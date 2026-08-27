@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "marathon-app",
-    "slug": "marathon-app",
+    "slug": "marathonapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,6 +20,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "3f6a427f-5cf3-4739-a2c0-e7842a80e6f8"
+      }
+    },
+    "owner": "jaykumar093"
   }
 }
