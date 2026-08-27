@@ -10,7 +10,7 @@
 
 | # | Task | Status | Sub-plan |
 |---|------|--------|----------|
-| 1 | Environment & accounts | In Progress | [01-environment-accounts.md](01-environment-accounts.md) |
+| 1 | Environment & accounts | Done | [01-environment-accounts.md](01-environment-accounts.md) |
 | 2 | Supabase backend (schema + Auth + waitlist gate) | Not Started | — |
 | 3 | Plan-generator engine (standalone module) | Not Started | — |
 | 4 | Navigation + Home/Plan wired to real data | Not Started | — |
