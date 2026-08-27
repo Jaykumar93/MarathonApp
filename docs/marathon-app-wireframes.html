@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marathon App — Wireframes</title>
+<style>
+  :root{
+    --ink:#2b2b2b;
+    --line:#9a9a9a;
+    --line-soft:#c6c6c6;
+    --fill:#eceeec;
+    --fill-soft:#f4f5f4;
+    --accent-line:#666;
+    --num-bg:#2b2b2b;
+    --mono:'Courier New', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:40px 24px 80px;
+    background:#fafafa;
+    font-family:Arial, Helvetica, sans-serif;
+    color:var(--ink);
+  }
+  h1{ font-size:22px; text-align:center; margin-bottom:6px; }
+  .sub{ text-align:center; color:#777; font-size:13px; margin-bottom:44px; }
+
+  /* ---- Flow map ---- */
+  .flowmap{
+    max-width:1180px; margin:0 auto 70px; background:#fff;
+    border:1px solid var(--line-soft); border-radius:10px; padding:28px;
+  }
+  .flowmap h2{ font-size:15px; margin-bottom:18px; }
+  .flow-row{ display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+  .flow-node{
+    border:1px solid var(--line); border-radius:6px; padding:8px 14px;
+    font-size:12px; background:var(--fill-soft); text-align:center; white-space:nowrap;
+  }
+  .flow-node.tab{ border-style:solid; border-width:2px; background:#fff; font-weight:bold; }
+  .flow-arrow{ font-size:14px; color:#999; }
+  .flow-note{ font-size:11px; color:#888; text-align:center; margin-top:4px; }
+  .tabbar-row{ display:flex; justify-content:center; gap:8px; margin:22px 0 8px; flex-wrap:wrap; }
+
+  /* ---- Screen section ---- */
+  .section-title{
+    max-width:1180px; margin:0 auto 18px; font-size:15px; font-weight:bold;
+    border-bottom:2px solid var(--ink); padding-bottom:6px;
+  }
+  .grid{
+    max-width:1180px; margin:0 auto 60px; display:flex; flex-wrap:wrap; gap:36px; justify-content:center;
+  }
+  .card{ width:300px; }
+  .card-label{ font-family:var(--mono); font-size:11px; color:#666; margin-bottom:8px; text-align:center; }
+  .frame{
+    width:300px; height:600px; border:2px solid var(--ink); border-radius:22px;
+    background:#fff; position:relative; overflow:hidden;
+  }
+  .notes{ margin-top:10px; font-size:11px; color:#555; line-height:1.6; }
+  .notes b{ display:inline-block; width:16px; height:16px; background:var(--num-bg); color:#fff;
+    border-radius:50%; text-align:center; font-size:10px; line-height:16px; margin-right:6px; }
+
+  /* wireframe primitives */
+  .num{
+    position:absolute; width:16px; height:16px; background:var(--num-bg); color:#fff;
+    border-radius:50%; font-size:10px; text-align:center; line-height:16px; z-index:5;
+  }
+  .wf{ padding:14px; display:flex; flex-direction:column; height:100%; gap:10px; }
+  .statusbar{ height:14px; }
+  .box{ background:var(--fill); border:1px dashed var(--line); border-radius:6px; }
+  .box-solid{ background:#fff; border:1px solid var(--ink); border-radius:6px; }
+  .bar{ height:8px; background:var(--fill); border-radius:3px; }
+  .bar.w60{ width:60%; } .bar.w80{ width:80%; } .bar.w40{ width:40%; } .bar.w100{ width:100%; } .bar.w30{width:30%;}
+  .btn{ height:38px; border:1.5px solid var(--ink); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:11px; }
+  .btn-ghost{ height:38px; border:1px dashed var(--line); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:11px; color:#777; }
+  .imgbox{
+    background:repeating-linear-gradient(45deg, var(--fill) 0 6px, #fff 6px 12px);
+    border:1px solid var(--line); border-radius:8px;
+  }
+  .row{ display:flex; gap:8px; align-items:center; }
+  .col{ display:flex; flex-direction:column; gap:6px; }
+  .tag{ font-size:9px; border:1px solid var(--line); border-radius:10px; padding:2px 8px; color:#777; }
+  .tabbar{
+    height:52px; border-top:1px solid var(--ink); display:flex; align-items:center; justify-content:space-around;
+    margin-top:auto;
+  }
+  .tabicon{ width:20px; height:20px; border:1px solid var(--line); border-radius:4px; position:relative; }
+  .tabicon.active{ border-color:var(--ink); background:var(--fill); }
+  .tabicon .dot{ position:absolute; top:-4px; right:-4px; width:8px; height:8px; border-radius:50%; background:var(--ink); }
+  .tappable{ outline:1.5px dotted var(--accent-line); outline-offset:2px; }
+  .divider{ border-top:1px dashed var(--line-soft); margin:2px 0; }
+  .listrow{ display:flex; align-items:center; gap:10px; border:1px solid var(--line-soft); border-radius:8px; padding:8px; }
+  .edge{ width:5px; height:26px; border-radius:3px; background:var(--fill); border:1px solid var(--line); flex-shrink:0; }
+  .circle{ border-radius:50%; }
+</style>
+</head>
+<body>
+
+<h1>Marathon Training App — Structural Wireframes</h1>
+<div class="sub">Low-fidelity layout reference. Grayscale, no visual styling — for structure and hierarchy only.</div>
+
+<!-- FLOW MAP -->
+<div class="flowmap">
+  <h2>1. App Navigation Map</h2>
+  <div class="flow-row">
+    <div class="flow-node">Splash</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">Auth</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">Waitlist (if pending)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">Onboarding (5 steps)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node tab">Home</div>
+  </div>
+  <div class="flow-note">Pre-tab-bar stack — one-directional, runs once per new user</div>
+
+  <div class="divider" style="margin:22px 0;"></div>
+
+  <div class="tabbar-row">
+    <div class="flow-node tab">Home</div>
+    <div class="flow-node tab">Plan</div>
+    <div class="flow-node tab">Track</div>
+    <div class="flow-node tab">Activity</div>
+    <div class="flow-node tab">Coach</div>
+  </div>
+  <div class="flow-note">Bottom tab bar — always accessible once approved</div>
+
+  <div class="divider" style="margin:22px 0;"></div>
+
+  <div class="flow-row">
+    <div class="flow-node">Home →</div>
+    <div class="flow-node">Session card → Active Run → Post-Run Summary → Save (instant) → optional "How it felt" (skippable)</div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-node">Home →</div>
+    <div class="flow-node">Countdown tap → Race Day Details (pacing, checklist, "how am I tracking" advice)</div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-node">Home →</div>
+    <div class="flow-node">Week terrain slice tap → jumps into Plan at today's position</div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-node">Track (tab) →</div>
+    <div class="flow-node">Active Run (GPS) <span style="color:#aaa;">or</span> Manual Log Entry — always available, independent of whether today has a scheduled session</div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-node">Plan →</div>
+    <div class="flow-node">Session detail → Start / Log / Ask Coach (pre-filled context)</div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-node">Post-Run Summary / Session detail →</div>
+    <div class="flow-node">"Ask coach" chip → Coach tab, pre-filled with that run/session as context</div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-node">Activity →</div>
+    <div class="flow-node">Activity History → Activity Detail</div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-node">Any tab →</div>
+    <div class="flow-node">Settings (pushed from Home/Profile icon, not a tab)</div>
+  </div>
+  <div class="flow-note">Stack screens pushed from tabs — not part of the tab bar itself. Home tab icon shows a small dot whenever today's session (if any) is still pending.</div>
+</div>
+
+<!-- AUTH -->
+<div class="section-title">2. Entry Flow</div>
+<div class="grid">
+
+  <div class="card">
+    <div class="card-label">01 · Auth</div>
+    <div class="frame">
+      <div class="wf">
+        <div class="statusbar"></div>
+        <div class="num" style="top:70px;left:14px;">1</div>
+        <div class="col" style="align-items:center; margin-top:40px;">
+          <div class="bar w40" style="height:16px;"></div>
+          <div class="bar w60" style="margin-top:4px;"></div>
+        </div>
+        <div class="col" style="margin-top:30px; gap:10px;">
+          <div class="num" style="top:150px;left:14px;">2</div>
+          <div class="btn">Continue with Google</div>
+          <div class="btn">Continue with Apple</div>
+          <div class="row" style="align-items:center; gap:8px; margin:4px 0;">
+            <div class="divider" style="flex:1;"></div><span style="font-size:10px;color:#999;">or</span><div class="divider" style="flex:1;"></div>
+          </div>
+          <div class="num" style="top:290px;left:14px;">3</div>
+          <div class="box" style="height:38px;"></div>
+          <div class="box" style="height:38px;"></div>
+          <div class="btn-ghost">Sign in</div>
+        </div>
+        <div class="bar w60" style="align-self:center; margin-top:auto;"></div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><b>1</b>Logo / tagline block</div>
+      <div><b>2</b>Primary social auth — equal weight, stacked</div>
+      <div><b>3</b>Email fallback — fields + toggle sign in/up</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">02 · Waitlist</div>
+    <div class="frame">
+      <div class="wf" style="justify-content:center; align-items:center; text-align:center;">
+        <div class="statusbar"></div>
+        <div class="num" style="top:220px;left:60px;">1</div>
+        <div class="box circle" style="width:60px;height:60px;"></div>
+        <div class="bar w60" style="height:16px; margin-top:18px;"></div>
+        <div class="col" style="width:100%; margin-top:8px;">
+          <div class="bar w100"></div>
+          <div class="bar w80" style="align-self:center;"></div>
+        </div>
+        <div class="num" style="top:400px;left:60px;">2</div>
+        <div class="btn-ghost" style="width:100%; margin-top:40px;">Sign out</div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><b>1</b>Status message — single focal point, no dashboard chrome</div>
+      <div><b>2</b>Only available action while pending</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">03 · Onboarding (step pattern × 5)</div>
+    <div class="frame">
+      <div class="wf">
+        <div class="statusbar"></div>
+        <div class="num" style="top:44px;left:14px;">1</div>
+        <div class="bar w100" style="height:4px;"></div>
+        <div class="num" style="top:80px;left:14px;">2</div>
+        <div class="bar w80" style="height:14px; margin-top:20px;"></div>
+        <div class="num" style="top:180px;left:14px;">3</div>
+        <div class="box" style="flex:1; margin-top:20px;"></div>
+        <div class="row" style="margin-top:auto;">
+          <div class="btn-ghost" style="flex:1;">Back</div>
+          <div class="btn" style="flex:2;">Continue</div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><b>1</b>Thin progress line (not numbered dots)</div>
+      <div><b>2</b>Single question per step</div>
+      <div><b>3</b>One large input control (date/slider/day-grid)</div>
+      Steps: 1) race target 2) current fitness 3) calibration (optional) 4) training days 5) health data connect
+    </div>
+  </div>
+
+</div>
+
+<!-- HOME / PLAN / TRACK -->
+<div class="section-title">3. Core Tabs</div>
+<div class="grid">
+
+  <div class="card">
+    <div class="card-label">04 · Home</div>
+    <div class="frame">
+      <div class="wf">
+        <div class="statusbar"></div>
+        <div class="num" style="top:44px;left:14px;">1</div>
+        <div class="col tappable" style="align-items:center; padding:6px 0;">
+          <div class="bar w30" style="height:26px;"></div>
+          <div class="bar w60" style="height:8px; margin-top:4px;"></div>
+        </div>
+        <div class="num" style="top:120px;left:14px;">2</div>
+        <div class="box" style="height:48px; margin-top:10px;"></div>
+        <div class="num" style="top:190px;left:14px;">3</div>
+        <div class="box-solid" style="height:140px; margin-top:10px; padding:10px;">
+          <div class="bar w40"></div>
+          <div class="bar w80" style="height:20px; margin-top:8px;"></div>
+          <div class="bar w100" style="margin-top:8px;"></div>
+          <div class="btn" style="margin-top:14px;">Start run</div>
+        </div>
+        <div class="num" style="top:400px;left:14px;">4</div>
+        <div class="col tappable" style="margin-top:10px; padding:6px;">
+          <div class="bar w40" style="height:6px;"></div>
+          <div class="box" style="height:36px;"></div>
+        </div>
+        <div class="tabbar">
+          <div class="tabicon active"><div class="dot"></div></div><div class="tabicon"></div><div class="tabicon"></div><div class="tabicon"></div><div class="tabicon"></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><b>1</b>Race countdown — tappable, opens Race Day Details (pacing, checklist, "how am I tracking" advice)</div>
+      <div><b>2</b>Adaptive plan-change banner (conditional, dismissible)</div>
+      <div><b>3</b>Today's session card — dominant element, single CTA</div>
+      <div><b>4</b>Mini weekly progress strip (Block Profile slice) — tappable, jumps into Plan at today's position</div>
+      Dotted outlines = tappable beyond the obvious button. Dot on Home tab icon = today's session still pending.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">05 · Plan / Calendar</div>
+    <div class="frame">
+      <div class="wf">
+        <div class="statusbar"></div>
+        <div class="bar w40" style="height:16px;"></div>
+        <div class="num" style="top:70px;left:14px;">1</div>
+        <div class="box" style="height:100px; margin-top:8px;"></div>
+        <div class="num" style="top:190px;left:14px;">2</div>
+        <div class="col" style="margin-top:10px; gap:8px;">
+          <div class="listrow"><div class="edge"></div><div class="col" style="flex:1;"><div class="bar w40" style="height:6px;"></div><div class="bar w60"></div></div><div class="bar w30" style="height:6px;width:30px;"></div></div>
+          <div class="listrow" style="border-color:var(--ink); border-width:2px;"><div class="edge" style="background:var(--ink);"></div><div class="col" style="flex:1;"><div class="bar w40" style="height:6px;"></div><div class="bar w60"></div></div><div class="bar w30" style="height:6px;width:30px;"></div></div>
+          <div class="listrow"><div class="edge"></div><div class="col" style="flex:1;"><div class="bar w40" style="height:6px;"></div><div class="bar w60"></div></div><div class="bar w30" style="height:6px;width:30px;"></div></div>
+          <div class="num" style="top:0;left:0;position:relative;display:inline-block;">3</div>
+          <div class="col" style="border:1px solid var(--line-soft); border-radius:8px; padding:8px; gap:6px;">
+            <div class="row"><div class="edge" style="background:var(--fill);"></div><div class="col" style="flex:1;"><div class="bar w40" style="height:6px;"></div><div class="bar w60"></div></div><div class="bar w30" style="height:6px;width:30px;"></div></div>
+            <div class="row" style="gap:6px;">
+              <div class="tag" style="flex:1; text-align:center; padding:6px 0;">Move to tomorrow</div>
+              <div class="tag" style="flex:1; text-align:center; padding:6px 0;">Mark done anyway</div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tabicon"></div><div class="tabicon active"></div><div class="tabicon"></div><div class="tabicon"></div><div class="tabicon"></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><b>1</b>Full block terrain (tap to jump to a week)</div>
+      <div><b>2</b>Day rows — status shown via left edge, tap to expand for full workout + prep/recovery content + "Ask coach" chip</div>
+      <div><b>3</b>Missed session — inline recovery actions instead of passive display</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">06 · Active Run</div>
+    <div class="frame">
+      <div class="wf">
+        <div class="statusbar"></div>
+        <div class="num" style="top:60px;left:130px;">1</div>
+        <div class="box circle" style="width:8px;height:8px; align-self:center;"></div>
+        <div class="num" style="top:110px;left:14px;">2</div>
+        <div class="col" style="align-items:center; margin-top:16px;">
+          <div class="bar w60" style="height:44px;"></div>
+          <div class="bar w40" style="height:6px; margin-top:6px;"></div>
+        </div>
+        <div class="num" style="top:230px;left:14px;">3</div>
+        <div class="box" style="height:70px; margin-top:16px;"></div>
+        <div class="num" style="top:340px;left:14px;">4</div>
+        <div class="imgbox" style="flex:1; margin-top:16px;"></div>
+        <div class="num" style="top:520px;left:14px;">5</div>
+        <div class="row" style="margin-top:14px;">
+          <div class="btn-ghost" style="flex:1;">Pause</div>
+          <div class="btn" style="flex:1;">Stop</div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><b>1</b>GPS status dot — invisible unless signal lost</div>
+      <div><b>2</b>Primary stat (pace) — largest element on screen</div>
+      <div><b>3</b>Pace band — target vs actual, horizontal strip</div>
+      <div><b>4</b>Live map — collapsible</div>
+      <div><b>5</b>Controls — bottom thumb zone, Stop requires confirm</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- LOGGING -->
+<div class="section-title">4. Logging &amp; Activity Detail</div>
+<div class="grid">
+
+  <div class="card">
+    <div class="card-label">07a · Post-Run Summary (instant save)</div>
+    <div class="frame">
+      <div class="wf">
+        <div class="statusbar"></div>
+        <div class="num" style="top:44px;left:14px;">1</div>
+        <div class="imgbox" style="height:120px;"></div>
+        <div class="num" style="top:180px;left:14px;">2</div>
+        <div class="row" style="margin-top:8px;">
+          <div class="box" style="flex:1; height:40px;"></div>
+          <div class="box" style="flex:1; height:40px;"></div>
+          <div class="box" style="flex:1; height:40px;"></div>
+        </div>
+        <div class="num" style="top:250px;left:14px;">3</div>
+        <div class="box" style="height:60px; margin-top:8px;"></div>
+        <div class="num" style="top:330px;left:14px;">4</div>
+        <div class="col" style="margin-top:8px; gap:3px;">
+          <div class="bar w100" style="height:6px;"></div>
+          <div class="bar w100" style="height:6px;"></div>
+          <div class="bar w100" style="height:6px;"></div>
+        </div>
+        <div class="num" style="top:5px;left:150px;">5</div>
+        <div class="btn" style="margin-top:auto;">Save</div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><b>1</b>Route map</div>
+      <div><b>2</b>Headline stats (distance / time / pace)</div>
+      <div><b>3</b>Elevation profile</div>
+      <div><b>4</b>Splits table (mono, aligned)</div>
+      <div><b>5</b>Save is the only required action — no RPE/notes gate here, zero friction right after finishing</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">07b · How It Felt (post-save, skippable)</div>
+    <div class="frame">
+      <div class="wf" style="justify-content:center;">
+        <div class="statusbar"></div>
+        <div class="num" style="top:120px;left:14px;">1</div>
+        <div class="bar w80" style="height:14px; align-self:center;"></div>
+        <div class="num" style="top:190px;left:14px;">2</div>
+        <div class="row" style="margin-top:20px; gap:4px; justify-content:center;">
+          <div class="box circle" style="width:22px;height:22px;"></div><div class="box circle" style="width:22px;height:22px;"></div><div class="box circle" style="width:22px;height:22px;"></div><div class="box circle" style="width:22px;height:22px;"></div><div class="box circle" style="width:22px;height:22px;"></div>
+        </div>
+        <div class="box" style="height:60px; margin-top:20px; opacity:0.4;"></div>
+        <div class="num" style="top:520px;left:14px;">3</div>
+        <div class="row" style="margin-top:30px;">
+          <div class="btn-ghost" style="flex:1;">Skip</div>
+          <div class="btn" style="flex:1;">Add</div>
+        </div>
+        <div class="num" style="top:600px;left:14px;">4</div>
+        <div class="tag" style="align-self:center; margin-top:10px;">Ask coach about this run</div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><b>1</b>Shown as a lightweight prompt right after Save completes — not a form gate</div>
+      <div><b>2</b>RPE dial + optional notes field</div>
+      <div><b>3</b>Skip and Add are equal weight — skipping has no penalty or nag</div>
+      <div><b>4</b>Ask-coach chip, pre-filled with this run as context</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">08 · Manual Log Entry</div>
+    <div class="frame">
+      <div class="wf">
+        <div class="statusbar"></div>
+        <div class="bar w40" style="height:16px;"></div>
+        <div class="num" style="top:70px;left:14px;">1</div>
+        <div class="col" style="margin-top:10px; gap:10px;">
+          <div class="box" style="height:38px;"></div>
+          <div class="box" style="height:38px;"></div>
+          <div class="box" style="height:38px;"></div>
+          <div class="row" style="gap:4px;"><div class="box circle" style="width:18px;height:18px;"></div><div class="box circle" style="width:18px;height:18px;"></div><div class="box circle" style="width:18px;height:18px;"></div><div class="box circle" style="width:18px;height:18px;"></div><div class="box circle" style="width:18px;height:18px;"></div></div>
+        </div>
+        <div class="num" style="top:250px;left:14px;">2</div>
+        <div class="bar w60" style="margin-top:16px; text-decoration:underline;"></div>
+        <div class="box" style="flex:1; margin-top:10px; opacity:0.4;"></div>
+        <div class="btn" style="margin-top:auto;">Save</div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><b>1</b>Quick fields only — date, distance, duration, RPE</div>
+      <div><b>2</b>"Add more detail" expander (splits/HR/elevation/shoe/notes) — collapsed by default</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">09 · Activity History → Detail</div>
+    <div class="frame">
+      <div class="wf">
+        <div class="statusbar"></div>
+        <div class="bar w40" style="height:16px;"></div>
+        <div class="num" style="top:60px;left:14px;">1</div>
+        <div class="col" style="margin-top:8px; gap:6px;">
+          <div class="listrow"><div class="edge"></div><div class="col" style="flex:1;"><div class="bar w60" style="height:6px;"></div></div><div class="bar w30" style="height:6px;width:26px;"></div></div>
+          <div class="listrow"><div class="edge"></div><div class="col" style="flex:1;"><div class="bar w60" style="height:6px;"></div></div><div class="bar w30" style="height:6px;width:26px;"></div></div>
+          <div class="listrow"><div class="edge"></div><div class="col" style="flex:1;"><div class="bar w60" style="height:6px;"></div></div><div class="bar w30" style="height:6px;width:26px;"></div></div>
+          <div class="listrow"><div class="edge"></div><div class="col" style="flex:1;"><div class="bar w60" style="height:6px;"></div></div><div class="bar w30" style="height:6px;width:26px;"></div></div>
+          <div class="listrow"><div class="edge"></div><div class="col" style="flex:1;"><div class="bar w60" style="height:6px;"></div></div><div class="bar w30" style="height:6px;width:26px;"></div></div>
+        </div>
+        <div class="num" style="top:490px;left:14px;">2</div>
+        <div class="row" style="margin-top:12px; gap:6px;">
+          <div class="tag">Type</div><div class="tag">Date range</div><div class="tag">Search</div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><b>1</b>Reverse-chronological rows → tap opens Activity Detail (same layout as Post-Run Summary + source badge + planned-vs-actual delta)</div>
+      <div><b>2</b>Filter/search controls</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PROGRESS / COACH / SETTINGS -->
+<div class="section-title">5. Activity, Coach &amp; Settings</div>
+<div class="grid">
+
+  <div class="card">
+    <div class="card-label">10 · Activity tab — Trends</div>
+    <div class="frame">
+      <div class="wf">
+        <div class="statusbar"></div>
+        <div class="bar w40" style="height:16px;"></div>
+        <div class="num" style="top:70px;left:14px;">1</div>
+        <div class="box" style="height:90px; margin-top:8px;"></div>
+        <div class="num" style="top:190px;left:14px;">2</div>
+        <div class="box" style="height:70px; margin-top:8px;"></div>
+        <div class="num" style="top:290px;left:14px;">3</div>
+        <div class="box" style="height:90px; margin-top:8px;"></div>
+        <div class="num" style="top:400px;left:14px;">4</div>
+        <div class="row" style="margin-top:8px; gap:6px;">
+          <div class="box-solid" style="flex:1;height:50px;"></div>
+          <div class="box-solid" style="flex:1;height:50px;"></div>
+        </div>
+        <div class="tabbar">
+          <div class="tabicon"></div><div class="tabicon"></div><div class="tabicon"></div><div class="tabicon active"></div><div class="tabicon"></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><b>1</b>Pace-over-time line chart</div>
+      <div><b>2</b>Weekly mileage bars</div>
+      <div><b>3</b>Consistency heatmap</div>
+      <div><b>4</b>Personal records (bib-card style)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">11 · Coach Chat</div>
+    <div class="frame">
+      <div class="wf">
+        <div class="statusbar"></div>
+        <div class="bar w40" style="height:16px;"></div>
+        <div class="num" style="top:70px;left:14px;">1</div>
+        <div class="col" style="margin-top:10px; gap:10px; flex:1;">
+          <div class="box" style="height:34px; width:70%; align-self:flex-end;"></div>
+          <div class="box-solid" style="height:50px; width:80%;"></div>
+          <div class="box" style="height:34px; width:60%; align-self:flex-end;"></div>
+        </div>
+        <div class="num" style="top:470px;left:14px;">2</div>
+        <div class="row" style="gap:6px; flex-wrap:wrap;">
+          <div class="tag">Why this run?</div><div class="tag">Fueling tips</div>
+        </div>
+        <div class="box" style="height:40px; margin-top:8px;"></div>
+        <div class="tabbar">
+          <div class="tabicon"></div><div class="tabicon"></div><div class="tabicon"></div><div class="tabicon"></div><div class="tabicon active"></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><b>1</b>Conversation thread — user right-aligned, coach left-aligned with optional activity-reference chip</div>
+      <div><b>2</b>Suggested-question chips + input field</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">12 · Settings</div>
+    <div class="frame">
+      <div class="wf">
+        <div class="statusbar"></div>
+        <div class="bar w40" style="height:16px;"></div>
+        <div class="num" style="top:70px;left:14px;">1</div>
+        <div class="col" style="margin-top:10px; gap:4px;">
+          <div class="bar w30" style="height:8px; margin-top:4px;"></div>
+          <div class="listrow" style="height:34px;"><div class="bar w60"></div></div>
+          <div class="bar w30" style="height:8px; margin-top:8px;"></div>
+          <div class="listrow" style="height:34px;"><div class="box circle" style="width:8px;height:8px;"></div><div class="bar w60"></div></div>
+          <div class="bar w30" style="height:8px; margin-top:8px;"></div>
+          <div class="listrow" style="height:34px;"><div class="bar w60"></div></div>
+          <div class="listrow" style="height:34px;"><div class="bar w60"></div></div>
+        </div>
+        <div class="btn-ghost" style="margin-top:auto;">Sign out</div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><b>1</b>Grouped rows: Account, Health Data (with status dot), Notifications, Units, Data Export</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section-title">6. Race Day Details (opened by tapping the Home countdown)</div>
+<div class="grid">
+
+  <div class="card">
+    <div class="card-label">13 · Race Day Details</div>
+    <div class="frame">
+      <div class="wf">
+        <div class="statusbar"></div>
+        <div class="bar w60" style="height:16px;"></div>
+        <div class="num" style="top:70px;left:14px;">1</div>
+        <div class="box-solid" style="height:70px; margin-top:8px; padding:8px;">
+          <div class="bar w40" style="height:6px;"></div>
+          <div class="bar w70" style="height:14px; margin-top:6px;"></div>
+        </div>
+        <div class="num" style="top:170px;left:14px;">2</div>
+        <div class="box" style="height:60px; margin-top:10px;"></div>
+        <div class="num" style="top:260px;left:14px;">3</div>
+        <div class="col" style="margin-top:10px; gap:6px;">
+          <div class="listrow" style="height:30px;"><div class="bar w60"></div></div>
+          <div class="listrow" style="height:30px;"><div class="bar w60"></div></div>
+          <div class="listrow" style="height:30px;"><div class="bar w60"></div></div>
+        </div>
+        <div class="num" style="top:430px;left:14px;">4</div>
+        <div class="btn" style="margin-top:auto;">Start race</div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><b>1</b>"How am I tracking" advice — plain-language summary of readiness vs. goal (draws on the Coach/RAG layer)</div>
+      <div><b>2</b>Goal-race pace band, pre-filled with target splits, not yet live</div>
+      <div><b>3</b>Editable morning-of checklist (gear, nutrition, arrival time)</div>
+      <div><b>4</b>Start race — begins the same tracking flow as Active Run, tagged as the goal race</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section-title">7. Notes</div>
+<div class="grid" style="justify-content:flex-start;">
+  <div style="max-width:1180px; font-size:13px; line-height:1.8; color:#444;">
+    <p><b>Track tab</b> stays a dedicated, always-available entry point — independent of whether today has a scheduled session, so an unplanned/extra run is just as easy to start as a planned one.</p>
+    <p><b>Shoe/Gear</b> and <b>Export/Share</b> are simple list/form patterns reusing the same listrow and card primitives shown above — not wireframed separately here to avoid repetition.</p>
+    <p><b>Adaptive plan-change prompt</b> is a bottom sheet, not a full screen — same content structure as the Home banner (message + two equal-weight actions), just modal-presented from the Plan screen.</p>
+    <p><b>Ask coach</b> chips appear wherever context is available (Post-Run Summary, Plan session detail) — tapping opens Coach with that run/session already loaded as context, rather than a blank chat.</p>
+    <p>All screens: tab bar present only on the 5 primary tabs; every other screen is a pushed stack screen with a back affordance in the top-left, omitted from these wireframes for clarity.</p>
+  </div>
+</div>
+
+</body>
+</html>

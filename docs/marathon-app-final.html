@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marathon App — Full Data-Rich Screens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --predawn:#14161A; --frost:#EEEFEA; --accent:#FF5A1F; --contour:#2B4C43;
+    --success:#3E8E7E; --warning:#F2B705; --text-dim:#6B6E73; --text-faint:#9A9D9F;
+    --card-line: rgba(20,22,26,0.07); --dark-line: rgba(255,255,255,0.09);
+    --data-face:'Space Grotesk',sans-serif; --body-face:'Plus Jakarta Sans',sans-serif; --mono-face:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:#e5e5e3; font-family:var(--body-face); padding:50px 24px 100px; }
+  /* Page chrome (outside the phone frames) always stays light, regardless of the
+     in-app dark toggle — only the phone screens themselves should go dark. */
+  body.dark{ background:#e5e5e3 !important; color:#14161A; }
+  body.dark h1.page, body.dark .section-title{ color:#14161A !important; }
+  body.dark .page-sub, body.dark .item-label{ color:#7a7d80 !important; }
+  h1.page{ text-align:center; font-family:var(--data-face); font-size:24px; color:var(--predawn); margin-bottom:6px; }
+  .page-sub{ text-align:center; color:#7a7d80; font-size:13px; margin-bottom:50px; }
+  .section-title{ max-width:1400px; margin:0 auto 22px; font-family:var(--data-face); font-size:15px; font-weight:700; color:var(--predawn); border-bottom:2px solid var(--predawn); padding-bottom:8px; }
+  .gallery{ max-width:1400px; margin:0 auto 64px; display:flex; flex-wrap:wrap; gap:44px; justify-content:center; }
+  .item{ display:flex; flex-direction:column; align-items:center; }
+  .item-label{ font-family:var(--mono-face); font-size:11px; color:#888; margin-bottom:12px; text-align:center; max-width:340px; }
+
+  .phone{ width:340px; height:700px; border-radius:40px; overflow:hidden; position:relative;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.35), 0 0 0 9px #0d0e10, 0 0 0 10px #2a2b2d; display:flex; flex-direction:column; }
+  .notch{ position:absolute; top:0; left:50%; transform:translateX(-50%); width:110px; height:28px; background:#0d0e10; border-radius:0 0 18px 18px; z-index:20; }
+  .statusbar{ height:40px; flex-shrink:0; }
+  .light{ background:var(--frost); color:var(--predawn); }
+  .dark{ background:var(--predawn); color:var(--frost); }
+  .scroll{ flex:1; overflow-y:auto; padding:10px 18px 18px; }
+
+  .kicker{ font-family:var(--mono-face); font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.07em; color:var(--accent); }
+  .kicker.muted{ color:var(--text-faint); }
+  .section-label{ font-family:var(--mono-face); font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-faint); margin:14px 0 7px; }
+  .section-label:first-of-type{ margin-top:0; }
+  .h-lg{ font-family:var(--data-face); font-weight:700; font-size:23px; }
+  .h-md{ font-family:var(--data-face); font-weight:600; font-size:17px; }
+  .p-dim{ font-size:11.5px; color:var(--text-dim); line-height:1.5; }
+  .p-faint{ font-size:10.5px; color:var(--text-faint); }
+  .mono{ font-family:var(--mono-face); }
+
+  .btn{ background:var(--accent); color:#fff; border:none; width:100%; padding:14px 0; border-radius:14px; font-family:var(--body-face); font-weight:700; font-size:13.5px; text-align:center; }
+  .btn-outline{ background:transparent; border:1.5px solid var(--contour); color:var(--contour); width:100%; padding:12.5px 0; border-radius:14px; font-family:var(--body-face); font-weight:600; font-size:13.5px; text-align:center; }
+  .btn-outline.dark{ border-color:rgba(255,255,255,0.25); color:var(--frost); }
+  .btn-social{ display:flex; align-items:center; justify-content:center; gap:9px; border:1.5px solid var(--card-line); border-radius:13px; padding:12px 0; font-size:13px; font-weight:600; background:#fff; }
+  .dot-icon{ width:15px; height:15px; border-radius:4px; background:var(--predawn); flex-shrink:0; }
+
+  .card{ background:#fff; border-radius:16px; padding:14px; box-shadow:0 3px 14px rgba(20,22,26,0.06); margin-bottom:10px; }
+  .card.dark-card{ background:rgba(255,255,255,0.05); border:1px solid var(--dark-line); box-shadow:none; }
+  .card-title{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .card-title .t{ font-size:11.5px; font-weight:700; color:var(--predawn); }
+  .card-title .v{ font-family:var(--mono-face); font-size:10px; color:var(--text-dim); }
+  .input{ border:1.5px solid var(--card-line); border-radius:11px; padding:12px 13px; font-size:12.5px; color:var(--text-dim); background:#fff; }
+
+  .row{ display:flex; align-items:center; gap:9px; }
+  .listrow{ display:flex; align-items:center; gap:11px; padding:10px 4px; border-bottom:1px solid var(--card-line); }
+  .listrow:last-child{ border-bottom:none; }
+  .edge{ width:5px; height:28px; border-radius:3px; flex-shrink:0; }
+
+  .pbar{ height:7px; background:var(--card-line); border-radius:4px; overflow:hidden; margin-bottom:5px; }
+  .pbar-fill{ height:100%; border-radius:4px; }
+  .pbar-row{ display:flex; justify-content:space-between; font-size:10px; color:var(--text-faint); }
+
+  .stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+  .stat .label{ font-size:9px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:2px; }
+  .stat .value{ font-family:var(--data-face); font-size:15px; font-weight:600; color:var(--predawn); }
+  .stat .value span{ font-size:10px; color:var(--text-dim); font-weight:500; }
+
+  .cal-strip{ display:flex; justify-content:space-between; gap:4px; }
+  .cal-day{ flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .cal-day .dname{ font-size:8.5px; color:var(--text-faint); font-weight:600; }
+  .cal-cell{ width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-family:var(--data-face); font-size:11.5px; font-weight:600; position:relative; }
+  .cal-cell.type-easy{ background:var(--success); color:#fff; }
+  .cal-cell.type-tempo{ background:var(--accent); color:#fff; }
+  .cal-cell.type-long{ background:var(--contour); color:#fff; }
+  .cal-cell.type-rest{ background:transparent; color:var(--text-faint); border:1.5px dashed var(--card-line); }
+  .cal-cell.type-missed{ background:#dcdcd7; color:#8a8d92; text-decoration:line-through; }
+  .cal-cell.outline-easy{ background:#fff; border:1.5px solid var(--success); color:var(--predawn); }
+  .cal-cell.outline-tempo{ background:#fff; border:1.5px solid var(--accent); color:var(--predawn); }
+  .cal-cell.outline-long{ background:#fff; border:1.5px solid var(--contour); color:var(--predawn); }
+  .cal-cell.is-today{ box-shadow:0 0 0 2.5px var(--predawn); }
+  .cal-legend{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 14px; }
+  .cal-legend-item{ display:flex; align-items:center; gap:4px; font-size:9px; color:var(--text-dim); }
+  .cal-legend-swatch{ width:8px; height:8px; border-radius:3px; }
+
+  .act-row{ display:flex; align-items:center; gap:9px; padding:8px 0; border-bottom:1px solid var(--card-line); }
+  .act-row:last-child{ border-bottom:none; }
+  .act-icon{ width:28px; height:28px; border-radius:8px; background:var(--frost); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .act-row .name{ font-size:11.5px; font-weight:600; color:var(--predawn); }
+  .act-row .date{ font-size:9.5px; color:var(--text-faint); }
+  .act-row .stat-mini{ margin-left:auto; text-align:right; font-family:var(--mono-face); font-size:10px; color:var(--text-dim); }
+
+  .insight-card{ background:var(--contour); color:#fff; }
+  .insight-card .t{ color:#dcecE7; }
+  .insight-card .body{ font-size:11.5px; line-height:1.5; color:#e8f2ee; }
+
+  .terrain-svg{ width:100%; height:50px; display:block; }
+
+  .tabbar{ height:74px; flex-shrink:0; background:#fff; border-top:1px solid var(--card-line); display:flex; align-items:flex-start; justify-content:space-around; padding-top:9px; }
+  .tab{ display:flex; flex-direction:column; align-items:center; gap:3px; position:relative; width:48px; }
+  .tab svg{ width:19px; height:19px; }
+  .tab .tlabel{ font-size:9px; color:var(--text-faint); font-weight:500; }
+  .tab.active svg{ color:var(--accent); }
+  .tab.active .tlabel{ color:var(--predawn); font-weight:700; }
+  .tab .dot{ position:absolute; top:-2px; right:10px; width:6px; height:6px; border-radius:50%; background:var(--accent); }
+  .tab.track{ margin-top:-19px; }
+  .tab.track .circle{ width:46px; height:46px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 18px -6px rgba(255,90,31,0.6); }
+  .tab.track svg{ color:#fff; width:19px; height:19px; }
+  .header-row{ display:flex; align-items:center; gap:9px; margin-bottom:14px; }
+  .back-chev{ font-size:16px; color:var(--text-dim); }
+
+  function-tabs(){}
+
+  /* ============ APP-WIDE DARK MODE (body.dark) ============ */
+  /* Applies to every .light-wrapped screen. Active Run keeps its own permanent
+     .dark styling regardless of this toggle — see closing note. */
+  body.dark .light{ background:var(--predawn); color:var(--frost); }
+  body.dark .card{ background:rgba(255,255,255,0.055); border:1px solid var(--dark-line); box-shadow:none; }
+  body.dark .card-title .t{ color:var(--frost); }
+  body.dark .card-title .v{ color:#9a9da2; }
+  body.dark .h-md, body.dark .h-lg{ color:var(--frost); }
+  body.dark .p-dim{ color:#b7bac0; }
+  body.dark .p-faint, body.dark .section-label{ color:#7d8085; }
+  body.dark .kicker.muted{ color:#8a8d92; }
+  body.dark .input{ background:rgba(255,255,255,0.05); border-color:var(--dark-line); color:var(--frost); }
+  body.dark .listrow{ border-bottom:1px solid var(--dark-line); }
+  body.dark .act-row{ border-bottom:1px solid var(--dark-line); }
+  body.dark .act-icon{ background:rgba(255,255,255,0.06); }
+  body.dark .btn-outline{ border-color:rgba(255,255,255,0.25); color:var(--frost); }
+  body.dark .btn-social{ background:rgba(255,255,255,0.05); border-color:var(--dark-line); color:var(--frost); }
+  body.dark .avatar{ background:var(--accent); }
+  body.dark .cal-cell.type-rest{ border-color:var(--dark-line); color:#7d8085; }
+  body.dark .cal-cell.outline-easy, body.dark .cal-cell.outline-tempo, body.dark .cal-cell.outline-long{ background:transparent; color:var(--frost); }
+  body.dark .cal-cell.type-missed{ background:rgba(255,255,255,0.08); color:#7d8085; }
+  body.dark .cal-cell.is-today{ box-shadow:0 0 0 2.5px var(--frost); }
+  body.dark .cal-legend-item{ color:#9a9da2; }
+  body.dark .banner{ background:rgba(242,183,5,0.12) !important; border-color:rgba(242,183,5,0.35) !important; }
+  body.dark .banner .msg{ color:#f0dca0 !important; }
+  body.dark .banner .apply, body.dark .banner b{ color:var(--frost) !important; }
+  body.dark .insight-card{ background:rgba(62,142,126,0.2); border:1px solid rgba(62,142,126,0.4); box-shadow:none; }
+  body.dark .tabbar{ background:#1a1c21; border-top:1px solid var(--dark-line); }
+  body.dark .tab.active .tlabel{ color:var(--frost); }
+  body.dark .tab svg[stroke="#9A9D9F"]{ stroke:#7d8085; }
+  body.dark .back-chev{ color:#b7bac0; }
+  body.dark .pbar{ background:rgba(255,255,255,0.1); }
+  body.dark .dot-icon{ background:var(--frost); }
+  body.dark .card.dark-card{ background:rgba(255,255,255,0.05); border:1px solid var(--dark-line); }
+</style>
+</head>
+<body>
+
+<h1 class="page">Full Data-Rich Screens</h1>
+<div class="page-sub">Every screen from the wireframe, rebuilt with real data density and the type-colored calendar system</div>
+
+<div style="text-align:center; margin-bottom:40px;">
+  <button id="theme-toggle" onclick="document.body.classList.toggle('dark'); this.textContent = document.body.classList.contains('dark') ? '☀ Switch to Light' : '● Switch to Dark';"
+    style="font-family:'JetBrains Mono',monospace; font-size:12px; padding:10px 20px; border-radius:20px; border:1.5px solid #14161A; background:#fff; color:#14161A; cursor:pointer;">
+    ● Switch to Dark
+  </button>
+  <div style="font-size:11px; color:#888; margin-top:8px; max-width:500px; margin-left:auto; margin-right:auto;">Toggles every screen at once — this is how the app-wide theme setting behaves. Active Run stays dark in both modes by design (see note at the bottom).</div>
+</div>
+
+<!-- shared tabbar snippet used across screens, written inline per screen for portability -->
+
+<!-- ========== ENTRY FLOW ========== -->
+<div class="section-title">1 · Entry Flow</div>
+<div class="gallery">
+
+  <div class="item">
+    <div class="item-label">01 · Auth</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="light" style="display:flex; flex-direction:column; height:100%;">
+        <div class="statusbar"></div>
+        <div class="scroll" style="display:flex; flex-direction:column;">
+          <div style="text-align:center; margin:26px 0 34px;">
+            <div style="width:52px;height:52px;border-radius:15px;background:var(--predawn);margin:0 auto 14px;"></div>
+            <div class="h-lg">Train for your race</div>
+            <div class="p-dim" style="margin-top:5px;">Free training plans, built around your life</div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:9px;">
+            <div class="btn-social"><div class="dot-icon"></div>Continue with Google</div>
+            <div class="btn-social"><div class="dot-icon" style="background:#000;"></div>Continue with Apple</div>
+          </div>
+          <div class="row" style="margin:18px 0; gap:9px;"><div style="flex:1; height:1px; background:var(--card-line);"></div><span class="p-faint">or</span><div style="flex:1; height:1px; background:var(--card-line);"></div></div>
+          <div style="display:flex; flex-direction:column; gap:9px;"><input class="input" placeholder="Email"/><input class="input" placeholder="Password" type="password"/></div>
+          <div class="btn" style="margin-top:14px;">Sign in</div>
+          <div class="p-faint" style="text-align:center; margin-top:auto; padding-top:24px;">By continuing you agree to our Privacy Policy</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-label">02 · Waitlist</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="light" style="display:flex; flex-direction:column; height:100%;">
+        <div class="statusbar"></div>
+        <div class="scroll" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+          <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="var(--contour)" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          <div class="h-md" style="margin-top:18px;">You're on the list</div>
+          <div class="p-dim" style="margin-top:7px; max-width:220px;">We're onboarding a small group at a time. You'll get a notification the moment you're in.</div>
+          <div class="card" style="margin-top:20px; width:100%; text-align:left;">
+            <div class="card-title"><span class="t">Joined</span><span class="v">Aug 24</span></div>
+            <div class="card-title" style="margin-bottom:0;"><span class="t">Position</span><span class="v">~ #14</span></div>
+          </div>
+          <div class="p-faint" style="margin-top:34px;">Sign out</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-label">03 · Onboarding — step 4 of 5</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="light" style="display:flex; flex-direction:column; height:100%;">
+        <div class="statusbar"></div>
+        <div class="scroll" style="display:flex; flex-direction:column;">
+          <div style="height:3px; background:var(--card-line); border-radius:2px; margin-bottom:24px;"><div style="width:80%; height:100%; background:var(--accent); border-radius:2px;"></div></div>
+          <div class="h-md" style="margin-bottom:5px;">Which days can you train?</div>
+          <div class="p-dim" style="margin-bottom:18px;">4 days/week, based on what you told us</div>
+          <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:5px;">
+            <div class="card" style="padding:7px 0; margin-bottom:0; text-align:center; background:var(--predawn); color:#fff;">M</div>
+            <div class="card" style="padding:7px 0; margin-bottom:0; text-align:center;">T</div>
+            <div class="card" style="padding:7px 0; margin-bottom:0; text-align:center; background:var(--predawn); color:#fff;">W</div>
+            <div class="card" style="padding:7px 0; margin-bottom:0; text-align:center;">T</div>
+            <div class="card" style="padding:7px 0; margin-bottom:0; text-align:center; background:var(--predawn); color:#fff;">F</div>
+            <div class="card" style="padding:7px 0; margin-bottom:0; text-align:center; background:var(--accent); color:#fff;">S</div>
+            <div class="card" style="padding:7px 0; margin-bottom:0; text-align:center;">S</div>
+          </div>
+          <div class="p-faint" style="text-align:center; margin-top:8px;">Orange = long run day</div>
+          <div class="row" style="margin-top:auto; gap:9px;"><div class="btn-outline" style="flex:1;">Back</div><div class="btn" style="flex:2;">Continue</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== CORE TABS ========== -->
+<div class="section-title">2 · Core Tabs</div>
+<div class="gallery">
+
+  <!-- HOME (data-rich) -->
+  <div class="item">
+    <div class="item-label">04 · Home — full data</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="light" style="display:flex; flex-direction:column; height:100%;">
+        <div class="statusbar"></div>
+        <div class="scroll">
+          <div class="row" style="justify-content:space-between; margin-bottom:12px;">
+            <div class="p-dim">Good morning, <b style="color:var(--predawn);">Alex</b></div>
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--predawn); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--data-face); font-size:11px;">A</div>
+          </div>
+          <div style="text-align:center; margin-bottom:10px;">
+            <div class="h-lg" style="font-size:42px;">42<span style="font-size:15px; color:var(--text-dim); font-weight:600;"> days</span></div>
+            <div class="p-dim">to City Marathon · 26.2mi ›</div>
+          </div>
+          <div class="section-label">This week</div>
+          <div class="cal-strip">
+            <div class="cal-day"><div class="dname">MON</div><div class="cal-cell type-easy">17</div></div>
+            <div class="cal-day"><div class="dname">TUE</div><div class="cal-cell type-missed">18</div></div>
+            <div class="cal-day"><div class="dname">WED</div><div class="cal-cell type-tempo is-today">19</div></div>
+            <div class="cal-day"><div class="dname">THU</div><div class="cal-cell type-rest">20</div></div>
+            <div class="cal-day"><div class="dname">FRI</div><div class="cal-cell outline-easy">21</div></div>
+            <div class="cal-day"><div class="dname">SAT</div><div class="cal-cell outline-long">22</div></div>
+            <div class="cal-day"><div class="dname">SUN</div><div class="cal-cell type-rest">23</div></div>
+          </div>
+          <div class="cal-legend">
+            <div class="cal-legend-item"><div class="cal-legend-swatch" style="background:var(--success);"></div>Easy</div>
+            <div class="cal-legend-item"><div class="cal-legend-swatch" style="background:var(--accent);"></div>Tempo</div>
+            <div class="cal-legend-item"><div class="cal-legend-swatch" style="background:var(--contour);"></div>Long</div>
+            <div class="cal-legend-item"><div class="cal-legend-swatch" style="background:#dcdcd7;"></div>Missed</div>
+          </div>
+          <div class="card" style="background:rgba(242,183,5,0.14); border:1px solid rgba(242,183,5,0.4); box-shadow:none;">
+            <div class="p-dim" style="color:#4a3c04; margin-bottom:7px;">Your last 3 runs came in easier than planned. Adjust next week?</div>
+            <div class="row" style="gap:14px;"><b style="font-size:11px;">Apply adjustment</b><span class="p-faint">Keep current plan</span></div>
+          </div>
+          <div class="card" style="border-left:4px solid var(--accent);">
+            <div class="kicker">Today · Tempo run</div>
+            <div class="h-md" style="margin:5px 0 3px;">6.0mi @ 8:15/mi</div>
+            <div class="p-faint" style="margin-bottom:10px;">3×1.5mi threshold, 0.5mi easy between</div>
+            <div class="btn">Start run</div>
+          </div>
+          <div class="section-label">Training block</div>
+          <div class="card">
+            <div class="card-title"><span class="t">Week 6 of 18</span><span class="v">3 of 5 done</span></div>
+            <svg class="terrain-svg" viewBox="0 0 300 50" preserveAspectRatio="none">
+              <path d="M0,42 42,38 84,26 126,18 168,23 210,9" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
+              <path d="M210,9 250,16 300,7" fill="none" stroke="#e2e4de" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="t">Weekly mileage</span><span class="v">18.4 / 24mi</span></div>
+            <div class="pbar"><div class="pbar-fill" style="width:77%; background:var(--accent);"></div></div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="t">Snapshot</span><span class="v">Last 7 days</span></div>
+            <div class="stat-grid">
+              <div class="stat"><div class="label">Avg pace</div><div class="value">8:42<span>/mi</span></div></div>
+              <div class="stat"><div class="label">Avg HR</div><div class="value">148<span>bpm</span></div></div>
+              <div class="stat"><div class="label">Elevation</div><div class="value">412<span>ft</span></div></div>
+              <div class="stat"><div class="label">Streak</div><div class="value">6<span>wks</span></div></div>
+            </div>
+          </div>
+          <div class="section-label">Insight</div>
+          <div class="card insight-card">
+            <div class="card-title"><span class="t">Coach note</span></div>
+            <div class="body">Easy pace improved 12 sec/mi over 3 weeks at the same effort — base fitness building well.</div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab active"><div class="dot"></div><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg><div class="tlabel">Home</div></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9A9D9F" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/></svg><div class="tlabel">Plan</div></div>
+          <div class="tab track"><div class="circle"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></div></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9A9D9F" stroke-width="2"><path d="M4 19V9M11 19V4M18 19v-7"/></svg><div class="tlabel">Activity</div></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9A9D9F" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg><div class="tlabel">Coach</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAN (data-rich) -->
+  <div class="item">
+    <div class="item-label">05 · Plan — full data</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="light" style="display:flex; flex-direction:column; height:100%;">
+        <div class="statusbar"></div>
+        <div class="scroll">
+          <div class="h-md" style="margin-bottom:10px;">Training block</div>
+          <div class="card">
+            <div class="p-faint" style="margin-bottom:6px;">18 weeks · today is week 6 · peak week 11</div>
+            <svg width="100%" height="66" viewBox="0 0 280 66" preserveAspectRatio="none">
+              <path d="M0,58 20,56 40,48 60,50 80,40 100,42 120,26 140,18 160,4 180,14 200,28 220,36 240,48 260,54 280,60" fill="none" stroke="var(--contour)" stroke-width="1.8" opacity="0.3"/>
+              <path d="M0,58 20,56 40,48 60,50 80,40 100,42 120,26" fill="none" stroke="var(--accent)" stroke-width="2.8" stroke-linecap="round"/>
+              <circle cx="120" cy="26" r="4.5" fill="var(--accent)"/>
+            </svg>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="t">Week 6 mileage</span><span class="v">18.4 / 24mi</span></div>
+            <div class="pbar"><div class="pbar-fill" style="width:77%; background:var(--accent);"></div></div>
+          </div>
+          <div class="section-label">This week</div>
+          <div class="cal-strip">
+            <div class="cal-day"><div class="dname">MON</div><div class="cal-cell type-easy">17</div></div>
+            <div class="cal-day"><div class="dname">TUE</div><div class="cal-cell type-missed">18</div></div>
+            <div class="cal-day"><div class="dname">WED</div><div class="cal-cell type-tempo is-today">19</div></div>
+            <div class="cal-day"><div class="dname">THU</div><div class="cal-cell type-rest">20</div></div>
+            <div class="cal-day"><div class="dname">FRI</div><div class="cal-cell outline-easy">21</div></div>
+            <div class="cal-day"><div class="dname">SAT</div><div class="cal-cell outline-long">22</div></div>
+            <div class="cal-day"><div class="dname">SUN</div><div class="cal-cell type-rest">23</div></div>
+          </div>
+          <div class="section-label">Sessions</div>
+          <div class="card" style="padding:4px 10px;">
+            <div class="listrow"><div class="edge" style="background:var(--success);"></div><div style="flex:1;"><div class="p-faint">Mon 17 · Easy</div><div class="h-md" style="font-size:13px;">4.2mi @ 9:10/mi</div></div><div class="mono p-dim">Done</div></div>
+            <div class="listrow"><div class="edge" style="background:#dcdcd7;"></div><div style="flex:1;"><div class="p-faint">Tue 18 · Tempo</div><div class="h-md" style="font-size:13px; color:var(--text-faint);">5.0mi @ 8:00/mi</div></div>
+              <div class="row" style="gap:5px;"><div class="btn-outline" style="padding:5px 8px; font-size:9.5px;">Move</div><div class="btn-outline" style="padding:5px 8px; font-size:9.5px;">Done</div></div>
+            </div>
+            <div class="listrow" style="border-color:var(--ink);"><div class="edge" style="background:var(--accent);"></div><div style="flex:1;"><div class="p-faint">Wed 19 · Today</div><div class="h-md" style="font-size:13px;">6.0mi @ 8:15/mi</div><div class="p-faint">Prep: light carbs 60min before · Warmup: 10min easy jog</div></div></div>
+            <div class="listrow"><div class="edge" style="background:var(--contour); opacity:0.4;"></div><div style="flex:1;"><div class="p-faint">Sat 22 · Long run</div><div class="h-md" style="font-size:13px;">14.0mi @ 8:50/mi</div></div><div class="mono p-faint">Upcoming</div></div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9A9D9F" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg><div class="tlabel">Home</div></div>
+          <div class="tab active"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/></svg><div class="tlabel">Plan</div></div>
+          <div class="tab track"><div class="circle"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></div></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9A9D9F" stroke-width="2"><path d="M4 19V9M11 19V4M18 19v-7"/></svg><div class="tlabel">Activity</div></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9A9D9F" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg><div class="tlabel">Coach</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVE RUN (data-rich) -->
+  <div class="item">
+    <div class="item-label">06 · Active Run — full data</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="dark" style="display:flex; flex-direction:column; height:100%;">
+        <div class="statusbar"></div>
+        <div class="scroll" style="display:flex; flex-direction:column;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--success); align-self:center; margin-bottom:10px; box-shadow:0 0 8px rgba(62,142,126,0.7);"></div>
+          <div style="text-align:center; margin-bottom:14px;">
+            <div class="h-lg" style="font-size:48px;">7:48</div>
+            <div class="p-faint" style="letter-spacing:0.05em;">CURRENT PACE / MI</div>
+          </div>
+          <div class="row" style="gap:8px; margin-bottom:14px;">
+            <div class="card dark-card" style="flex:1; text-align:center; margin-bottom:0; padding:8px 4px;"><div class="p-faint">DIST</div><div class="h-md" style="font-size:14px;">3.2mi</div></div>
+            <div class="card dark-card" style="flex:1; text-align:center; margin-bottom:0; padding:8px 4px;"><div class="p-faint">TIME</div><div class="h-md" style="font-size:14px;">25:04</div></div>
+            <div class="card dark-card" style="flex:1; text-align:center; margin-bottom:0; padding:8px 4px;"><div class="p-faint">HR</div><div class="h-md" style="font-size:14px;">156</div></div>
+            <div class="card dark-card" style="flex:1; text-align:center; margin-bottom:0; padding:8px 4px;"><div class="p-faint">ELEV</div><div class="h-md" style="font-size:14px;">88ft</div></div>
+          </div>
+          <div class="card dark-card" style="padding:12px;">
+            <div class="p-faint" style="margin-bottom:8px;">PACE BAND · GOAL 3:45:00</div>
+            <div style="position:relative; height:34px;">
+              <div style="position:absolute; top:16px; left:0; right:0; height:2px; background:var(--dark-line);"></div>
+              <div style="position:absolute; left:4%; top:0; text-align:center; font-family:var(--mono-face); font-size:8.5px; color:var(--text-faint);">MI 3<br><span style="color:#c7c9cb;">24:20</span></div>
+              <div style="position:absolute; left:38%; top:0; text-align:center; font-family:var(--mono-face); font-size:8.5px; color:var(--text-faint);">MI 4<br><span style="color:#c7c9cb;">32:35</span></div>
+              <div style="position:absolute; left:72%; top:0; text-align:center; font-family:var(--mono-face); font-size:8.5px; color:var(--text-faint);">MI 5<br><span style="color:#c7c9cb;">40:50</span></div>
+              <div style="position:absolute; left:26%; top:8px; width:16px; height:16px; border-radius:50%; background:var(--success); box-shadow:0 0 0 4px rgba(62,142,126,0.25);"></div>
+            </div>
+          </div>
+          <div style="flex:1; min-height:110px; border-radius:14px; border:1px solid var(--dark-line); position:relative; overflow:hidden; margin:12px 0;">
+            <svg viewBox="0 0 300 140" style="position:absolute; inset:0; width:100%; height:100%;" preserveAspectRatio="none">
+              <path d="M20,120 C60,90 40,60 90,50 C140,40 130,15 190,25 C230,32 250,10 280,6" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="row" style="gap:10px;"><div class="btn-outline dark" style="flex:1;">Pause</div><div class="btn" style="flex:1;">Stop</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== LOGGING ========== -->
+<div class="section-title">3 · Logging &amp; Activity</div>
+<div class="gallery">
+
+  <div class="item">
+    <div class="item-label">07a · Post-Run Summary — full data</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="light" style="display:flex; flex-direction:column; height:100%;">
+        <div class="statusbar"></div>
+        <div class="scroll">
+          <div style="height:110px; border-radius:13px; background:linear-gradient(rgba(255,90,31,0.08),transparent); border:1px solid var(--card-line); position:relative; overflow:hidden; margin-bottom:10px;">
+            <svg viewBox="0 0 300 130" style="position:absolute; inset:0;" preserveAspectRatio="none"><path d="M20,100 C70,75 50,50 110,42 C160,35 150,12 220,20 C250,24 260,10 280,7" fill="none" stroke="var(--accent)" stroke-width="3"/></svg>
+          </div>
+          <div class="row" style="gap:8px; margin-bottom:10px;">
+            <div class="card" style="flex:1; text-align:center; margin-bottom:0; padding:10px 4px;"><div class="p-faint">DIST</div><div class="h-md" style="font-size:15px;">6.1mi</div></div>
+            <div class="card" style="flex:1; text-align:center; margin-bottom:0; padding:10px 4px;"><div class="p-faint">TIME</div><div class="h-md" style="font-size:15px;">48:32</div></div>
+            <div class="card" style="flex:1; text-align:center; margin-bottom:0; padding:10px 4px;"><div class="p-faint">PACE</div><div class="h-md" style="font-size:15px;">7:58</div></div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="t">HR zones</span><span class="v">avg 152bpm</span></div>
+            <div class="row" style="height:22px; gap:2px;">
+              <div style="flex:1; background:#dcdcd7; border-radius:2px;"></div>
+              <div style="flex:2; background:var(--success); border-radius:2px;"></div>
+              <div style="flex:3; background:var(--accent); border-radius:2px;"></div>
+              <div style="flex:1; background:var(--warning); border-radius:2px;"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="p-faint" style="margin-bottom:6px;">ELEVATION</div>
+            <svg width="100%" height="34" viewBox="0 0 260 34" preserveAspectRatio="none"><path d="M0,26 20,22 40,16 60,20 80,10 100,14 120,6 140,12 160,18 180,8 200,14 220,20 240,24 260,18" fill="none" stroke="var(--contour)" stroke-width="2"/></svg>
+          </div>
+          <div class="card">
+            <div class="p-faint mono" style="margin-bottom:6px;">SPLITS</div>
+            <div class="mono p-dim" style="line-height:1.9;">MI 1&nbsp;&nbsp;&nbsp;7:52<br>MI 2&nbsp;&nbsp;&nbsp;7:59<br>MI 3&nbsp;&nbsp;&nbsp;8:01<br>MI 4&nbsp;&nbsp;&nbsp;7:55</div>
+          </div>
+          <div class="row" style="gap:8px; margin-bottom:10px;">
+            <div class="card" style="flex:1; margin-bottom:0; padding:8px;"><div class="p-faint">SHOE</div><div class="p-dim" style="font-weight:600;">Pegasus 40</div></div>
+            <div class="card" style="flex:1; margin-bottom:0; padding:8px;"><div class="p-faint">WEATHER</div><div class="p-dim" style="font-weight:600;">64°F, clear</div></div>
+          </div>
+          <div class="btn">Save</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-label">07b · How It Felt</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="light" style="display:flex; flex-direction:column; height:100%;">
+        <div class="statusbar"></div>
+        <div class="scroll" style="display:flex; flex-direction:column; justify-content:center; text-align:center;">
+          <div class="h-md">Nice work — saved.</div>
+          <div class="p-dim" style="margin-top:5px;">Want to add how it felt?</div>
+          <div class="row" style="justify-content:center; gap:7px; margin:20px 0;">
+            <div class="card" style="width:34px;height:34px; display:flex; align-items:center; justify-content:center; padding:0; margin-bottom:0;">1</div>
+            <div class="card" style="width:34px;height:34px; display:flex; align-items:center; justify-content:center; padding:0; margin-bottom:0;">2</div>
+            <div class="card" style="width:34px;height:34px; display:flex; align-items:center; justify-content:center; padding:0; margin-bottom:0; background:var(--accent); color:#fff;">3</div>
+            <div class="card" style="width:34px;height:34px; display:flex; align-items:center; justify-content:center; padding:0; margin-bottom:0;">4</div>
+            <div class="card" style="width:34px;height:34px; display:flex; align-items:center; justify-content:center; padding:0; margin-bottom:0;">5</div>
+          </div>
+          <div class="row" style="justify-content:center; gap:6px; flex-wrap:wrap; margin-bottom:20px;">
+            <div class="kicker muted" style="border:1px solid var(--card-line); border-radius:14px; padding:5px 10px;">Legs felt strong</div>
+            <div class="kicker muted" style="border:1px solid var(--card-line); border-radius:14px; padding:5px 10px;">A bit tired</div>
+          </div>
+          <div class="row" style="gap:9px;"><div class="btn-outline" style="flex:1;">Skip</div><div class="btn" style="flex:1;">Add</div></div>
+          <div class="kicker muted" style="margin-top:18px;">Ask coach about this run</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-label">08 · Manual Log Entry</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="light" style="display:flex; flex-direction:column; height:100%;">
+        <div class="statusbar"></div>
+        <div class="scroll">
+          <div class="h-md" style="margin-bottom:14px;">Log a run</div>
+          <div style="display:flex; flex-direction:column; gap:9px;"><input class="input" value="Today, Aug 26"/><input class="input" placeholder="Distance (mi)"/><input class="input" placeholder="Duration"/></div>
+          <div class="p-faint" style="margin:12px 0 8px;">HOW DID IT FEEL?</div>
+          <div class="row" style="gap:7px; margin-bottom:16px;">
+            <div class="card" style="flex:1; margin-bottom:0; text-align:center; padding:7px 0;">1</div>
+            <div class="card" style="flex:1; margin-bottom:0; text-align:center; padding:7px 0;">2</div>
+            <div class="card" style="flex:1; margin-bottom:0; text-align:center; padding:7px 0; background:var(--accent); color:#fff;">3</div>
+            <div class="card" style="flex:1; margin-bottom:0; text-align:center; padding:7px 0;">4</div>
+            <div class="card" style="flex:1; margin-bottom:0; text-align:center; padding:7px 0;">5</div>
+          </div>
+          <div class="kicker" style="text-decoration:underline; margin-bottom:14px; display:inline-block;">+ Add splits, HR, elevation, shoe, weather</div>
+          <div class="btn" style="margin-top:auto;">Save</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-label">09 · Activity History — full data</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="light" style="display:flex; flex-direction:column; height:100%;">
+        <div class="statusbar"></div>
+        <div class="scroll">
+          <div class="h-md" style="margin-bottom:10px;">Activity</div>
+          <div class="row" style="gap:8px; margin-bottom:10px;">
+            <div class="card" style="flex:1; margin-bottom:0; text-align:center; padding:9px 4px;"><div class="p-faint">THIS WK</div><div class="h-md" style="font-size:14px;">18.4mi</div></div>
+            <div class="card" style="flex:1; margin-bottom:0; text-align:center; padding:9px 4px;"><div class="p-faint">THIS MO</div><div class="h-md" style="font-size:14px;">74mi</div></div>
+            <div class="card" style="flex:1; margin-bottom:0; text-align:center; padding:9px 4px;"><div class="p-faint">TOTAL</div><div class="h-md" style="font-size:14px;">312mi</div></div>
+          </div>
+          <div class="row" style="gap:6px; margin-bottom:10px;">
+            <div class="kicker muted" style="border:1px solid var(--card-line); border-radius:18px; padding:5px 11px;">All types</div>
+            <div class="kicker muted" style="border:1px solid var(--card-line); border-radius:18px; padding:5px 11px;">This month</div>
+          </div>
+          <div class="card" style="padding:4px 10px;">
+            <div class="listrow"><div class="edge" style="background:var(--accent);"></div><div style="flex:1;"><div class="h-md" style="font-size:13px;">Tempo run</div><div class="p-faint">Aug 25</div></div><div class="mono p-dim" style="text-align:right;">6.1mi<br>7:58/mi</div></div>
+            <div class="listrow"><div class="edge" style="background:var(--contour);"></div><div style="flex:1;"><div class="h-md" style="font-size:13px;">Long run</div><div class="p-faint">Aug 23</div></div><div class="mono p-dim" style="text-align:right;">14.0mi<br>8:40/mi</div></div>
+            <div class="listrow"><div class="edge" style="background:var(--success);"></div><div style="flex:1;"><div class="h-md" style="font-size:13px;">Easy run</div><div class="p-faint">Aug 21</div></div><div class="mono p-dim" style="text-align:right;">4.2mi<br>9:10/mi</div></div>
+            <div class="listrow"><div class="edge" style="background:#dcdcd7;"></div><div style="flex:1;"><div class="h-md" style="font-size:13px; color:var(--text-faint);">Recovery jog</div><div class="p-faint">Aug 20 · Missed</div></div><div class="mono p-faint">—</div></div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9A9D9F" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg><div class="tlabel">Home</div></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9A9D9F" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/></svg><div class="tlabel">Plan</div></div>
+          <div class="tab track"><div class="circle"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></div></div>
+          <div class="tab active"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M4 19V9M11 19V4M18 19v-7"/></svg><div class="tlabel">Activity</div></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9A9D9F" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg><div class="tlabel">Coach</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== TRENDS / COACH / SETTINGS ========== -->
+<div class="section-title">4 · Trends, Coach &amp; Settings</div>
+<div class="gallery">
+
+  <div class="item">
+    <div class="item-label">10 · Activity Tab — Trends, full data</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="light" style="display:flex; flex-direction:column; height:100%;">
+        <div class="statusbar"></div>
+        <div class="scroll">
+          <div class="h-md" style="margin-bottom:10px;">Trends</div>
+          <div class="card">
+            <div class="card-title"><span class="t">Pace over time</span><span class="v">last 8 weeks</span></div>
+            <svg width="100%" height="42" viewBox="0 0 260 42" preserveAspectRatio="none"><path d="M0,34 30,30 60,32 90,22 120,25 150,16 180,19 210,10 240,13 260,7" fill="none" stroke="var(--accent)" stroke-width="2.5"/></svg>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="t">Weekly mileage</span><span class="v">avg 21mi</span></div>
+            <div class="row" style="align-items:flex-end; height:42px; gap:5px;">
+              <div style="flex:1; background:var(--contour); height:35%; border-radius:3px 3px 0 0;"></div>
+              <div style="flex:1; background:var(--contour); height:48%; border-radius:3px 3px 0 0;"></div>
+              <div style="flex:1; background:var(--contour); height:58%; border-radius:3px 3px 0 0;"></div>
+              <div style="flex:1; background:var(--contour); height:66%; border-radius:3px 3px 0 0;"></div>
+              <div style="flex:1; background:var(--accent); height:88%; border-radius:3px 3px 0 0;"></div>
+              <div style="flex:1; background:var(--contour); height:77%; border-radius:3px 3px 0 0;"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="t">Consistency</span><span class="v">last 30 days</span></div>
+            <div style="display:grid; grid-template-columns:repeat(10,1fr); gap:3px;">
+              <div style="aspect-ratio:1; background:var(--success); border-radius:2px;"></div><div style="aspect-ratio:1; background:var(--success); opacity:0.4; border-radius:2px;"></div><div style="aspect-ratio:1; background:#e2e4de; border-radius:2px;"></div><div style="aspect-ratio:1; background:var(--success); border-radius:2px;"></div><div style="aspect-ratio:1; background:var(--success); opacity:0.7; border-radius:2px;"></div><div style="aspect-ratio:1; background:#e2e4de; border-radius:2px;"></div><div style="aspect-ratio:1; background:var(--success); border-radius:2px;"></div><div style="aspect-ratio:1; background:var(--success); opacity:0.4; border-radius:2px;"></div><div style="aspect-ratio:1; background:#e2e4de; border-radius:2px;"></div><div style="aspect-ratio:1; background:var(--success); border-radius:2px;"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:6px;"><span class="t">Personal records</span></div>
+            <div class="row" style="justify-content:space-between; margin-bottom:6px;"><span class="p-dim">Half marathon</span><span class="mono h-md" style="font-size:13px;">1:42:18</span></div>
+            <div class="row" style="justify-content:space-between; margin-bottom:6px;"><span class="p-dim">10K</span><span class="mono h-md" style="font-size:13px;">44:02</span></div>
+            <div class="row" style="justify-content:space-between;"><span class="p-dim">5K</span><span class="mono h-md" style="font-size:13px;">20:51</span></div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9A9D9F" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg><div class="tlabel">Home</div></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9A9D9F" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/></svg><div class="tlabel">Plan</div></div>
+          <div class="tab track"><div class="circle"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></div></div>
+          <div class="tab active"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M4 19V9M11 19V4M18 19v-7"/></svg><div class="tlabel">Activity</div></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9A9D9F" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg><div class="tlabel">Coach</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-label">11 · Coach Chat — with context</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="light" style="display:flex; flex-direction:column; height:100%;">
+        <div class="statusbar"></div>
+        <div class="scroll" style="display:flex; flex-direction:column; gap:10px;">
+          <div class="h-md" style="margin-bottom:2px;">Coach</div>
+          <div class="card" style="align-self:flex-start; max-width:82%; margin-bottom:0; background:var(--frost); box-shadow:none; border:1px solid var(--card-line);"><div class="p-dim">Why is today a tempo run instead of easy?</div></div>
+          <div class="card" style="align-self:flex-start; max-width:88%; margin-bottom:0;">
+            <div class="p-dim">Tempo runs build your ability to hold marathon-adjacent pace under fatigue. You've had two easy days this week, so your legs should be fresh enough to hit it well.</div>
+            <div class="kicker muted" style="margin-top:8px; border-top:1px solid var(--card-line); padding-top:6px;">↳ Based on your Mon &amp; Aug 21 easy runs</div>
+          </div>
+          <div style="align-self:flex-end; max-width:70%; background:var(--predawn); color:#fff; border-radius:14px; padding:9px 13px; font-size:11.5px;">Got it, thanks</div>
+          <div class="row" style="gap:6px; flex-wrap:wrap; margin-top:auto;">
+            <div class="kicker muted" style="border:1px solid var(--card-line); border-radius:14px; padding:5px 10px;">Fueling tips</div>
+            <div class="kicker muted" style="border:1px solid var(--card-line); border-radius:14px; padding:5px 10px;">Injury check</div>
+          </div>
+          <input class="input" placeholder="Ask your coach..." style="margin-top:6px;"/>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9A9D9F" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg><div class="tlabel">Home</div></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9A9D9F" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/></svg><div class="tlabel">Plan</div></div>
+          <div class="tab track"><div class="circle"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></div></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9A9D9F" stroke-width="2"><path d="M4 19V9M11 19V4M18 19v-7"/></svg><div class="tlabel">Activity</div></div>
+          <div class="tab active"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg><div class="tlabel">Coach</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-label">12 · Settings</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="light" style="display:flex; flex-direction:column; height:100%;">
+        <div class="statusbar"></div>
+        <div class="scroll">
+          <div class="h-md" style="margin-bottom:16px;">Settings</div>
+          <div class="p-faint mono" style="margin-bottom:5px;">ACCOUNT</div>
+          <div class="card" style="padding:4px 10px;"><div class="listrow"><span class="p-dim">Alex Rivera</span></div><div class="listrow"><span class="p-dim">alex@email.com</span></div></div>
+          <div class="p-faint mono" style="margin-bottom:5px;">HEALTH DATA</div>
+          <div class="card" style="padding:4px 10px;"><div class="listrow"><div style="width:7px;height:7px;border-radius:50%;background:var(--success);"></div><span class="p-dim">Health Connect — Connected</span></div></div>
+          <div class="p-faint mono" style="margin-bottom:5px;">PREFERENCES</div>
+          <div class="card" style="padding:4px 10px;"><div class="listrow"><span class="p-dim">Units — Miles</span></div><div class="listrow"><span class="p-dim">Notifications — On</span></div><div class="listrow"><span class="p-dim">Export data (GPX/TCX)</span></div></div>
+          <div class="btn-outline" style="margin-top:16px;">Sign out</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== RACE DAY ========== -->
+<div class="section-title">5 · Race Day Details</div>
+<div class="gallery">
+
+  <div class="item">
+    <div class="item-label">13 · Race Day Details — full data</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="light" style="display:flex; flex-direction:column; height:100%;">
+        <div class="statusbar"></div>
+        <div class="scroll">
+          <div class="header-row"><span class="back-chev">‹</span><span class="h-md">City Marathon</span></div>
+          <div class="card" style="background:rgba(62,142,126,0.1); box-shadow:none; border:1px solid rgba(62,142,126,0.3);">
+            <div class="kicker" style="color:var(--success);">How you're tracking</div>
+            <div class="p-dim" style="margin-top:5px;">Right on pace for your 3:45 goal — mileage and long runs matching the plan closely.</div>
+            <svg width="100%" height="30" viewBox="0 0 260 30" preserveAspectRatio="none" style="margin-top:8px;"><path d="M0,24 40,20 80,22 120,14 160,16 200,8 260,6" fill="none" stroke="var(--success)" stroke-width="2"/></svg>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="t">Weather forecast</span><span class="v">race day</span></div>
+            <div class="row"><div class="h-lg" style="font-size:22px;">58°F</div><div class="p-dim">Overcast, light wind — good racing conditions</div></div>
+          </div>
+          <div class="card dark-card" style="background:var(--predawn); color:var(--frost); padding:12px;">
+            <div class="p-faint" style="margin-bottom:8px;">GOAL PACE BAND · 3:45:00</div>
+            <div class="mono p-dim" style="line-height:1.9; color:#dcdedb;">MI 1&nbsp;&nbsp;&nbsp;8:35<br>MI 6&nbsp;&nbsp;&nbsp;51:30<br>MI 13&nbsp;&nbsp;1:52:30<br>MI 20&nbsp;&nbsp;2:53:20<br>MI 26&nbsp;&nbsp;3:43:00</div>
+          </div>
+          <div class="p-faint mono" style="margin-bottom:5px;">MORNING-OF CHECKLIST</div>
+          <div class="card" style="padding:4px 10px;">
+            <div class="listrow"><span class="p-dim">Lay out gear</span></div>
+            <div class="listrow"><span class="p-dim">Breakfast — 3hrs before</span></div>
+            <div class="listrow"><span class="p-dim">Arrive by 6:30am</span></div>
+            <div class="listrow"><span class="p-dim">Gels — miles 6, 12, 18, 22</span></div>
+          </div>
+          <div class="btn" style="margin-top:auto;">Start race</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section-title">6 · Note on Theming</div>
+<div class="gallery" style="justify-content:flex-start;">
+  <div style="max-width:1400px; font-size:13px; line-height:1.8; color:#444;">
+    <p><b>Toggle the button above the gallery</b> to see all 13 light/dark-responsive screens switch together — that's the app-wide theme setting, controlled from Settings, applying instantly everywhere.</p>
+    <p><b>Active Run (screen 06) is the one deliberate exception</b> — it stays dark regardless of the toggle. This mirrors a pattern used by camera and workout-tracking apps: a screen used almost exclusively outdoors, often in bright daylight or pitch-dark early mornings, benefits from a fixed high-contrast dark treatment more than it benefits from matching the user's general app preference. If you'd rather have Active Run also respect the toggle for full consistency, that's a one-line change (remove its fixed <span class="mono">.dark</span> class) — flagging it here as a deliberate design call rather than an oversight, since you said "everywhere" and this is the one place I've kept an exception.</p>
+  </div>
+</div>
+
+</body>
+</html>
