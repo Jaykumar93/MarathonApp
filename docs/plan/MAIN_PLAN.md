@@ -12,7 +12,7 @@
 |---|------|--------|----------|
 | 1 | Environment & accounts | Done | [01-environment-accounts.md](01-environment-accounts.md) |
 | 2 | Supabase backend (schema + Auth + waitlist gate) | Done | [02-supabase-backend.md](02-supabase-backend.md) |
-| 3 | Plan-generator engine (standalone module) | Not Started | — |
+| 3 | Plan-generator engine (standalone module) | Done | [03-plan-generator-engine.md](03-plan-generator-engine.md) |
 | 4 | Navigation + Home/Plan wired to real data | Not Started | — |
 | 5 | Manual activity logging end-to-end | Not Started | — |
 | 6 | GPS tracking, Active Run, maps | Not Started | — |
