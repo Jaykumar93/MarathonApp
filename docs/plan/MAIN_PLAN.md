@@ -11,7 +11,7 @@
 | # | Task | Status | Sub-plan |
 |---|------|--------|----------|
 | 1 | Environment & accounts | Done | [01-environment-accounts.md](01-environment-accounts.md) |
-| 2 | Supabase backend (schema + Auth + waitlist gate) | In Progress | [02-supabase-backend.md](02-supabase-backend.md) |
+| 2 | Supabase backend (schema + Auth + waitlist gate) | Done | [02-supabase-backend.md](02-supabase-backend.md) |
 | 3 | Plan-generator engine (standalone module) | Not Started | — |
 | 4 | Navigation + Home/Plan wired to real data | Not Started | — |
 | 5 | Manual activity logging end-to-end | Not Started | — |
@@ -120,6 +120,13 @@ Final phase before first real build.
 **Blocks:** nothing — final task.
 
 ---
+
+## Before inviting real waitlist testers
+
+Running checklist of things deliberately deferred along the way — each was a conscious call, not an oversight, but easy to lose track of once we're several tasks further along. Check this before Task 8's "first real build" step, at the latest.
+
+- [ ] **Re-enable "Confirm email"** in Supabase (Authentication → Providers → Email) — turned off during Task 2 RLS testing to avoid the free-tier email rate limit; left off deliberately while still mid-build. See [02-supabase-backend.md](02-supabase-backend.md#what's-left).
+- [ ] **Live-verify the waitlist dashboard-approval fix** — approve a real pending profile from the Supabase Table Editor and confirm `status` actually persists as `'approved'`. The fix (treating a `NULL` `auth.role()` as a privileged/dashboard connection) is based on the schema reviewer's static analysis of the SQL, not an executed test — skipped for now per user's call ("trust the fix"). See [02-supabase-backend.md](02-supabase-backend.md#what's-left).
 
 ## Notes
 
