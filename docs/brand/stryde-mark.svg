@@ -1,0 +1,14 @@
+<svg width="512" height="512" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Stryde app icon mark: an ascending stride/"S" swoosh on the Predawn ground,
+       in Course Marking orange, with a Negative Split dot marking "today" -
+       the same device used for the in-app Block Profile's progress marker. -->
+  <rect width="100" height="100" rx="22" fill="#14161A"/>
+  <path
+    d="M27,76 C27,52 73,50 73,24"
+    fill="none"
+    stroke="#FF5A1F"
+    stroke-width="12"
+    stroke-linecap="round"
+  />
+  <circle cx="73" cy="24" r="8" fill="#3E8E7E"/>
+</svg>

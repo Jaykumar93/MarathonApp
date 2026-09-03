@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "marathon-app",
+    "name": "Stryde",
     "slug": "marathonapp",
+    "scheme": "stryde",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,7 +12,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#14161A",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -26,6 +27,11 @@
         "projectId": "3f6a427f-5cf3-4739-a2c0-e7842a80e6f8"
       }
     },
-    "owner": "jaykumar093"
+    "owner": "jaykumar093",
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-splash-screen"
+    ]
   }
 }

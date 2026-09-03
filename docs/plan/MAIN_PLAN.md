@@ -13,7 +13,7 @@
 | 1 | Environment & accounts | Done | [01-environment-accounts.md](01-environment-accounts.md) |
 | 2 | Supabase backend (schema + Auth + waitlist gate) | Done | [02-supabase-backend.md](02-supabase-backend.md) |
 | 3 | Plan-generator engine (standalone module) | Done | [03-plan-generator-engine.md](03-plan-generator-engine.md) |
-| 4 | Navigation + Home/Plan wired to real data | Not Started | — |
+| 4 | Navigation + Home/Plan wired to real data | Done | [04-navigation-home-plan.md](04-navigation-home-plan.md) |
 | 5 | Manual activity logging end-to-end | Not Started | — |
 | 6 | GPS tracking, Active Run, maps | Not Started | — |
 | 7 | Health Connect auto-sync (Android) | Not Started | — |
@@ -126,7 +126,8 @@ Final phase before first real build.
 Running checklist of things deliberately deferred along the way — each was a conscious call, not an oversight, but easy to lose track of once we're several tasks further along. Check this before Task 8's "first real build" step, at the latest.
 
 - [ ] **Re-enable "Confirm email"** in Supabase (Authentication → Providers → Email) — turned off during Task 2 RLS testing to avoid the free-tier email rate limit; left off deliberately while still mid-build. See [02-supabase-backend.md](02-supabase-backend.md#what's-left).
-- [ ] **Live-verify the waitlist dashboard-approval fix** — approve a real pending profile from the Supabase Table Editor and confirm `status` actually persists as `'approved'`. The fix (treating a `NULL` `auth.role()` as a privileged/dashboard connection) is based on the schema reviewer's static analysis of the SQL, not an executed test — skipped for now per user's call ("trust the fix"). See [02-supabase-backend.md](02-supabase-backend.md#what's-left).
+- [x] **Live-verify the waitlist dashboard-approval fix** — done during Task 4 testing: approved a real test profile via `supabase db query --linked` (a privileged, non-PostgREST connection, same code path as the Table Editor) and confirmed `status`/`access_granted` actually persisted as `'approved'`/`true`, not silently reverted. Closes the item left open since Task 2.
+- [ ] **Clean up disposable test accounts** in `auth.users` — two from Task 2's RLS testing plus one from Task 4's end-to-end walkthrough (`jaykumarpokar9+stryde-test-1@gmail.com`). Harmless, just clutter; a manual dashboard delete whenever convenient.
 
 ## Notes
 
