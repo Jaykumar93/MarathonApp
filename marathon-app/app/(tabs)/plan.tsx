@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 import {
   getAllPlanDays,
   getCurrentWeekNumber,
@@ -9,6 +10,7 @@ import {
   useActivePlanData,
 } from "../../lib/data/usePlanData";
 import { markSessionDone, moveSessionToTomorrow, type PlanSessionRow } from "../../lib/data/plans";
+import { deleteGoal } from "../../lib/data/goals";
 import { colors, fonts, spacing, type } from "../../lib/theme";
 import { Card } from "../../components/ui/Card";
 import { BlockProfile } from "../../components/BlockProfile";
@@ -16,13 +18,17 @@ import { PlanCalendarScroller } from "../../components/PlanCalendarScroller";
 import { DayDetailPanel } from "../../components/DayDetailPanel";
 import { SessionListRow } from "../../components/SessionListRow";
 import { NoPlanPrompt } from "../../components/NoPlanPrompt";
+import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { useAuth } from "../../lib/auth/AuthContext";
 import { formatDistance } from "../../lib/units";
 
 export default function Plan() {
-  const { profile } = useAuth();
+  const router = useRouter();
+  const { profile, refreshActiveGoal } = useAuth();
   const { loading, goal, plan, sessions, reload } = useActivePlanData();
   const [selectedDate, setSelectedDate] = useState(todayIso());
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const unit = profile?.distance_unit ?? "km";
 
   if (loading) {
@@ -62,13 +68,50 @@ export default function Plan() {
     reload();
   }
 
+  async function handleDeletePlan() {
+    if (!goal) return;
+    setDeleting(true);
+    await deleteGoal(goal.id);
+    await reload();
+    await refreshActiveGoal();
+    setDeleting(false);
+    setConfirmingDelete(false);
+  }
+
   return (
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.container}
       refreshControl={<RefreshControl refreshing={false} onRefresh={reload} />}
     >
-      <Text style={styles.header}>Training block</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.header}>Training block</Text>
+        <View style={styles.headerActions}>
+          <Pressable onPress={() => router.push("/edit-plan")} hitSlop={8}>
+            <Text style={styles.headerActionText}>Edit</Text>
+          </Pressable>
+          <Pressable onPress={() => setConfirmingDelete(true)} hitSlop={8}>
+            <Text style={[styles.headerActionText, styles.headerActionDanger]}>Delete</Text>
+          </Pressable>
+        </View>
+      </View>
+
+      {confirmingDelete && (
+        <Card>
+          <Text style={styles.confirmText}>
+            Delete this plan? This can't be undone - your training history stays intact, but you'll need to
+            set up a new goal.
+          </Text>
+          <View style={styles.confirmActions}>
+            <View style={{ flex: 1 }}>
+              <PrimaryButton label="Yes, delete it" onPress={handleDeletePlan} loading={deleting} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <PrimaryButton label="Cancel" variant="secondary" onPress={() => setConfirmingDelete(false)} />
+            </View>
+          </View>
+        </Card>
+      )}
 
       <Card>
         <Text style={styles.metaLine}>
@@ -115,7 +158,18 @@ const styles = StyleSheet.create({
   container: { padding: spacing.screenPadding, paddingTop: 10 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
   body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
-  header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary, marginBottom: 12 },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary },
+  headerActions: { flexDirection: "row", gap: 16 },
+  headerActionText: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.textDim },
+  headerActionDanger: { color: "#B3261E" },
+  confirmText: { fontFamily: fonts.bodyMedium, fontSize: type.pDim, color: colors.textPrimary, marginBottom: 12 },
+  confirmActions: { flexDirection: "row", gap: 10 },
   metaLine: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginBottom: 6 },
   sectionLabel: {
     fontFamily: fonts.monoMedium,

@@ -281,3 +281,13 @@ The last real open item from Round 1. Design confirmed with the user via `AskUse
 Verified end-to-end live against the real test account: opened Edit Plan, confirmed every field pre-filled correctly against a direct DB read (distance, date, experience, training days, long-run day all matched exactly; empty fields correctly reflected genuinely-null columns), changed training days per week 4→5, saved, and confirmed via `supabase db query --linked`: the goal's `training_days_per_week` updated to 5, exactly one non-deleted plan remains (`plans_one_current_per_goal` intact), 2 total plan rows exist (old superseded, not hard-deleted - regeneration history preserved), and the new plan's actual session list on the Plan screen reflects 5 training days for the week. The Round 4 lead-in-warmup behavior also correctly re-triggers on regeneration (today's date still shows its bridge warmup run).
 
 `npx tsc --noEmit` and all 51 tests clean.
+
+---
+
+## Round 8 — Edit/Delete plan also on the Plan tab
+
+> "also we should have option to delete or edit plan in the plan tab instead of the setting"
+
+Added compact "Edit"/"Delete" text links next to the "Training block" header in `app/(tabs)/plan.tsx` - same actions Settings already had, now also reachable without leaving the Plan tab. "Edit" pushes to `/edit-plan` (unchanged); "Delete" shows the same two-step inline confirm card pattern Settings uses (own local `confirmingDelete`/`deleting` state and `handleDeletePlan`, calling the existing `deleteGoal`), rather than extracting a shared component - the two screens' surrounding layout differs enough (Settings: full-width buttons in a dedicated CURRENT PLAN card; Plan tab: compact header-row text links) that sharing UI would need its own "compact" mode, and the actual duplicated logic is only ~6 lines. Settings keeps its own copy unchanged - both are now valid places to edit/delete a plan.
+
+Verified live: "Delete" shows the confirm card with the same warning copy as Settings; "Cancel" dismisses without touching the plan; "Edit" navigates to `/edit-plan` correctly. `npx tsc --noEmit` and all 51 tests clean.
