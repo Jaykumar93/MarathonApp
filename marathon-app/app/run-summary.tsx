@@ -107,7 +107,7 @@ export default function RunSummary() {
         </Card>
       )}
 
-      {(activity.rpe || activity.notes || activity.avg_heart_rate || activity.elevation_gain_meters) && (
+      {(activity.rpe || activity.notes || activity.avg_heart_rate || activity.elevation_gain_meters != null) && (
         <Card>
           {activity.rpe && <Text style={styles.detailLine}>RPE: {activity.rpe}/10</Text>}
           {activity.avg_heart_rate && <Text style={styles.detailLine}>Avg heart rate: {activity.avg_heart_rate} bpm</Text>}

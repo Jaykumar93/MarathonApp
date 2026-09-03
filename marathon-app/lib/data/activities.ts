@@ -11,6 +11,9 @@ export interface ActivityRow {
   duration_seconds: number;
   avg_heart_rate: number | null;
   elevation_gain_meters: number | null;
+  elevation_loss_meters: number | null;
+  splits: unknown;
+  route: unknown;
   rpe: number | null;
   notes: string | null;
   plan_id: string | null;
@@ -19,14 +22,21 @@ export interface ActivityRow {
 
 export interface CreateActivityInput {
   activityType: string;
-  /** Plain YYYY-MM-DD - stored as midday UTC so it always falls inside the intended UTC calendar day, matching how every other date-range query in this app treats "day". */
+  /** Plain YYYY-MM-DD - stored as midday UTC so it always falls inside the intended UTC calendar day, matching how every other date-range query in this app treats "day". Ignored when `startTimeIso` is given (a GPS run knows its own real start instant). */
   date: string;
+  /** Full ISO timestamp - used by GPS-tracked runs (Task 6), which know exactly when they started, instead of the midday-UTC placeholder a hand-typed entry (Task 5) uses. */
+  startTimeIso?: string;
   distanceMeters: number;
   durationSeconds: number;
   rpe?: number;
   notes?: string;
   avgHeartRate?: number;
   elevationGainMeters?: number;
+  elevationLossMeters?: number;
+  /** Per-km split data (see lib/gpsStats.ts's Split[]) - GPS runs only. */
+  splits?: unknown;
+  /** Recorded GPS route (see lib/gpsStats.ts's RoutePoint[]) - GPS runs only. */
+  route?: unknown;
   planId?: string;
   planSessionId?: string;
 }
@@ -67,13 +77,16 @@ export async function createActivity(userId: string, input: CreateActivityInput)
       user_id: userId,
       source: "manual",
       activity_type: input.activityType,
-      start_time: `${input.date}T12:00:00.000Z`,
+      start_time: input.startTimeIso ?? `${input.date}T12:00:00.000Z`,
       distance_meters: input.distanceMeters,
       duration_seconds: input.durationSeconds,
       rpe: input.rpe ?? null,
       notes: input.notes ?? null,
       avg_heart_rate: input.avgHeartRate ?? null,
       elevation_gain_meters: input.elevationGainMeters ?? null,
+      elevation_loss_meters: input.elevationLossMeters ?? null,
+      splits: input.splits ?? null,
+      route: input.route ?? null,
       plan_id: input.planId ?? null,
       plan_session_id: input.planSessionId ?? null,
     })
