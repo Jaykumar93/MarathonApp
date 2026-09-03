@@ -11,6 +11,7 @@ import { colors, fonts, spacing, type } from "../lib/theme";
 import { Card } from "../components/ui/Card";
 import { ChipSelect } from "../components/ui/ChipSelect";
 import { TextField } from "../components/ui/TextField";
+import { DateField } from "../components/ui/DateField";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PlanFeasibilityWarnings } from "../components/PlanFeasibilityWarnings";
 
@@ -95,15 +96,28 @@ export default function EditPlan() {
   // distance is useless to the pace engine (Riegel needs both).
   const calibrationIncomplete = calibrationTime.length > 0 && !calibrationDistanceKm;
 
+  // DateField offers every day/month/year, including ones already behind
+  // today - checked explicitly here rather than left to surface as a
+  // confusing negative week count out of generatePlan()'s schedule check.
+  const isPastDate = isValidDate(goalDate) && goalDate < new Date().toISOString().slice(0, 10);
+
   const goalInput: GoalInput | null = useMemo(() => {
-    // isValidDate matters here specifically because goalDate is a raw
-    // free-text field the user can be mid-edit on - unlike onboarding
-    // (where the date only reaches generatePlan() once, on submit, after
-    // its own isValidDate check), this preview recomputes on every
-    // keystroke, so an incomplete date like "2027-01-1" must not reach
-    // generatePlan() (it did, and crashed - Invalid Date propagates to
-    // NaN week counts and an Array(NaN) RangeError deep in the engine).
-    if (!initialized || !raceDistanceKm || !isValidDate(goalDate) || !trainingDaysPerWeek || !longRunDay) {
+    // isValidDate matters here specifically because DateField's value could
+    // in principle arrive malformed - unlike onboarding (where the date
+    // only reaches generatePlan() once, on submit), this preview recomputes
+    // live, so a malformed date must not reach generatePlan() (it did once,
+    // from a free-text field this screen no longer uses, and crashed -
+    // Invalid Date propagates to NaN week counts and an Array(NaN)
+    // RangeError deep in the engine). isPastDate is the same idea for a
+    // well-formed but already-passed date.
+    if (
+      !initialized ||
+      !raceDistanceKm ||
+      !isValidDate(goalDate) ||
+      isPastDate ||
+      !trainingDaysPerWeek ||
+      !longRunDay
+    ) {
       return null;
     }
     return {
@@ -121,6 +135,7 @@ export default function EditPlan() {
     initialized,
     raceDistanceKm,
     goalDate,
+    isPastDate,
     targetTime,
     weeklyMileage,
     experienceLevel,
@@ -206,13 +221,8 @@ export default function EditPlan() {
           />
         </View>
         <View style={styles.fieldGap}>
-          <TextField
-            label="Race date (YYYY-MM-DD)"
-            value={goalDate}
-            onChangeText={setGoalDate}
-            placeholder="2027-04-12"
-            keyboardType="numbers-and-punctuation"
-          />
+          <DateField label="Race date" value={goalDate} onChange={setGoalDate} />
+          {isPastDate && <Text style={styles.errorText}>Race date must be in the future - pick a date after today.</Text>}
         </View>
       </Card>
 

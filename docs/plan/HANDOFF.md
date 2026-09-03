@@ -356,3 +356,25 @@ Two independent asks, both iterated live against direct follow-up feedback rathe
 **Countdown number font** (`components/CountdownArc.tsx`): the "4 looks cut off at the top" report was the same `SpaceGrotesk_700Bold` ascender-clipping issue from Round 5's original plain-text countdown (fixed there with `lineHeight`/`paddingTop` tuning) - recurring because `CountdownArc`'s number style never got that same treatment when it replaced the old text block in Round 11. Rather than re-patching the same font with more lineHeight/padding, switched the number and its "days" label to `fonts.monoSemiBold`/`monoMedium` (JetBrains Mono) - this app already uses the mono family for every other numeric/data readout (paces, distances, calendar day numbers), so a countdown number is squarely in that font's job description, and its metrics don't carry the same clipping risk Space Grotesk's bold weight had at this size.
 
 `npx tsc --noEmit` and all 51 tests clean. Verified live after each course-correction, not just the final state.
+
+---
+
+## Round 13 — free-text date fields replaced with a proper date picker
+
+> "Okay whenever we are adding date i want a calender input or something like dropdown of date month and year"
+
+Both places a race date is entered - `app/onboarding/race-target.tsx` and `app/edit-plan.tsx` - used a raw `TextField` with a "YYYY-MM-DD" placeholder. Besides being poor UX, this was the exact class of input that crashed Edit Plan in Round 10 (a mid-typed date reaching `generatePlan()`). Replaced both with a new shared **[components/ui/DateField.tsx](../../marathon-app/components/ui/DateField.tsx)**.
+
+**Went through a few real design iterations, each from direct live feedback rather than landing right the first time:**
+
+1. First attempt used `@react-native-picker/picker` (installed via `npx expo install`) for three native `<select>`-backed dropdowns. Functioned correctly (verified live - default date, correct day-count-per-month, correct year range) but the user flagged the result as looking "really odd" - a browser's native `<select>` chrome can't be restyled to match this app's own card/field language, on web or off it.
+2. Rebuilt as three `ChipSelect` rows (Year/Month, wrapping) plus a horizontally-scrollable Day strip, reusing the exact chip component already used everywhere else in onboarding - fully on-brand, but the user then asked for "dropdown format" specifically, i.e. a compact closed field that opens a list, not three rows permanently taking up vertical space.
+3. Landed on a **custom-built dropdown**: a closed field styled identically to `TextField`'s input box (border, radius, font), which opens a small `Modal` sheet with a scrollable, app-styled option list (selected row highlighted in `colors.accent`) on tap - the actual shipped version. `@react-native-picker/picker` was uninstalled again once nothing used it.
+
+**Validation went through one iteration too.** The first cut filtered Day/Month options so a past date literally wasn't selectable when the current year/month was chosen (picking "February" while today is September just wouldn't show February) - this fixed the "-27 weeks until race day" nonsense-message bug at the root, but the user preferred showing the complete, unfiltered calendar and validating the selected result explicitly instead ("dont show validation like -27 week instead it should be like the race date should be of future"). Final behavior: **every day/month/year is always offered**; both `race-target.tsx` and `edit-plan.tsx` now compute their own `isPastDate` check (`goalDate < today`) that takes priority over the existing tight-timeline warning, rendering a plain "Race date must be in the future - pick a date after today." instead of a negative week count.
+
+An unset `DateField` auto-initializes to today+84 days (~12 weeks, a sensible race-planning default) on mount, since a dropdown - unlike a text field - has no natural "empty" state; every current use case (a future race date) benefits from starting on something reasonable rather than today's own date.
+
+Verified live end-to-end on `race-target.tsx`: confirmed the default date, confirmed the modal opens/selects/closes cleanly for all three fields, confirmed selecting a genuinely past date (January 2026, when today is September 2026) now shows the clear future-date message and disables Continue - not the confusing negative-week message. `edit-plan.tsx` shares the identical `DateField` component and the same `isPastDate` pattern; not independently re-verified live this round given time, but structurally identical to the tested path.
+
+`npx tsc --noEmit` and all 51 tests clean throughout every iteration.
