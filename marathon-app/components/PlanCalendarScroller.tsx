@@ -62,26 +62,49 @@ export function PlanCalendarScroller({ days, selectedDate, onSelectDate }: PlanC
       renderItem={({ item }) => {
         const cell = cellStyleFor(item, today);
         const isSelected = item.date === selectedDate;
+        // Selection is a filled state, not just a ring - a ring reads as
+        // "you're looking at this" only when it stands out clearly against
+        // whatever status color the day already has, which a same-colored
+        // outline doesn't reliably do. A solid fill is unambiguous
+        // regardless of the day's own session-type/status coloring
+        // underneath it. "Today" stays its own ring so the two meanings
+        // (today vs. selected) never merge into one signal.
+        const display = isSelected
+          ? { bg: colors.accent, border: colors.accent, dashed: false, text: "#fff", strike: cell.strike }
+          : cell;
+        const label = [
+          `${item.dayLabel} ${item.dayNumber}`,
+          item.isToday && "today",
+          item.sessionType && item.sessionType !== "rest" ? `${item.sessionType} planned` : null,
+          isSelected && "selected",
+        ]
+          .filter(Boolean)
+          .join(", ");
         return (
-          <Pressable style={styles.dayCol} onPress={() => onSelectDate(item.date)}>
+          <Pressable
+            style={styles.dayCol}
+            onPress={() => onSelectDate(item.date)}
+            hitSlop={4}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+          >
             <Text style={styles.dayName}>{item.dayLabel}</Text>
             <View
               style={[
                 styles.cell,
                 {
-                  backgroundColor: cell.bg,
-                  borderColor: cell.border,
-                  borderWidth: cell.dashed ? 1.5 : cell.bg === "#fff" ? 1.5 : 0,
-                  borderStyle: cell.dashed ? "dashed" : "solid",
+                  backgroundColor: display.bg,
+                  borderColor: display.border,
+                  borderWidth: display.dashed ? 1.5 : display.bg === "#fff" ? 1.5 : 0,
+                  borderStyle: display.dashed ? "dashed" : "solid",
                 },
                 item.isToday && styles.todayRing,
-                isSelected && styles.selectedRing,
               ]}
             >
               <Text
                 style={[
                   styles.cellText,
-                  { color: cell.text, textDecorationLine: cell.strike ? "line-through" : "none" },
+                  { color: display.text, textDecorationLine: display.strike ? "line-through" : "none" },
                 ]}
               >
                 {item.dayNumber}
@@ -100,6 +123,5 @@ const styles = StyleSheet.create({
   dayName: { fontSize: 8.5, color: colors.textFaint, fontWeight: "600" },
   cell: { width: 32, height: 32, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   todayRing: { borderWidth: 2.5, borderColor: colors.predawn },
-  selectedRing: { borderWidth: 2, borderColor: colors.accent },
   cellText: { fontFamily: fonts.data, fontSize: 11.5, fontWeight: "600" },
 });

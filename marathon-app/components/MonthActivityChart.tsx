@@ -49,13 +49,23 @@ export function MonthActivityChart({
   return (
     <View>
       <View style={styles.header}>
-        <Pressable onPress={onPrevMonth} hitSlop={8}>
+        <Pressable
+          onPress={onPrevMonth}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Previous month"
+        >
           <Text style={styles.navArrow}>‹</Text>
         </Pressable>
         <Text style={styles.monthLabel}>
           {MONTH_NAMES[month - 1]} {year}
         </Text>
-        <Pressable onPress={onNextMonth} hitSlop={8}>
+        <Pressable
+          onPress={onNextMonth}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Next month"
+        >
           <Text style={styles.navArrow}>›</Text>
         </Pressable>
       </View>
@@ -65,7 +75,13 @@ export function MonthActivityChart({
           const isSelected = v.date === selectedDate;
           const heightPct = Math.max((v.km / maxKm) * 100, v.km > 0 ? 6 : 2);
           return (
-            <Pressable key={v.date} style={styles.barCol} onPress={() => onSelectDate?.(v.date)}>
+            <Pressable
+              key={v.date}
+              style={styles.barCol}
+              onPress={() => onSelectDate?.(v.date)}
+              accessibilityRole="button"
+              accessibilityLabel={`${MONTH_NAMES[month - 1]} ${v.day}, ${v.km > 0 ? `${v.km.toFixed(1)}km logged` : "no run logged"}`}
+            >
               <View style={styles.barTrack}>
                 <View
                   style={[

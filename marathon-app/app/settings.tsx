@@ -131,7 +131,11 @@ export default function Settings() {
           }}
           placeholder="e.g. jay_runs"
         />
-        {!!usernameError && <Text style={styles.errorText}>{usernameError}</Text>}
+        {!!usernameError && (
+          <Text style={styles.errorText} accessibilityLiveRegion="polite">
+            {usernameError}
+          </Text>
+        )}
         {usernameDirty && (
           <View style={styles.inlineSave}>
             <PrimaryButton label="Save username" onPress={handleSaveUsername} loading={savingUsername} />
@@ -142,7 +146,9 @@ export default function Settings() {
 
         <View style={styles.row}>
           <Text style={styles.label}>Email</Text>
-          <Text style={styles.value}>{profile?.email}</Text>
+          <Text style={[styles.value, { flexShrink: 1 }]} numberOfLines={1} ellipsizeMode="tail">
+            {profile?.email}
+          </Text>
         </View>
         <Text style={styles.memberSince}>Member since {formatMemberSince(profile?.created_at)}</Text>
       </Card>

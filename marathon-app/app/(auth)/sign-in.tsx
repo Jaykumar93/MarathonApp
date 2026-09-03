@@ -34,7 +34,11 @@ export default function SignIn() {
         <View style={styles.form}>
           <TextField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" />
           <TextField label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" />
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error && (
+            <Text style={styles.error} accessibilityLiveRegion="polite">
+              {error}
+            </Text>
+          )}
           <PrimaryButton label="Sign in" onPress={handleSignIn} loading={loading} disabled={!email || !password} />
         </View>
 

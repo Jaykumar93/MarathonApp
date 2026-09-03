@@ -61,7 +61,11 @@ export default function SignUp() {
           <TextField label="Full name" value={fullName} onChangeText={setFullName} autoComplete="name" autoCapitalize="words" />
           <TextField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" />
           <TextField label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password-new" />
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error && (
+            <Text style={styles.error} accessibilityLiveRegion="polite">
+              {error}
+            </Text>
+          )}
           <PrimaryButton label="Sign up" onPress={handleSignUp} loading={loading} disabled={!fullName || !email || !password} />
         </View>
 
