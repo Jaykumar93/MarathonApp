@@ -309,3 +309,17 @@ Asked a clarifying question first (per the user's own "ask if unclear") on the s
 **Verification note**: today's real date in this environment (2026-09-03) falls in this test account's own lead-in/first week, so the Monday-snap's clamp-to-0 branch is the only one directly observable live right now (confirmed unchanged/correct via screenshot). The steady-state branch (today deep into an ongoing plan) was verified with a standalone arithmetic check instead - Thursday at array index 30 correctly resolves to index 27 (that week's Monday), Sunday at index 34 correctly resolves to the same Monday at index 28, Monday itself stays put - since there's no way to fake "today" against a live multi-week plan without also faking system time.
 
 `npx tsc --noEmit` and all 51 tests clean (no engine changes this round - purely a `PlanCalendarScroller` display fix).
+
+---
+
+## Round 10 — bug fix: Edit Plan crashed on an incomplete race date
+
+> "while editing the plan is not working properly lots of error"
+
+**Root cause**: `app/edit-plan.tsx`'s `goalInput`/`preview` (`generatePlan()`) recomputes live on every keystroke (by design - see Round 7), but the gate before calling it only checked `!goalDate` (a truthy-string check), not whether it was a *complete, valid* date. Onboarding's `race-target.tsx` never has this problem because it only commits `goalDate` into the shared context (and from there into `generatePlan()`) once, on submit, after its own `isValidDate` check - the raw text field is local state until then. Edit Plan's date field feeds `generatePlan()` directly and continuously, so an in-progress edit like `"2027-01-1"` (one keystroke away from a real date, e.g. clearing a date to retype it) reached `new Date(...)` as `Invalid Date`, propagated to `NaN` week counts inside the engine, and `Array(NaN)` threw `RangeError: Invalid array length` - crashing the whole screen (repeatedly, since the broken value persisted across Fast Refresh, which explains the user's "lots of error").
+
+**Fix**: added the same `isValidDate` regex+parse check `race-target.tsx` already uses, gating `goalInput` (returns `null` - no preview computed, Save stays disabled - until the date is a complete valid `YYYY-MM-DD`). Reproduced the exact crash first via a throwaway script calling `generatePlan()` directly with the stored goal values (didn't crash - confirming the *stored* data was fine and the bug was specifically about *in-progress typing*), then confirmed live: cleared the race date and retyped it character-by-character (deliberately pausing on `"2027-02-2"`, an incomplete date) - no crash, screen stays fully responsive, Save re-enables the moment the date completes.
+
+**Secondary fix while in this code**: the console also showed repeated "GO_BACK was not handled by any navigator" warnings - `edit-plan.tsx` called a raw `router.back()` in two places (the back link, and after a successful save), which errors if the screen has no history behind it (a direct link, or a page refresh while sitting on `/edit-plan` - both real possibilities in the web target this app is developed/tested through). Added a `goBack()` helper using `router.canGoBack()` with a `router.replace("/(tabs)")` fallback, used in both places.
+
+`npx tsc --noEmit` and all 51 tests clean. No plan-engine changes - the engine's behavior for a fully-formed `GoalInput` was never wrong; this was purely a caller-side input-validation gap, same category of bug the onboarding screens already guard against by design.
