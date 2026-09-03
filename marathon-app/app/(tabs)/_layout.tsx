@@ -1,10 +1,17 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import { ColorValue, Pressable, StyleSheet, Text } from "react-native";
 import { useAuth } from "../../lib/auth/AuthContext";
 import { colors, fonts, type } from "../../lib/theme";
 
-function TabIcon({ symbol, color }: { symbol: string; color: ColorValue }) {
-  return <Text style={{ fontSize: 20, color }}>{symbol}</Text>;
+type IoniconName = keyof typeof Ionicons.glyphMap;
+
+// Outline icon while inactive, filled while active - the standard tab-bar
+// convention (matches the pattern Ionicons' own name pairs are designed
+// for: "home-outline"/"home", etc.) and reads more clearly at 22px than
+// this app's previous plain-Unicode-glyph icons did.
+function TabIcon({ name, focused, color }: { name: IoniconName; focused: boolean; color: ColorValue }) {
+  return <Ionicons name={focused ? (name.replace("-outline", "") as IoniconName) : name} size={22} color={color} />;
 }
 
 // Profile access lives in the shared tab header (not on any one screen) so
@@ -64,13 +71,39 @@ export default function TabsLayout() {
         options={{
           title: "Home",
           headerLeft: () => <HomeGreeting />,
-          tabBarIcon: ({ color }) => <TabIcon symbol="⌂" color={color} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon name="home-outline" focused={focused} color={color} />,
         }}
       />
-      <Tabs.Screen name="plan" options={{ title: "Plan", tabBarIcon: ({ color }) => <TabIcon symbol="▤" color={color} /> }} />
-      <Tabs.Screen name="track" options={{ title: "Track", tabBarIcon: ({ color }) => <TabIcon symbol="●" color={color} /> }} />
-      <Tabs.Screen name="activity" options={{ title: "Activity", tabBarIcon: ({ color }) => <TabIcon symbol="≡" color={color} /> }} />
-      <Tabs.Screen name="coach" options={{ title: "Coach", tabBarIcon: ({ color }) => <TabIcon symbol="◎" color={color} /> }} />
+      <Tabs.Screen
+        name="plan"
+        options={{
+          title: "Plan",
+          tabBarIcon: ({ color, focused }) => <TabIcon name="calendar-outline" focused={focused} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="track"
+        options={{
+          title: "Track",
+          tabBarIcon: ({ color, focused }) => <TabIcon name="navigate-outline" focused={focused} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="activity"
+        options={{
+          title: "Activity",
+          tabBarIcon: ({ color, focused }) => <TabIcon name="list-outline" focused={focused} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="coach"
+        options={{
+          title: "Coach",
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="chatbubble-ellipses-outline" focused={focused} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
