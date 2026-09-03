@@ -291,3 +291,21 @@ Verified end-to-end live against the real test account: opened Edit Plan, confir
 Added compact "Edit"/"Delete" text links next to the "Training block" header in `app/(tabs)/plan.tsx` - same actions Settings already had, now also reachable without leaving the Plan tab. "Edit" pushes to `/edit-plan` (unchanged); "Delete" shows the same two-step inline confirm card pattern Settings uses (own local `confirmingDelete`/`deleting` state and `handleDeletePlan`, calling the existing `deleteGoal`), rather than extracting a shared component - the two screens' surrounding layout differs enough (Settings: full-width buttons in a dedicated CURRENT PLAN card; Plan tab: compact header-row text links) that sharing UI would need its own "compact" mode, and the actual duplicated logic is only ~6 lines. Settings keeps its own copy unchanged - both are now valid places to edit/delete a plan.
 
 Verified live: "Delete" shows the confirm card with the same warning copy as Settings; "Cancel" dismisses without touching the plan; "Edit" navigates to `/edit-plan` correctly. `npx tsc --noEmit` and all 51 tests clean.
+
+---
+
+## Round 9 — calendar initial view snaps to Monday, not "today"
+
+> "also for the calender i want to see the whole week from monday to sunday rather then from current date, also i should be able to scroll for pass day if there is any plan for before date that is"
+
+Asked a clarifying question first (per the user's own "ask if unclear") on the second half - confirmed they just meant "confirm I can already scroll to the lead-in/past days that exist," not "also surface a superseded plan's old days after Edit Plan." The latter doesn't exist and wasn't asked for.
+
+**What was actually wrong**: `PlanCalendarScroller`'s `initialScrollIndex` landed on *today's* index, so the initial visible 7-cell window started wherever today fell in the week (e.g. today=Thursday showed Thu-Wed, splitting across two calendar weeks) instead of a clean Monday-Sunday week.
+
+**Fix** (`components/PlanCalendarScroller.tsx`): `initialIndex` now walks back from today's index to that week's Monday (`daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1`, then `todayIdx - daysSinceMonday`), clamped at 0. The clamp matters for the very first (lead-in) week specifically - if the plan started mid-week (Round 4's lead-in bridge), the actual Monday of that calendar week doesn't exist in the data at all (the array's earliest day is the lead-in start), so it correctly falls back to showing from the earliest available day instead of a negative index.
+
+**"Scroll to past days" was already true** - `getAllPlanDays` (`lib/data/usePlanData.ts`) already builds the full day range from the plan's earliest actual date (lead-in start or `start_date`, whichever is earlier) through race day, so every day that has any plan data has always been in the scrollable range; only the *initial landing spot* needed fixing.
+
+**Verification note**: today's real date in this environment (2026-09-03) falls in this test account's own lead-in/first week, so the Monday-snap's clamp-to-0 branch is the only one directly observable live right now (confirmed unchanged/correct via screenshot). The steady-state branch (today deep into an ongoing plan) was verified with a standalone arithmetic check instead - Thursday at array index 30 correctly resolves to index 27 (that week's Monday), Sunday at index 34 correctly resolves to the same Monday at index 28, Monday itself stays put - since there's no way to fake "today" against a live multi-week plan without also faking system time.
+
+`npx tsc --noEmit` and all 51 tests clean (no engine changes this round - purely a `PlanCalendarScroller` display fix).
