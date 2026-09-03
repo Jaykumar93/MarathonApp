@@ -256,3 +256,28 @@ Asked the user directly rather than guessing (via `AskUserQuestion`) since both 
   - Coach → `chatbubble-ellipses-outline` / `chatbubble-ellipses` (chat-appropriate, anticipating Task 8's AI Coach)
 
 Verified live via screenshot. `tsc`/51 tests clean. Committed as `54ca48c` and **pushed to `origin/main` successfully this time** (`867a2d4..54ca48c`) - the recurring GitHub credential-expiry issue from earlier in the project did not recur this attempt.
+
+---
+
+## Round 7 — "Edit plan" designed and built
+
+The last real open item from Round 1. Design confirmed with the user via `AskUserQuestion` before writing code (two decisions):
+
+1. **Regenerate, not in-place mutation** - matches the schema's own design intent. `plans_one_current_per_goal` is a partial unique index on `is_deleted=false` specifically so a goal can have multiple plan attempts over time ("a goal can be regenerated into a fresh plan without losing the old attempt" - see the initial schema migration's comments). So editing means: update the `goals` row's descriptive fields, soft-delete the current `plans` row, call `generatePlan()` again, insert a fresh `plans` + `plan_sessions` via the same `createPlanWithSessions()` onboarding already uses. No schema change needed - this was always the intended path, just never built.
+2. **Single page, not a wizard** - user's explicit choice over reusing the 4-step onboarding flow pre-filled. Editing an existing plan is "tweak a couple of fields," not "start fresh," so seeing everything at once beats stepping through screens again.
+
+**New file:** [app/edit-plan.tsx](../../marathon-app/app/edit-plan.tsx) - one page, all fields (distance, race date, experience, weekly mileage, target time, calibration race, training days, long-run day), pre-filled from the current `goals` row via a one-time `useEffect` (guarded by an `initialized` flag so it never clobbers what the user's typed since). Computes a `generatePlan()` preview live via `useMemo` and shows the same feasibility warnings onboarding shows, then `handleSave` reuses that exact preview rather than recomputing - same "what you saw is what got persisted" guarantee as `health-data.tsx`.
+
+**Data layer additions:**
+- `lib/data/goals.ts`: `updateGoal(goalId, input)` - factored the insert/update column-mapping into a shared `goalInputToRow()` so `createGoal` and `updateGoal` can't drift apart.
+- `lib/data/plans.ts`: `supersedePlan(planId)` - soft-deletes a plan without touching its goal (distinct from `deleteGoal`, which cascades and closes the goal out entirely).
+
+**Refactor while touching this code**: the HH:MM:SS parse/format helpers were duplicated (`parseHms` in `calibration.tsx`, `formatHms` in `health-data.tsx`) and Edit Plan needed both - extracted to [lib/timeFormat.ts](../../marathon-app/lib/timeFormat.ts), all three call sites updated. Same reasoning for the onboarding-final-step warning banner JSX, needed verbatim a third time - extracted to [components/PlanFeasibilityWarnings.tsx](../../marathon-app/components/PlanFeasibilityWarnings.tsx), used by both `health-data.tsx` and `edit-plan.tsx` now.
+
+**Wiring:** "Edit plan" button added to Settings' CURRENT PLAN section (above "Delete current plan"). `app/_layout.tsx`'s `AuthGate` and root `Stack` both needed `edit-plan` added as a recognized top-level route - **this is the exact `/settings`-didn't-navigate bug from Round 1 all over again if forgotten** (any new top-level route outside `(tabs)`/`onboarding` needs an explicit exception in `AuthGate`'s redirect-back-to-tabs condition, or it silently bounces).
+
+**A tooling gotcha worth remembering**: after adding the new `edit-plan.tsx` route file, clicking into it from Settings did nothing (no error, no navigation) against the already-running dev server - a new top-level route file needs Metro to pick it up, and this particular server had been running since early in the session. A full `preview_stop`/close-tab/`preview_start` restart fixed it immediately. Consistent with every other "looks broken, isn't" gotcha logged in this file - **check for this before debugging further whenever a brand-new route or file added mid-session doesn't seem to be recognized.**
+
+Verified end-to-end live against the real test account: opened Edit Plan, confirmed every field pre-filled correctly against a direct DB read (distance, date, experience, training days, long-run day all matched exactly; empty fields correctly reflected genuinely-null columns), changed training days per week 4→5, saved, and confirmed via `supabase db query --linked`: the goal's `training_days_per_week` updated to 5, exactly one non-deleted plan remains (`plans_one_current_per_goal` intact), 2 total plan rows exist (old superseded, not hard-deleted - regeneration history preserved), and the new plan's actual session list on the Plan screen reflects 5 training days for the week. The Round 4 lead-in-warmup behavior also correctly re-triggers on regeneration (today's date still shows its bridge warmup run).
+
+`npx tsc --noEmit` and all 51 tests clean.

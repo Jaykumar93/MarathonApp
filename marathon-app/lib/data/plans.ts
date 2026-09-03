@@ -72,6 +72,20 @@ export async function createPlanWithSessions(
   return planRow as PlanRow;
 }
 
+/**
+ * Soft-deletes a plan without touching its goal - used by "Edit plan" to
+ * retire the current plan before generating a replacement. Distinct from
+ * deleteGoal (goals.ts), which cascades and closes the goal out entirely;
+ * this leaves the goal active so a fresh plan can immediately take its
+ * place, matching the "regeneration history" design the schema already
+ * supports (plans_one_current_per_goal only requires at most one
+ * *non-deleted* plan per goal at a time, not ever).
+ */
+export async function supersedePlan(planId: string): Promise<void> {
+  const { error } = await supabase.from("plans").update({ is_deleted: true }).eq("id", planId);
+  if (error) throw error;
+}
+
 export async function getCurrentPlan(goalId: string): Promise<PlanRow | null> {
   const { data, error } = await supabase
     .from("plans")
