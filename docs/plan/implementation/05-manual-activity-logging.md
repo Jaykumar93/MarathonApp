@@ -127,3 +127,26 @@ React Navigation's tab navigator keeps every tab's screen mounted even when not 
 ### Files touched in this pass
 
 **Modified:** `components/MonthActivityChart.tsx` (press-in/out tooltip, anchored per-bar), `lib/activityStats.ts` + its test (`weekSeconds`/`monthSeconds`), `app/(tabs)/activity.tsx` (Filters modal, date-range presets + custom range, paired distance/time stat cards).
+
+---
+
+## 4. A real bug: the Filters sheet's text inputs couldn't be typed into
+
+> "also when clicking the min dis and min time we are unable to add the value its disappering directly"
+
+Reproduced directly rather than guessing: `document.activeElement` after tapping "Min distance" stayed on whatever was focused before (the field never gained focus at all), even though `document.elementFromPoint()` at the exact same coordinates correctly identified the `<input>` as the top-most element there.
+
+**Root cause**: the Filters modal (and `Dropdown.tsx`'s own option-list modal) nested the sheet *inside* the backdrop `Pressable` (`<Pressable onPress={close}><View onStartShouldSetResponder={() => true}>...sheet content...</View></Pressable>`), relying on `onStartShouldSetResponder` to stop the backdrop's press from firing when tapping inside the sheet. That responder API is native-only - React Native Web doesn't implement it, so it's a silent no-op on web. React Native Web's `Pressable` intercepts `pointerdown` on its own DOM subtree as part of its own press-state handling, which pre-empts the browser's default "focus this input" behavior for any input nested inside it - fine for buttons and option rows (which don't need focus, just a click), but fatal for a `TextInput` specifically.
+
+**Fix**: restructured both modals so the backdrop and the sheet are *siblings*, not parent/child - `<View><Pressable style={StyleSheet.absoluteFill-equivalent} onPress={close} /><View style={sheet}>...</View></View>`. The sheet's content is no longer inside the Pressable's own subtree at all, so there's nothing to intercept its inputs' focus, and the `onStartShouldSetResponder` hack (which was never actually doing anything on web) was removed entirely. Applied to both `app/(tabs)/activity.tsx`'s Filters sheet (the actual bug site) and `components/ui/Dropdown.tsx` (same latent pattern, no `TextInput` in it yet but the same risk for any future one).
+
+Verified by reproducing the original failure first (`document.activeElement` stuck on the previously-focused element), then confirming after the fix (`document.activeElement` correctly becomes the `<input>`, `.value` correctly holds what was typed, the Filters badge count updates live).
+
+## 5. Small polish requests after the fix
+
+- **"the type filter should be in the filter button as well both way"** - Type (previously only a standalone dropdown next to "Filters") now also appears inside the Filters sheet itself, both bound to the same `typeFilter` state so they always agree.
+- **"why the type filter count not getting added"** - `activeFilterCount` (the number on the "Filters" badge) had deliberately excluded Type when Type lived only outside the sheet; now that it's also "inside", it counts toward the badge.
+- **"also count should show in the type filter as well"**, then **"the position of the count for the type is not proper keep it on right near the dropdown arrow"**, then **"keep the format same for both"** - extracted a shared **`components/ui/Badge.tsx`** (used identically by the "Filters" button and by a new optional `badge` prop on `Dropdown.tsx`, rendered inline right before the caret) so an active-filter indicator looks and sits identically everywhere it appears, rather than each place inventing its own badge markup/position. `Dropdown.tsx`'s closed-box layout changed from `justifyContent: "space-between"` (only correct for exactly 2 children) to giving the value text `flex: 1` so it fills the remaining space and pushes the badge+caret flush right regardless of how many trailing elements there are.
+- **"the clickable activity should be distinguishable from the background div"**, then **"the color for the div [is] same as the primary color of the app"**, then **"keep the color as before but you can add a border"** - Activity History's list rows went from flat rows separated by a bottom border to individually rounded/padded cards (matching `DayDetailPanel`'s `LoggedActivityRow` visual language). First pass filled them with `colors.screenBg` - which is literally the page's own background color, so a row filled with it read as a cutout showing the page through the card rather than a distinct surface. A dark-tint fill was tried and rejected in favor of the simpler final version: keep `colors.screenBg`, add a `colors.cardLine` border - distinguishable via outline rather than needing a fill color that has to be different from *every* other meaningful color in the palette.
+
+`npx tsc --noEmit` and all 56 tests clean throughout; every step verified live via direct DOM inspection (`document.activeElement`, `elementFromPoint`, input `.value`) rather than trusting screenshots alone, given how easily a screenshot's timing can be misleading for this kind of focus/state bug.

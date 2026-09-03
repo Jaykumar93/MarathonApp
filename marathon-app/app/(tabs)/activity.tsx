@@ -10,6 +10,7 @@ import { SESSION_TYPE_COLOR, SESSION_TYPE_LABEL, ACTIVITY_TYPE_OPTIONS } from ".
 import { colors, fonts, spacing, type } from "../../lib/theme";
 import { Card } from "../../components/ui/Card";
 import { Dropdown } from "../../components/ui/Dropdown";
+import { Badge } from "../../components/ui/Badge";
 import { DateField } from "../../components/ui/DateField";
 import { TextField } from "../../components/ui/TextField";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
@@ -116,9 +117,15 @@ export default function Activity() {
   const minDistanceMeters = parseFloat(minDistanceKm) > 0 ? parseFloat(minDistanceKm) * 1000 : 0;
   const minDurationSeconds = parseFloat(minDurationMin) > 0 ? parseFloat(minDurationMin) * 60 : 0;
 
-  const activeFilterCount = [dateRange !== "all", minDistanceMeters > 0, minDurationSeconds > 0].filter(Boolean).length;
+  const activeFilterCount = [
+    typeFilter !== "all",
+    dateRange !== "all",
+    minDistanceMeters > 0,
+    minDurationSeconds > 0,
+  ].filter(Boolean).length;
 
   function resetFilters() {
+    setTypeFilter("all");
     setDateRange("all");
     setCustomFrom("");
     setCustomTo("");
@@ -200,25 +207,41 @@ export default function Activity() {
             for first and doesn't need a whole sheet to change; everything
             else (date range, thresholds) lives behind "Filters". */}
         <View style={styles.topFilterRow}>
-          <Dropdown options={TYPE_OPTIONS} value={typeFilter} onSelect={setTypeFilter} compact style={styles.typeDropdown} />
+          <Dropdown
+            options={TYPE_OPTIONS}
+            value={typeFilter}
+            onSelect={setTypeFilter}
+            compact
+            style={styles.typeDropdown}
+            badge={typeFilter !== "all" ? 1 : undefined}
+          />
           <Pressable style={styles.filtersButton} onPress={() => setFiltersOpen(true)} accessibilityRole="button">
             <Text style={styles.filtersButtonText}>Filters</Text>
-            {activeFilterCount > 0 && (
-              <View style={styles.filtersBadge}>
-                <Text style={styles.filtersBadgeText}>{activeFilterCount}</Text>
-              </View>
-            )}
+            {activeFilterCount > 0 && <Badge count={activeFilterCount} />}
             <Text style={styles.caret}>▾</Text>
           </Pressable>
         </View>
 
         <Modal visible={filtersOpen} transparent animationType="slide" onRequestClose={() => setFiltersOpen(false)}>
-          <Pressable style={styles.modalOverlay} onPress={() => setFiltersOpen(false)}>
-            <View style={styles.modalSheet} onStartShouldSetResponder={() => true}>
+          <View style={styles.modalWrap}>
+            {/* Backdrop is a sibling of the sheet, not its parent - a
+                TextInput nested inside a Pressable's own subtree on web
+                loses the ability to focus on tap (RNW's Pressable
+                intercepts pointerdown for its own press-state handling,
+                which pre-empts the browser's default "focus this input"
+                behavior; `onStartShouldSetResponder` does not prevent this
+                on web, it's a native-only responder API). Keeping the
+                backdrop's tap-to-close area completely separate from the
+                sheet's own content sidesteps that entirely. */}
+            <Pressable style={styles.modalBackdrop} onPress={() => setFiltersOpen(false)} />
+            <View style={styles.modalSheet}>
               <ScrollView>
                 <Text style={styles.modalTitle}>Filters</Text>
 
-                <Text style={styles.fieldLabel}>Date range</Text>
+                <Text style={styles.fieldLabel}>Type</Text>
+                <Dropdown options={TYPE_OPTIONS} value={typeFilter} onSelect={setTypeFilter} />
+
+                <Text style={[styles.fieldLabel, styles.fieldLabelSpaced]}>Date range</Text>
                 <Dropdown options={DATE_RANGE_OPTIONS} value={dateRange} onSelect={setDateRange} />
 
                 {dateRange === "custom" && (
@@ -259,7 +282,7 @@ export default function Activity() {
                 </View>
               </ScrollView>
             </View>
-          </Pressable>
+          </View>
         </Modal>
 
         {monthGroups.length === 0 ? (
@@ -339,18 +362,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardBg,
   },
   filtersButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 12.5, color: colors.textPrimary },
-  filtersBadge: {
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 3,
-  },
-  filtersBadgeText: { fontFamily: fonts.monoSemiBold, fontSize: 9.5, color: "#fff" },
   caret: { fontFamily: fonts.body, fontSize: 11, color: colors.textFaint },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(20,22,26,0.45)", justifyContent: "flex-end" },
+  modalWrap: { flex: 1, justifyContent: "flex-end" },
+  modalBackdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(20,22,26,0.45)" },
   modalSheet: {
     backgroundColor: "#fff",
     borderTopLeftRadius: 20,
@@ -361,6 +375,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontFamily: fonts.dataBold, fontSize: 17, color: colors.textPrimary, marginBottom: 10 },
   fieldLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textDim, marginBottom: 8 },
+  fieldLabelSpaced: { marginTop: 14 },
   modalRow: { flexDirection: "row", gap: 10, marginTop: 14 },
   modalRowItem: { flex: 1 },
   customRangeStack: { gap: 14, marginTop: 14 },
@@ -371,15 +386,16 @@ const styles = StyleSheet.create({
   monthHeading: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.textPrimary },
   monthSummary: { fontFamily: fonts.mono, fontSize: type.pDim, color: colors.textDim },
   monthSubSummary: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginBottom: 8 },
-  listCard: { paddingHorizontal: 10, marginBottom: 0 },
+  listCard: { paddingHorizontal: 10, paddingVertical: 8, marginBottom: 0, gap: 8 },
   row: {
     flexDirection: "row",
     alignItems: "center",
     gap: 11,
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.cardLine,
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.cardLine,
+    backgroundColor: colors.screenBg,
   },
   edge: { width: 5, height: 28, borderRadius: 3 },
   rowBody: { flex: 1 },
