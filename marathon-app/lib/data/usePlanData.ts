@@ -99,6 +99,35 @@ const DAY_LABELS: Record<string, string> = {
 };
 
 /**
+ * Signing up mid-week adds lead-in bridge sessions (week_number 0) dated
+ * before the plan's official Monday start (see buildLeadInSessions in the
+ * plan engine) - sessions are ordered by session_date ascending
+ * (getPlanSessions), so sessions[0] is the true earliest date whenever any
+ * exist, otherwise startDate itself. Shared by the calendar (which needs
+ * every day in the range) and the countdown arc (which just needs the
+ * range's two ends), so the two never disagree on where the plan "starts."
+ */
+function getPlanEarliestDate(sessions: PlanSessionRow[], startDate: string): string {
+  return sessions.length > 0 && sessions[0].session_date < startDate ? sessions[0].session_date : startDate;
+}
+
+/**
+ * How far through the plan today is, as a 0-1 fraction of the full range
+ * (plan's earliest day, lead-in included, through race day) - purely date
+ * math, clamped so a plan that's already finished (or one whose lead-in
+ * hasn't started rendering yet) never reports outside 0-1.
+ */
+export function getPlanProgressFraction(sessions: PlanSessionRow[], startDate: string, goalDate: string): number {
+  const earliestDate = getPlanEarliestDate(sessions, startDate);
+  const start = new Date(earliestDate + "T00:00:00Z").getTime();
+  const end = new Date(goalDate + "T00:00:00Z").getTime();
+  const today = new Date(todayIso() + "T00:00:00Z").getTime();
+  const totalMs = end - start;
+  if (totalMs <= 0) return 1;
+  return Math.min(1, Math.max(0, (today - start) / totalMs));
+}
+
+/**
  * Every day from the plan's start date through race day, keyed by real
  * calendar date (not week_number) - the scrollable calendar spans the
  * whole plan, and a moved session (see moveSessionToTomorrow) changes
@@ -108,13 +137,7 @@ const DAY_LABELS: Record<string, string> = {
 export function getAllPlanDays(sessions: PlanSessionRow[], startDate: string, goalDate: string): CalendarDayInfo[] {
   const today = todayIso();
   const sessionsByDate = new Map(sessions.map((s) => [s.session_date, s]));
-
-  // Signing up mid-week adds lead-in bridge sessions (week_number 0) dated
-  // before the plan's official Monday start (see buildLeadInSessions in
-  // the plan engine) - sessions are ordered by session_date ascending
-  // (getPlanSessions), so sessions[0] is the true earliest date whenever
-  // any exist, otherwise startDate itself.
-  const earliestDate = sessions.length > 0 && sessions[0].session_date < startDate ? sessions[0].session_date : startDate;
+  const earliestDate = getPlanEarliestDate(sessions, startDate);
 
   const start = new Date(earliestDate + "T00:00:00Z");
   const end = new Date(goalDate + "T00:00:00Z");

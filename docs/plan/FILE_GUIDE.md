@@ -67,6 +67,7 @@
 | File | What it renders |
 |---|---|
 | [BlockProfile.tsx](../../marathon-app/components/BlockProfile.tsx) | The SVG "terrain" chart of weekly volume across the whole plan (base→build→peak→taper), mini variant for Home, hero variant for Plan. |
+| [CountdownArc.tsx](../../marathon-app/components/CountdownArc.tsx) | Home's race-day countdown — a semicircle progress arc (`react-native-svg`) with a solid dot marking today's position, reusing Block Profile's "current position on a path" convention instead of a plain number. |
 | [DayDetailPanel.tsx](../../marathon-app/components/DayDetailPanel.tsx) | Selected day's planned session (type/distance/pace/prep tip) + any logged activity, or the appropriate empty state. Unit-aware (`lib/units.ts`). |
 | [MonthActivityChart.tsx](../../marathon-app/components/MonthActivityChart.tsx) | Calendar-month bar chart of logged distance per day, with prev/next month navigation. |
 | [NoPlanPrompt.tsx](../../marathon-app/components/NoPlanPrompt.tsx) | Shown on Home/Plan when there's no active goal — "Create your plan" CTA into onboarding. Onboarding is optional, so landing here is a normal state, not an error. |
@@ -101,7 +102,7 @@
 | [goals.ts](../../marathon-app/lib/data/goals.ts) | `createGoal`, `getActiveGoal`, `updateGoal` (descriptive fields only - used by Edit Plan), `deleteGoal` (soft-delete, one-way). |
 | [plans.ts](../../marathon-app/lib/data/plans.ts) | `createPlanWithSessions` (batched insert of plan + all sessions), `getCurrentPlan`, `getPlanSessions`, `markSessionDone`, `moveSessionToTomorrow`, `supersedePlan` (soft-delete a plan without touching its goal - used by Edit Plan before inserting the regenerated one). |
 | [activities.ts](../../marathon-app/lib/data/activities.ts) | `getActivitiesInRange`, `groupActivitiesByDate` — read-only so far (no write path yet; Task 5 builds the actual logging UI). |
-| [usePlanData.ts](../../marathon-app/lib/data/usePlanData.ts) | `useActivePlanData()` hook (loads goal+plan+sessions for the signed-in user) plus pure date-math helpers: `getCurrentWeekNumber`, `getWeekDateRange`, `getWeeklyVolumesKm`, `getAllPlanDays`. **Always derives "current week"/calendar range from real dates, never from `week_number`/session-row order** — a past bug (Task 4) showed row-order-based logic breaks the moment a session moves. |
+| [usePlanData.ts](../../marathon-app/lib/data/usePlanData.ts) | `useActivePlanData()` hook (loads goal+plan+sessions for the signed-in user) plus pure date-math helpers: `getCurrentWeekNumber`, `getWeekDateRange`, `getWeeklyVolumesKm`, `getAllPlanDays`, `getPlanProgressFraction` (0-1 elapsed fraction, used by `CountdownArc`). **Always derives "current week"/calendar range from real dates, never from `week_number`/session-row order** — a past bug (Task 4) showed row-order-based logic breaks the moment a session moves. |
 
 ### Everything else in `lib/`
 
