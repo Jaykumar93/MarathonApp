@@ -4,23 +4,7 @@ import { colors, fonts, type } from "../lib/theme";
 import type { PlanSessionRow } from "../lib/data/plans";
 import { useAuth } from "../lib/auth/AuthContext";
 import { formatDistance, formatPace } from "../lib/units";
-
-const TYPE_COLOR: Record<string, string> = {
-  easy: colors.success,
-  tempo: colors.accent,
-  interval: colors.accent,
-  long: colors.contour,
-  race: colors.accent,
-};
-
-const TYPE_LABEL: Record<string, string> = {
-  easy: "Easy",
-  tempo: "Tempo",
-  interval: "Interval",
-  long: "Long run",
-  rest: "Rest",
-  race: "Race day",
-};
+import { SESSION_TYPE_COLOR, SESSION_TYPE_LABEL } from "../lib/sessionTypes";
 
 function formatDate(iso: string): string {
   const d = new Date(iso + "T00:00:00Z");
@@ -45,7 +29,7 @@ export function SessionListRow({ session, isToday, onMoveToTomorrow, onMarkDoneA
   const isMissed =
     session.status === "missed" || (isPastDate(session.session_date) && session.status === "pending");
   const isDone = session.status === "completed";
-  const edgeColor = isMissed ? colors.missedBg : TYPE_COLOR[session.session_type] ?? colors.contour;
+  const edgeColor = isMissed ? colors.missedBg : SESSION_TYPE_COLOR[session.session_type] ?? colors.contour;
   const edgeOpacity = session.session_type === "long" && !isToday ? 0.4 : 1;
 
   const prep = session.prep_recovery as { prep?: string; recovery?: string } | null;
@@ -55,7 +39,7 @@ export function SessionListRow({ session, isToday, onMoveToTomorrow, onMarkDoneA
       <View style={[styles.edge, { backgroundColor: edgeColor, opacity: edgeOpacity }]} />
       <View style={styles.body}>
         <Text style={[styles.title, isMissed && { color: colors.textFaint }]}>
-          {formatDate(session.session_date)} · {TYPE_LABEL[session.session_type] ?? session.session_type}
+          {formatDate(session.session_date)} · {SESSION_TYPE_LABEL[session.session_type] ?? session.session_type}
           {isToday ? " · Today" : ""}
         </Text>
         {session.session_type !== "rest" && (
