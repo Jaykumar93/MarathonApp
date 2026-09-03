@@ -25,6 +25,11 @@ export function getDistanceCategory(distanceKm: number): DistanceCategory {
 export type PaceSource =
   | "prior_race_result"
   | "target_time"
+  /** Requested target time was faster than the runner's own evidence (a
+   * prior race or calibration race) supports - see resolvePaceZones - so
+   * the plan was built around the evidence-based pace instead, not the
+   * requested one. Paired with GeneratedPlan.paceFeasibilityWarning. */
+  | "target_time_capped"
   | "calibration_race"
   | "experience_default";
 
@@ -99,6 +104,33 @@ export interface PlanSessionDraft {
   backToBackGroup?: string;
 }
 
+/**
+ * Race day arrives before the distance's recommended minimum runway
+ * (getMinWeeks) - the plan still gets built (compressed into whatever time
+ * is actually available, down to STRUCTURAL_MIN_WEEKS), but it's a more
+ * aggressive ramp-up than the safety-recommended minimum, so the user
+ * should be told rather than left to assume this is the normal pace of
+ * things.
+ */
+export interface ScheduleFeasibilityWarning {
+  minWeeksRecommended: number;
+  availableWeeks: number;
+}
+
+/**
+ * The requested target time was faster than what the runner's own
+ * calibration race supports via Riegel prediction - see resolvePaceZones.
+ * The plan is built around achievableTimeSeconds instead of the requested
+ * one. (A prior real race result, when present, always wins outright over
+ * an explicit target time earlier in the fallback chain, so this warning
+ * only ever arises from a calibration race, never a prior result.)
+ */
+export interface PaceFeasibilityWarning {
+  requestedTimeSeconds: number;
+  achievableTimeSeconds: number;
+  basis: "calibration_race";
+}
+
 export interface GeneratedPlan {
   startDate: string; // ISO date, the Monday the plan begins
   goalDate: string;
@@ -111,6 +143,8 @@ export interface GeneratedPlan {
   paceSource: PaceSource;
   volumeSource: VolumeSource;
   sessions: PlanSessionDraft[];
+  scheduleFeasibilityWarning?: ScheduleFeasibilityWarning;
+  paceFeasibilityWarning?: PaceFeasibilityWarning;
 }
 
 export type GenerateResult =
@@ -132,6 +166,18 @@ export const PLAN_LENGTH_ANCHORS: { km: number; defaultWeeks: number; minWeeks: 
   { km: HALF_MARATHON_KM, defaultWeeks: 12, minWeeks: 8 },
   { km: MARATHON_KM, defaultWeeks: 18, minWeeks: 12 },
 ];
+
+/**
+ * The absolute floor below which a plan cannot be generated for ANY
+ * distance - base(1) + build(1) + peak(1) + taper(2) = 5 weeks is the
+ * minimum for computePhases' phase math to hold together at all. Per-
+ * distance minWeeks (above) is a stronger, distance-specific SAFETY
+ * recommendation, not a mathematical requirement - a timeline between this
+ * floor and a distance's own minWeeks is still buildable (generatePlan
+ * compresses into it), just more aggressive than recommended, and gets
+ * flagged via ScheduleFeasibilityWarning rather than refused outright.
+ */
+export const STRUCTURAL_MIN_WEEKS = 5;
 
 // Ultra extrapolation rate beyond the marathon anchor, weeks per extra km.
 export const ULTRA_EXTRA_DEFAULT_WEEKS_PER_KM = 0.35;

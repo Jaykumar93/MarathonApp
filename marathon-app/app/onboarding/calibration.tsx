@@ -11,6 +11,7 @@ const CALIBRATION_DISTANCE_OPTIONS = [
   { value: 5, label: "5K" },
   { value: 10, label: "10K" },
   { value: 21.0975, label: "Half marathon" },
+  { value: 42.195, label: "Marathon" },
 ];
 
 function parseHms(raw: string): number | undefined {
@@ -27,6 +28,11 @@ export default function Calibration() {
   const { answers, update } = useOnboarding();
   const [targetTime, setTargetTime] = useState("");
   const [calibrationTime, setCalibrationTime] = useState("");
+  const [customDistance, setCustomDistance] = useState("");
+
+  const isCustomDistance =
+    answers.calibrationRaceDistanceKm !== undefined &&
+    !CALIBRATION_DISTANCE_OPTIONS.some((o) => o.value === answers.calibrationRaceDistanceKm);
 
   function handleNext() {
     update({
@@ -80,9 +86,25 @@ export default function Calibration() {
           </Text>
           <ChipSelect
             options={CALIBRATION_DISTANCE_OPTIONS}
-            value={answers.calibrationRaceDistanceKm}
-            onChange={(v) => update({ calibrationRaceDistanceKm: v })}
+            value={isCustomDistance ? undefined : answers.calibrationRaceDistanceKm}
+            onChange={(v) => {
+              update({ calibrationRaceDistanceKm: v });
+              setCustomDistance("");
+            }}
           />
+          <View style={{ marginTop: 12 }}>
+            <TextField
+              label="Or enter a custom distance (km)"
+              value={customDistance}
+              onChangeText={(t) => {
+                setCustomDistance(t);
+                const n = parseFloat(t);
+                if (!Number.isNaN(n) && n > 0) update({ calibrationRaceDistanceKm: n });
+              }}
+              keyboardType="decimal-pad"
+              placeholder="e.g. 15"
+            />
+          </View>
           {calibrationIncomplete && (
             <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: "#B3261E", marginTop: 8 }}>
               Pick the distance this time was run over, or clear the duration field to skip this section.

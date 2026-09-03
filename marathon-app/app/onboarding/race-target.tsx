@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
 import { ChipSelect } from "../../components/ui/ChipSelect";
 import { TextField } from "../../components/ui/TextField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
+import { computeAvailableWeeks, getMinWeeks, resolveStartDate, STRUCTURAL_MIN_WEEKS } from "../../lib/planEngine";
 import { colors, fonts } from "../../lib/theme";
 
 const DISTANCE_OPTIONS = [
@@ -27,12 +28,26 @@ export default function RaceTarget() {
 
   const isCustom = answers.raceDistanceKm !== undefined && !DISTANCE_OPTIONS.some((o) => o.value === answers.raceDistanceKm);
 
+  // Live feedback as soon as distance + date are both known, rather than
+  // waiting until the final onboarding step to tell the user their
+  // timeline is tight - the same check generatePlan() does at submit time
+  // (see lib/planEngine/planGenerator.ts), run early here purely for
+  // display so the user can adjust before investing in the rest of setup.
+  const scheduleWarning = useMemo(() => {
+    if (!answers.raceDistanceKm || !isValidDate(goalDate)) return null;
+    const start = resolveStartDate(new Date().toISOString().slice(0, 10));
+    const availableWeeks = computeAvailableWeeks(start, goalDate);
+    const minWeeksRecommended = getMinWeeks(answers.raceDistanceKm);
+    if (availableWeeks >= minWeeksRecommended) return null;
+    return { availableWeeks, minWeeksRecommended, tooTight: availableWeeks < STRUCTURAL_MIN_WEEKS };
+  }, [answers.raceDistanceKm, goalDate]);
+
   function handleNext() {
     update({ goalDate });
     router.push("/onboarding/fitness");
   }
 
-  const canContinue = !!answers.raceDistanceKm && isValidDate(goalDate);
+  const canContinue = !!answers.raceDistanceKm && isValidDate(goalDate) && !scheduleWarning?.tooTight;
 
   return (
     <OnboardingStepLayout
@@ -73,6 +88,13 @@ export default function RaceTarget() {
         placeholder="2027-04-12"
         keyboardType="numbers-and-punctuation"
       />
+      {scheduleWarning && (
+        <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: "#B3261E" }}>
+          {scheduleWarning.tooTight
+            ? `Only ${scheduleWarning.availableWeeks} week${scheduleWarning.availableWeeks === 1 ? "" : "s"} until race day - that's not enough time to build a safe plan for this distance (needs at least ${STRUCTURAL_MIN_WEEKS}). Pick a later date.`
+            : `Only ${scheduleWarning.availableWeeks} weeks until race day - typical plans for this distance use ${scheduleWarning.minWeeksRecommended}+. We can still build you a plan, but it'll be a compressed, higher-effort ramp-up than we'd normally recommend.`}
+        </Text>
+      )}
     </OnboardingStepLayout>
   );
 }

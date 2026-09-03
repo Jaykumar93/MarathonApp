@@ -22,6 +22,7 @@ import {
   PaceZones,
   Phase,
   PlanSessionDraft,
+  STRUCTURAL_MIN_WEEKS,
   SessionType,
   getDistanceCategory,
 } from "./types";
@@ -74,15 +75,22 @@ export function generatePlan(input: GoalInput): GenerateResult {
 
   const availableWeeks = computeAvailableWeeks(startDate, input.goalDate);
   const minWeeksRequired = getMinWeeks(input.raceDistanceKm);
-  if (availableWeeks < minWeeksRequired) {
+  // Below the distance's recommended minimum, the plan is still buildable
+  // (just a more aggressive ramp-up than recommended - flagged below via
+  // scheduleFeasibilityWarning) as long as there's enough runway for the
+  // phase math itself to hold together. Only refuse outright below that
+  // absolute structural floor, where no coherent plan can be built at all.
+  if (availableWeeks < STRUCTURAL_MIN_WEEKS) {
     return { ok: false, reason: "insufficient_time", minWeeksRequired, availableWeeks };
   }
+  const scheduleFeasibilityWarning =
+    availableWeeks < minWeeksRequired ? { minWeeksRecommended: minWeeksRequired, availableWeeks } : undefined;
 
   const totalWeeks = availableWeeks;
   const phases = computePhases(totalWeeks, input.raceDistanceKm);
   const { weeklyKm: startingVolumeKm, source: volumeSource } = resolveStartingVolume(input);
   const { volumesByWeek, peakWeeklyDistanceKm } = computeWeeklyVolumes(startingVolumeKm, phases);
-  const { zones: paceZones, source: paceSource } = resolvePaceZones(input);
+  const { zones: paceZones, source: paceSource, feasibilityWarning: paceFeasibilityWarning } = resolvePaceZones(input);
   const introWeeks = introPeriodWeeks(input);
 
   const sessions: PlanSessionDraft[] = [];
@@ -207,6 +215,8 @@ export function generatePlan(input: GoalInput): GenerateResult {
       paceSource,
       volumeSource,
       sessions,
+      scheduleFeasibilityWarning,
+      paceFeasibilityWarning,
     },
   };
 }

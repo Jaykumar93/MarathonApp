@@ -3,6 +3,7 @@ import {
   ExperienceLevel,
   GoalInput,
   MARATHON_KM,
+  PaceFeasibilityWarning,
   PaceSource,
   PaceZones,
   getDistanceCategory,
@@ -129,9 +130,48 @@ function ultraExperienceDefaultZones(level: ExperienceLevel, raceDistanceKm: num
   };
 }
 
+/**
+ * A stretch goal is legitimate - runners sometimes reasonably believe
+ * they're trending faster than their last data point suggests - so this
+ * doesn't override a target time outright. It only kicks in when there's
+ * real measured evidence (a prior race or calibration race, not just a
+ * self-reported experience label) that directly contradicts it by more
+ * than a modest margin. 0.93 = target may be up to ~7% faster than the
+ * evidence-based prediction before it's treated as unrealistic.
+ */
+const REALISTIC_STRETCH_FACTOR = 0.93;
+
+interface EvidenceBasedPace {
+  pace: number; // seconds per km, at input.raceDistanceKm
+  source: "calibration_race";
+}
+
+/**
+ * The best measured (not self-reported) signal available for what pace this
+ * runner can realistically hold at raceDistanceKm - null if there's none.
+ * Doesn't need to check historicalContext.priorRaceResults: that branch
+ * always wins outright over an explicit target time earlier in
+ * resolvePaceZones' fallback chain, so target-time capping (the only
+ * caller of this function) is never reached when a prior race result
+ * exists in the first place.
+ */
+function evidenceBasedGoalPace(input: GoalInput): EvidenceBasedPace | null {
+  if (input.calibrationRaceTimeSeconds && input.calibrationRaceDistanceKm) {
+    const predictedSeconds = applyLongDistancePredictionCorrection(
+      riegelPredict(input.calibrationRaceTimeSeconds, input.calibrationRaceDistanceKm, input.raceDistanceKm),
+      input.raceDistanceKm,
+      input.calibrationRaceDistanceKm
+    );
+    return { pace: predictedSeconds / input.raceDistanceKm, source: "calibration_race" };
+  }
+
+  return null;
+}
+
 export interface ResolvedPaceZones {
   zones: PaceZones;
   source: PaceSource;
+  feasibilityWarning?: PaceFeasibilityWarning;
 }
 
 export function resolvePaceZones(input: GoalInput): ResolvedPaceZones {
@@ -148,10 +188,25 @@ export function resolvePaceZones(input: GoalInput): ResolvedPaceZones {
     return { zones: paceZonesFromGoalPace(goalPace, input.raceDistanceKm), source: "prior_race_result" };
   }
 
-  // 2. Explicit target time.
+  // 2. Explicit target time - capped if it contradicts real measured evidence.
   if (input.targetTimeSeconds) {
-    const goalPace = input.targetTimeSeconds / input.raceDistanceKm;
-    return { zones: paceZonesFromGoalPace(goalPace, input.raceDistanceKm), source: "target_time" };
+    const requestedPace = input.targetTimeSeconds / input.raceDistanceKm;
+    const evidence = evidenceBasedGoalPace(input);
+
+    if (evidence && requestedPace < evidence.pace * REALISTIC_STRETCH_FACTOR) {
+      const achievableTimeSeconds = Math.round(evidence.pace * input.raceDistanceKm);
+      return {
+        zones: paceZonesFromGoalPace(evidence.pace, input.raceDistanceKm),
+        source: "target_time_capped",
+        feasibilityWarning: {
+          requestedTimeSeconds: input.targetTimeSeconds,
+          achievableTimeSeconds,
+          basis: evidence.source,
+        },
+      };
+    }
+
+    return { zones: paceZonesFromGoalPace(requestedPace, input.raceDistanceKm), source: "target_time" };
   }
 
   // 3. Calibration race, via Riegel's formula.

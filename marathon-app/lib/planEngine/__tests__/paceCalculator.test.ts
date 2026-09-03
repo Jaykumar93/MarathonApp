@@ -102,6 +102,61 @@ describe("resolvePaceZones - fallback chain", () => {
     expect(zones.long).toBeGreaterThan(zones.goalPace * 1.4);
   });
 
+  it("caps an unrealistic target time to the calibration-predicted pace and flags it", () => {
+    // 48-min 10k predicts a marathon nowhere near 2:30 - the target should
+    // be capped to the Riegel-predicted pace instead of honored outright.
+    const input = baseInput({
+      targetTimeSeconds: 2.5 * 3600,
+      calibrationRaceTimeSeconds: 48 * 60,
+      calibrationRaceDistanceKm: 10,
+    });
+    const { source, zones, feasibilityWarning } = resolvePaceZones(input);
+    expect(source).toBe("target_time_capped");
+    expect(zones.goalPace).toBeGreaterThan((2.5 * 3600) / MARATHON_KM);
+    expect(feasibilityWarning).toBeDefined();
+    expect(feasibilityWarning!.requestedTimeSeconds).toBe(2.5 * 3600);
+    expect(feasibilityWarning!.basis).toBe("calibration_race");
+    expect(feasibilityWarning!.achievableTimeSeconds).toBeGreaterThan(feasibilityWarning!.requestedTimeSeconds);
+  });
+
+  it("a prior race result still wins outright over an unrealistic target time (unaffected by capping)", () => {
+    const input = baseInput({
+      targetTimeSeconds: 2.5 * 3600,
+      historicalContext: {
+        priorRaceResults: [{ raceDistanceKm: 21.0975, actualTimeSeconds: 100 * 60, goalDate: "2025-06-01" }],
+      },
+    });
+    const { source } = resolvePaceZones(input);
+    expect(source).toBe("prior_race_result");
+  });
+
+  it("does not cap a target time with no calibration/prior evidence to contradict it", () => {
+    // Only a self-reported experience label exists - too weak a signal to
+    // override an explicit numeric target.
+    const input = baseInput({ targetTimeSeconds: 2.5 * 3600, experienceLevel: "advanced" });
+    const { source, feasibilityWarning } = resolvePaceZones(input);
+    expect(source).toBe("target_time");
+    expect(feasibilityWarning).toBeUndefined();
+  });
+
+  it("does not cap a target time that's merely a modest, plausible stretch beyond calibration", () => {
+    const input = baseInput({
+      calibrationRaceTimeSeconds: 48 * 60,
+      calibrationRaceDistanceKm: 10,
+    });
+    const predictedFromCalibration = resolvePaceZones(
+      baseInput({ calibrationRaceTimeSeconds: 48 * 60, calibrationRaceDistanceKm: 10 })
+    ).zones.goalPace;
+    const predictedSeconds = predictedFromCalibration * MARATHON_KM;
+    // 2% faster than predicted - a reasonable stretch goal, well inside the 7% allowance.
+    const { source, feasibilityWarning } = resolvePaceZones({
+      ...input,
+      targetTimeSeconds: Math.round(predictedSeconds * 0.98),
+    });
+    expect(source).toBe("target_time");
+    expect(feasibilityWarning).toBeUndefined();
+  });
+
   it("degrades the experience-default ultra goal pace further for longer ultra distances", () => {
     const level = "advanced";
     const { zones: zones80 } = resolvePaceZones(baseInput({ raceDistanceKm: 80, experienceLevel: level }));

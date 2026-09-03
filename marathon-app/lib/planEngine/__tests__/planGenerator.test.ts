@@ -1,4 +1,5 @@
 import { generatePlan } from "../planGenerator";
+import { computeAvailableWeeks, resolveStartDate } from "../periodization";
 import { GenerateResult, GoalInput, MARATHON_KM } from "../types";
 
 function addDaysIso(iso: string, days: number): string {
@@ -146,6 +147,83 @@ describe("generatePlan - fake onboarding input scenarios", () => {
     if (result.ok) return;
     expect(result.reason).toBe("insufficient_time");
     expect(result.minWeeksRequired).toBe(12);
+  });
+
+  it("5b. marathon with ~8 weeks (below the 12-week recommendation, above the 5-week structural floor) still builds, flagged", () => {
+    const today = "2026-01-05";
+    const goalDate = addDaysIso(today, 8 * 7);
+    const expectedAvailableWeeks = computeAvailableWeeks(resolveStartDate(today), goalDate);
+    const input: GoalInput = {
+      raceDistanceKm: MARATHON_KM,
+      goalDate,
+      today,
+      experienceLevel: "intermediate",
+      trainingDaysPerWeek: 4,
+      longRunDay: "sat",
+    };
+    const result = generatePlan(input);
+    assertPlanInvariants(result, input);
+    if (!result.ok) return;
+    expect(result.plan.scheduleFeasibilityWarning).toEqual({
+      minWeeksRecommended: 12,
+      availableWeeks: expectedAvailableWeeks,
+    });
+  });
+
+  it("5c. marathon with a full 18-week runway has no schedule feasibility warning", () => {
+    const today = "2026-01-05";
+    const input: GoalInput = {
+      raceDistanceKm: MARATHON_KM,
+      goalDate: addDaysIso(today, 18 * 7),
+      today,
+      experienceLevel: "intermediate",
+      trainingDaysPerWeek: 4,
+      longRunDay: "sat",
+    };
+    const result = generatePlan(input);
+    assertPlanInvariants(result, input);
+    if (!result.ok) return;
+    expect(result.plan.scheduleFeasibilityWarning).toBeUndefined();
+  });
+
+  it("5d. marathon with only 5 weeks (the absolute structural floor) still builds rather than refusing", () => {
+    const today = "2026-01-05";
+    const start = resolveStartDate(today);
+    // day offset 30 from the (Monday) start date lands squarely in the
+    // [28, 34] range that computeAvailableWeeks maps to exactly 5 weeks.
+    const goalDate = addDaysIso(start, 30);
+    const input: GoalInput = {
+      raceDistanceKm: MARATHON_KM,
+      goalDate,
+      today,
+      experienceLevel: "intermediate",
+      trainingDaysPerWeek: 4,
+      longRunDay: "sat",
+    };
+    expect(computeAvailableWeeks(start, goalDate)).toBe(5);
+    const result = generatePlan(input);
+    assertPlanInvariants(result, input);
+    if (!result.ok) return;
+    expect(result.plan.scheduleFeasibilityWarning?.availableWeeks).toBe(5);
+  });
+
+  it("5e. an unrealistic target time surfaces as a paceFeasibilityWarning on the generated plan", () => {
+    const input: GoalInput = {
+      raceDistanceKm: MARATHON_KM,
+      goalDate: "2026-06-01",
+      today: "2026-01-05",
+      targetTimeSeconds: 2.5 * 3600,
+      calibrationRaceTimeSeconds: 48 * 60,
+      calibrationRaceDistanceKm: 10,
+      trainingDaysPerWeek: 5,
+      longRunDay: "sat",
+    };
+    const result = generatePlan(input);
+    assertPlanInvariants(result, input);
+    if (!result.ok) return;
+    expect(result.plan.paceSource).toBe("target_time_capped");
+    expect(result.plan.paceFeasibilityWarning).toBeDefined();
+    expect(result.plan.paceFeasibilityWarning!.basis).toBe("calibration_race");
   });
 
   it("6. edge case: trainingDaysPerWeek=7 -> sensible easy/hard balance, not all-hard", () => {
