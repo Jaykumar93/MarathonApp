@@ -68,6 +68,42 @@ function findPhaseForWeek(weekNumber: number, phases: { name: Phase; startWeek: 
   return match ? match.name : phases[phases.length - 1].name;
 }
 
+const LEAD_IN_WARMUP_DURATION_SECONDS = 20 * 60;
+
+/**
+ * The official plan always begins on a Monday (resolveStartDate), so
+ * signing up mid-week leaves a gap between today and that Monday. Rather
+ * than leaving those days without any plan coverage at all, this bridges
+ * them with a single light warmup run on the earliest day (today) and
+ * rest for the rest of the gap - never touching days before today, since
+ * those are already past and can't be planned for. weekNumber 0 marks
+ * these as distinct from the periodized week 1+ (see PlanSessionDraft) -
+ * getWeeklyVolumesKm already ignores week_number 0, so it can never be
+ * mistaken for real week-1 volume.
+ */
+function buildLeadInSessions(today: string, startDate: string, paceZones: PaceZones, category: DistanceCategory): PlanSessionDraft[] {
+  const warmupDistanceKm = LEAD_IN_WARMUP_DURATION_SECONDS / paceZones.easy;
+  const sessions: PlanSessionDraft[] = [];
+
+  let date = today;
+  let isFirstDay = true;
+  while (date < startDate) {
+    sessions.push({
+      sessionDate: date,
+      weekNumber: 0,
+      phase: "base",
+      sessionType: isFirstDay ? "easy" : "rest",
+      plannedDistanceMeters: isFirstDay ? Math.round(warmupDistanceKm * 1000) : null,
+      plannedDurationSeconds: isFirstDay ? LEAD_IN_WARMUP_DURATION_SECONDS : null,
+      plannedPaceSecondsPerKm: isFirstDay ? paceZones.easy : null,
+      prepRecovery: isFirstDay ? getPrepRecovery("easy", LEAD_IN_WARMUP_DURATION_SECONDS, category) : null,
+    });
+    date = addDays(date, 1);
+    isFirstDay = false;
+  }
+  return sessions;
+}
+
 export function generatePlan(input: GoalInput): GenerateResult {
   const today = input.today ?? new Date().toISOString().slice(0, 10);
   const startDate = resolveStartDate(today);
@@ -93,7 +129,12 @@ export function generatePlan(input: GoalInput): GenerateResult {
   const { zones: paceZones, source: paceSource, feasibilityWarning: paceFeasibilityWarning } = resolvePaceZones(input);
   const introWeeks = introPeriodWeeks(input);
 
-  const sessions: PlanSessionDraft[] = [];
+  // Bridges the gap between today and the plan's official Monday start (if
+  // any) with a light warmup day rather than leaving it with no plan
+  // coverage at all - see buildLeadInSessions. Prepended first since its
+  // dates are always earlier than every session the week loop below adds,
+  // keeping `sessions` in chronological order throughout.
+  const sessions: PlanSessionDraft[] = buildLeadInSessions(today, startDate, paceZones, category);
 
   for (let week = 1; week <= totalWeeks; week++) {
     const phase = findPhaseForWeek(week, phases);

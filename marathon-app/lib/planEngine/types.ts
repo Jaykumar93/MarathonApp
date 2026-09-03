@@ -87,7 +87,11 @@ export interface PrepRecovery {
 
 export interface PlanSessionDraft {
   sessionDate: string; // ISO date
-  weekNumber: number; // 1-indexed
+  /** 1-indexed within the periodized plan. 0 marks a lead-in bridge day
+   * before the plan's official Monday start (see buildLeadInSessions) -
+   * never part of the real progression, always excluded from per-week
+   * volume totals (see getWeeklyVolumesKm). */
+  weekNumber: number;
   phase: Phase;
   sessionType: SessionType;
   /** Null for ultra long/back-to-back sessions planned by duration instead - see plannedDurationSeconds. */

@@ -13,9 +13,18 @@ function assertPlanInvariants(result: GenerateResult, input: GoalInput) {
   if (!result.ok) return;
   const { plan } = result;
 
-  // every session date falls within [startDate, goalDate]
+  // every official (week 1+) session date falls within [startDate,
+  // goalDate]; lead-in bridge days (week 0, see buildLeadInSessions) are
+  // the one deliberate exception - they fall before startDate by design,
+  // but never before today.
+  const today = input.today ?? new Date().toISOString().slice(0, 10);
   for (const s of plan.sessions) {
-    expect(s.sessionDate >= plan.startDate).toBe(true);
+    if (s.weekNumber === 0) {
+      expect(s.sessionDate >= today).toBe(true);
+      expect(s.sessionDate < plan.startDate).toBe(true);
+    } else {
+      expect(s.sessionDate >= plan.startDate).toBe(true);
+    }
     expect(s.sessionDate <= plan.goalDate).toBe(true);
   }
 
@@ -308,6 +317,60 @@ describe("generatePlan - fake onboarding input scenarios", () => {
     // corrected goal pace should be slower (larger sec/km) than the raw, uncorrected Riegel prediction
     const rawGoalPace = (20 * 60 * Math.pow(MARATHON_KM / 5, 1.06)) / MARATHON_KM;
     expect(result.plan.paceZones.goalPace).toBeGreaterThan(rawGoalPace);
+  });
+
+  it("11. signing up mid-week adds a lead-in warmup today and rest for the rest of the gap, never touching past days", () => {
+    // 2026-01-07 is a Wednesday - resolveStartDate should push the official
+    // plan to the following Monday (2026-01-12), leaving a 5-day gap.
+    const today = "2026-01-07";
+    const input: GoalInput = {
+      raceDistanceKm: MARATHON_KM,
+      goalDate: "2026-06-01",
+      today,
+      experienceLevel: "intermediate",
+      trainingDaysPerWeek: 4,
+      longRunDay: "sat",
+    };
+    const result = generatePlan(input);
+    assertPlanInvariants(result, input);
+    if (!result.ok) return;
+
+    expect(result.plan.startDate).toBe("2026-01-12");
+    const leadIn = result.plan.sessions.filter((s) => s.weekNumber === 0);
+    expect(leadIn.map((s) => s.sessionDate)).toEqual(["2026-01-07", "2026-01-08", "2026-01-09", "2026-01-10", "2026-01-11"]);
+
+    // exactly one warmup run, on today, everything else in the gap is rest
+    expect(leadIn[0].sessionType).toBe("easy");
+    expect(leadIn[0].plannedDistanceMeters).toBeGreaterThan(0);
+    for (const s of leadIn.slice(1)) {
+      expect(s.sessionType).toBe("rest");
+      expect(s.plannedDistanceMeters).toBeNull();
+    }
+
+    // never generates anything before today (those days are already past)
+    expect(result.plan.sessions.every((s) => s.sessionDate >= today)).toBe(true);
+
+    // lead-in days don't pollute official week-1 volume
+    const week1Sessions = result.plan.sessions.filter((s) => s.weekNumber === 1);
+    expect(week1Sessions.every((s) => s.sessionDate >= "2026-01-12")).toBe(true);
+  });
+
+  it("12. signing up on a Monday needs no lead-in bridge at all", () => {
+    const today = "2026-01-05"; // a Monday
+    const input: GoalInput = {
+      raceDistanceKm: MARATHON_KM,
+      goalDate: "2026-06-01",
+      today,
+      experienceLevel: "intermediate",
+      trainingDaysPerWeek: 4,
+      longRunDay: "sat",
+    };
+    const result = generatePlan(input);
+    assertPlanInvariants(result, input);
+    if (!result.ok) return;
+
+    expect(result.plan.startDate).toBe(today);
+    expect(result.plan.sessions.filter((s) => s.weekNumber === 0)).toHaveLength(0);
   });
 
   it("10. ultra (80km) -> back-to-back long runs appear in peak phase, duration-capped long runs", () => {
