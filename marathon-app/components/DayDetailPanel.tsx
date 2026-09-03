@@ -3,6 +3,8 @@ import { StyleSheet, Text, View } from "react-native";
 import { colors, fonts, type } from "../lib/theme";
 import type { PlanSessionRow } from "../lib/data/plans";
 import type { ActivityRow } from "../lib/data/activities";
+import { useAuth } from "../lib/auth/AuthContext";
+import { formatDistance, formatPace } from "../lib/units";
 
 const TYPE_LABEL: Record<string, string> = {
   easy: "Easy run",
@@ -18,13 +20,6 @@ function formatDateHeading(iso: string): string {
   return d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
 }
 
-function formatPace(secondsPerKm: number | null): string {
-  if (!secondsPerKm) return "";
-  const mins = Math.floor(secondsPerKm / 60);
-  const secs = Math.round(secondsPerKm % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}/km`;
-}
-
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.round((seconds % 3600) / 60);
@@ -38,6 +33,8 @@ interface DayDetailPanelProps {
 }
 
 export function DayDetailPanel({ date, session, activities }: DayDetailPanelProps) {
+  const { profile } = useAuth();
+  const unit = profile?.distance_unit ?? "km";
   const prep = session?.prep_recovery as { prep?: string; recovery?: string } | null;
 
   return (
@@ -48,8 +45,10 @@ export function DayDetailPanel({ date, session, activities }: DayDetailPanelProp
         <View style={styles.block}>
           <Text style={styles.kicker}>Planned · {TYPE_LABEL[session.session_type] ?? session.session_type}</Text>
           <Text style={styles.mainLine}>
-            {session.planned_distance_meters ? `${(session.planned_distance_meters / 1000).toFixed(1)}km` : ""}
-            {session.planned_pace_seconds_per_km ? ` @ ${formatPace(session.planned_pace_seconds_per_km)}` : ""}
+            {session.planned_distance_meters ? formatDistance(session.planned_distance_meters / 1000, unit) : ""}
+            {session.planned_pace_seconds_per_km
+              ? ` @ ${formatPace(session.planned_pace_seconds_per_km, unit)}`
+              : ""}
           </Text>
           {prep?.prep && <Text style={styles.subLine}>Prep: {prep.prep}</Text>}
         </View>
@@ -62,7 +61,7 @@ export function DayDetailPanel({ date, session, activities }: DayDetailPanelProp
           <Text style={styles.kicker}>Logged</Text>
           {activities.map((a) => (
             <Text key={a.id} style={styles.mainLine}>
-              {(a.distance_meters / 1000).toFixed(1)}km in {formatDuration(a.duration_seconds)}
+              {formatDistance(a.distance_meters / 1000, unit)} in {formatDuration(a.duration_seconds)}
               {a.rpe ? ` · RPE ${a.rpe}` : ""}
             </Text>
           ))}

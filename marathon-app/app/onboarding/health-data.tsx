@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Text, View } from "react-native";
+import { useRouter } from "expo-router";
 import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
 import { ChipSelect } from "../../components/ui/ChipSelect";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
@@ -17,6 +18,7 @@ const HEALTH_SOURCE_OPTIONS = [
 ];
 
 export default function HealthData() {
+  const router = useRouter();
   const { answers, update } = useOnboarding();
   const { session, refreshActiveGoal } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -60,7 +62,12 @@ export default function HealthData() {
         })
         .eq("id", session.user.id);
 
-      await refreshActiveGoal(); // AuthGate reacts to this and redirects to (tabs)
+      await refreshActiveGoal();
+      // Onboarding is no longer force-exited by AuthGate once a goal exists
+      // (it's an optional flow now, not a mandatory gate) - navigate away
+      // explicitly on successful completion instead of relying on the
+      // router to notice and redirect.
+      router.replace("/(tabs)");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong creating your plan.");
       setSubmitting(false);

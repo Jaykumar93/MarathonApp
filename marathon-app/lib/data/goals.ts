@@ -63,3 +63,16 @@ export async function getActiveGoal(userId: string): Promise<GoalRow | null> {
   if (error) throw error;
   return data as GoalRow | null;
 }
+
+/**
+ * Soft-deletes a goal (is_deleted=true). One-way by design (Task 2/3
+ * decision) - the goals_enforce_lifecycle_one_way trigger blocks ever
+ * flipping this back, and cascade_goal_lifecycle automatically closes out
+ * the goal's current plan and cancels its remaining pending sessions.
+ * There is deliberately no "undo" - this is a real, if reversible-in-effect
+ * (you can always set up a new goal), decision point for the user.
+ */
+export async function deleteGoal(goalId: string): Promise<void> {
+  const { error } = await supabase.from("goals").update({ is_deleted: true }).eq("id", goalId);
+  if (error) throw error;
+}

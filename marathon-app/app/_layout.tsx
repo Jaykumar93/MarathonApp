@@ -59,11 +59,21 @@ export default function RootLayout() {
 
 /**
  * Auth-gated redirect: not signed in -> (auth); signed in but not approved
- * -> /waitlist; approved but no active goal -> /onboarding; else -> (tabs).
- * hasActiveGoal lives in AuthContext (not local state) specifically so the
- * onboarding completion handler can call refreshActiveGoal() and have this
- * effect react to the update, instead of racing a manual navigation against
- * a stale local goal-check.
+ * -> /waitlist; approved -> (tabs) by default.
+ *
+ * Deliberately NOT forced into onboarding just because hasActiveGoal is
+ * false - onboarding/plan creation is optional and user-initiated (a
+ * "Create your plan" prompt on Home, or reachable any time from Settings),
+ * not a mandatory gate blocking the rest of the app. "onboarding" and
+ * "settings" are both legitimate destinations an approved user can be
+ * sitting in - the redirect only fires to pull an approved user OUT of
+ * somewhere they shouldn't be (auth/waitlist), never to force them INTO
+ * onboarding specifically.
+ *
+ * hasActiveGoal lives in AuthContext (not local state) so the onboarding
+ * completion handler can call refreshActiveGoal() and have this effect
+ * react to the update, instead of racing a manual navigation against
+ * stale local state.
  */
 function AuthGate() {
   const { session, profile, loading, hasActiveGoal } = useAuth();
@@ -77,6 +87,7 @@ function AuthGate() {
     const inTabsGroup = segments[0] === "(tabs)";
     const inOnboarding = segments[0] === "onboarding";
     const inWaitlist = segments[0] === "waitlist";
+    const inSettings = segments[0] === "settings";
 
     if (!session) {
       if (!inAuthGroup) router.replace("/sign-in");
@@ -88,12 +99,7 @@ function AuthGate() {
       return;
     }
 
-    if (profile?.status === "approved" && !hasActiveGoal) {
-      if (!inOnboarding) router.replace("/onboarding/race-target");
-      return;
-    }
-
-    if (profile?.status === "approved" && hasActiveGoal && !inTabsGroup) {
+    if (profile?.status === "approved" && !inTabsGroup && !inOnboarding && !inSettings) {
       router.replace("/(tabs)");
     }
   }, [session, profile, hasActiveGoal, segments]);
@@ -106,6 +112,7 @@ function AuthGate() {
       <Stack.Screen name="waitlist" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="settings" options={{ presentation: "card" }} />
     </Stack>
   );
 }

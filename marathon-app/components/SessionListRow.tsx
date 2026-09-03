@@ -2,6 +2,8 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, fonts, type } from "../lib/theme";
 import type { PlanSessionRow } from "../lib/data/plans";
+import { useAuth } from "../lib/auth/AuthContext";
+import { formatDistance, formatPace } from "../lib/units";
 
 const TYPE_COLOR: Record<string, string> = {
   easy: colors.success,
@@ -26,18 +28,6 @@ function formatDate(iso: string): string {
   return `${day} ${d.getUTCDate()}`;
 }
 
-function formatPace(secondsPerKm: number | null): string {
-  if (!secondsPerKm) return "";
-  const mins = Math.floor(secondsPerKm / 60);
-  const secs = Math.round(secondsPerKm % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}/km`;
-}
-
-function formatDistance(meters: number | null): string {
-  if (!meters) return "";
-  return `${(meters / 1000).toFixed(1)}km`;
-}
-
 function isPastDate(iso: string): boolean {
   return iso < new Date().toISOString().slice(0, 10);
 }
@@ -50,6 +40,8 @@ interface SessionListRowProps {
 }
 
 export function SessionListRow({ session, isToday, onMoveToTomorrow, onMarkDoneAnyway }: SessionListRowProps) {
+  const { profile } = useAuth();
+  const unit = profile?.distance_unit ?? "km";
   const isMissed =
     session.status === "missed" || (isPastDate(session.session_date) && session.status === "pending");
   const isDone = session.status === "completed";
@@ -68,8 +60,10 @@ export function SessionListRow({ session, isToday, onMoveToTomorrow, onMarkDoneA
         </Text>
         {session.session_type !== "rest" && (
           <Text style={[styles.detail, isMissed && { color: colors.textFaint }]}>
-            {formatDistance(session.planned_distance_meters)}
-            {session.planned_pace_seconds_per_km ? ` @ ${formatPace(session.planned_pace_seconds_per_km)}` : ""}
+            {session.planned_distance_meters ? formatDistance(session.planned_distance_meters / 1000, unit) : ""}
+            {session.planned_pace_seconds_per_km
+              ? ` @ ${formatPace(session.planned_pace_seconds_per_km, unit)}`
+              : ""}
           </Text>
         )}
         {isToday && prep?.prep && <Text style={styles.prepLine}>Prep: {prep.prep}</Text>}

@@ -7,6 +7,7 @@ import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { TextField } from "../../components/ui/TextField";
 
 export default function SignUp() {
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,7 +17,14 @@ export default function SignUp() {
   async function handleSignUp() {
     setError(null);
     setLoading(true);
-    const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+    // full_name goes through signup metadata (not a follow-up profile
+    // update) so it's captured correctly whether or not "Confirm email" is
+    // on - no session exists yet to run an update against until confirmed.
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: fullName.trim() } },
+    });
     setLoading(false);
     if (signUpError) {
       setError(signUpError.message);
@@ -50,10 +58,11 @@ export default function SignUp() {
         <Text style={styles.subtitle}>You'll join the waitlist first - access is approved manually.</Text>
 
         <View style={styles.form}>
+          <TextField label="Full name" value={fullName} onChangeText={setFullName} autoComplete="name" autoCapitalize="words" />
           <TextField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" />
           <TextField label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password-new" />
           {error && <Text style={styles.error}>{error}</Text>}
-          <PrimaryButton label="Sign up" onPress={handleSignUp} loading={loading} disabled={!email || !password} />
+          <PrimaryButton label="Sign up" onPress={handleSignUp} loading={loading} disabled={!fullName || !email || !password} />
         </View>
 
         <View style={styles.footerRow}>
