@@ -163,3 +163,36 @@ What changed:
 Verified end-to-end in the browser against the live `jaykumarpokar9+stryde-test-1@gmail.com` test account: typed and saved a name ("Jaykumar Pokar") and username ("jay_runs"), confirmed both the dirty-state Save buttons and their disappearance after a successful save, and independently confirmed via `supabase db query --linked` that both values actually landed in the `profiles` row (not just optimistic local state). Confirmed the avatar/header is present with no active goal on both Home and Plan. Walked the onboarding flow from `race-target` through `fitness` to `calibration` and confirmed Back/Exit links at each step and the Duration+Distance fields rendering together. `npx tsc --noEmit` and `npm test` (41 tests) both clean after these changes.
 
 Still pending, unchanged from Round 1: **"Edit plan"** design, **dark mode** (still Task 8, still just a placeholder), and the actual **git commit + push** for this whole combined batch (Round 1 + Round 2) — see the repo's git status for the full uncommitted file list before assuming anything here is saved to history.
+
+---
+
+## Round 3 — plan-feasibility warnings, custom calibration distance, and a real layout bug
+
+Two more requests, handled together:
+
+> "also while creating plan if the goal is unrealistic based on the race date or goal finish time, it should give warning to the user and make the plan that is doable. for recent race result, give option for custom distance input as well"
+
+Plus a UI bug the user spotted mid-session (reported live: "beside skip button i see a random button in orange it is a glitch").
+
+### Plan feasibility (schedule + pace)
+
+The plan engine (`lib/planEngine/`) already had a hard `insufficient_time` gate (goal date too soon for the distance) but it fully refused to build a plan rather than making a doable one, and there was no check at all for an unrealistic **goal finish time**. Both are now handled by warning-and-build instead of block-or-blind-accept:
+
+- **`lib/planEngine/types.ts`**: added `STRUCTURAL_MIN_WEEKS = 5` (the true floor below which `computePhases`' phase math can't produce a coherent plan for any distance — base(1)+build(1)+peak(1)+taper(2)), plus `ScheduleFeasibilityWarning` and `PaceFeasibilityWarning` interfaces, both optional fields on `GeneratedPlan`. `PaceSource` gained `"target_time_capped"`.
+- **`lib/planEngine/planGenerator.ts`**: the refusal check now compares `availableWeeks` against `STRUCTURAL_MIN_WEEKS` (5) instead of the distance's own recommended `minWeeksRequired` (e.g. 12 for a marathon). Between those two numbers, the plan still builds exactly as before (same periodization math, just compressed into fewer weeks) but carries a `scheduleFeasibilityWarning` on the result. Only truly refuses below the 5-week structural floor.
+- **`lib/planEngine/paceCalculator.ts`**: `resolvePaceZones`' target-time branch now checks the requested pace against `evidenceBasedGoalPace()` — a Riegel prediction from the calibration race, when one exists. If the target is more than ~7% faster than that prediction (`REALISTIC_STRETCH_FACTOR = 0.93`), the plan is built around the achievable pace instead, tagged `paceSource: "target_time_capped"`, with a `paceFeasibilityWarning` describing both numbers. **Important scoping decision**: a prior real race result (`historicalContext.priorRaceResults`) already wins outright over an explicit target time earlier in the fallback chain (pre-existing behavior, unchanged) — so capping only ever triggers off a *calibration* race, never a prior result; there's no path where a prior result and a "capped target" can coexist. Without any calibration/prior evidence at all, a target time is never second-guessed (a self-reported experience label alone isn't strong enough evidence to override a specific user-entered number).
+- Added 9 new Jest tests across `paceCalculator.test.ts` and `planGenerator.test.ts` covering: capping vs. calibration, no-cap with no evidence, no-cap for a modest/plausible stretch goal, schedule warning present/absent at various weeks, and the absolute structural floor still building rather than refusing. Full suite: **49 tests passing** (up from 41).
+- **UI wiring**:
+  - `app/onboarding/race-target.tsx` — live, non-blocking schedule warning as soon as distance+date are both entered (uses the same `computeAvailableWeeks`/`getMinWeeks`/`STRUCTURAL_MIN_WEEKS` exports the engine itself uses), so the user finds out before investing in the rest of onboarding, not just at the final step. Continue is disabled only when truly below the structural floor.
+  - `app/onboarding/health-data.tsx` (final step) — computes `generatePlan()` once as a `useMemo`'d `preview`, renders both warning banners (amber, non-blocking) before "Create my plan," and `handleFinish` reuses the exact same `preview` result rather than recomputing, so what the user saw is guaranteed to be what gets persisted.
+  - Verified end-to-end live: a marathon 8 weeks out (vs. the 12-week recommendation) showed the schedule warning at both race-target and health-data; a 2:30:00 marathon target against a 15km-in-1:10:00 calibration result got capped to 3:35:48 with the pace warning shown; confirmed via `supabase db query --linked` that both warnings and the capped `target_time_seconds` landed correctly in the persisted `goals`/`plans` rows.
+
+### Custom calibration distance
+
+`app/onboarding/calibration.tsx`'s "recent race result" distance selector only offered 5K/10K/Half marathon. Added a "Marathon" chip (parity with the race-target distance picker) and a free-text "Or enter a custom distance (km)" field, mirroring the same custom-distance pattern already used on `race-target.tsx`. No schema change needed — `goals.calibration_race_distance_km` was already numeric (Task 3 migration), not an enum.
+
+### Bug fix: onboarding footer buttons overlapping ("random orange button")
+
+User caught this live on the calibration screen (the only onboarding step with both a Skip and a Continue button). Root cause in `components/OnboardingStepLayout.tsx`: the footer is a `flexDirection: "row"` container holding two `PrimaryButton`s, but `PrimaryButton`'s own stylesheet hardcodes `width: "100%"` (correct for its normal single-button full-width use everywhere else in the app). Two 100%-width children in one row overlap instead of splitting it — the "random orange sliver beside Skip" was the Continue button's edge showing through. Fixed by wrapping each footer button in a `<View style={{flex:1}}>` rather than touching `PrimaryButton` itself (which would have affected every other screen using it). Confirmed fixed live via screenshot: Skip and Continue now sit side-by-side, evenly split, no overlap.
+
+`npx tsc --noEmit` and all 49 tests clean after this round.

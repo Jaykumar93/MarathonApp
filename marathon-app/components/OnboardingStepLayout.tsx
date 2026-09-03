@@ -58,8 +58,14 @@ export function OnboardingStepLayout({
         <View style={styles.content}>{children}</View>
       </ScrollView>
       <View style={styles.footer}>
-        {onSkip && <PrimaryButton label="Skip" onPress={onSkip} variant="secondary" />}
-        <PrimaryButton label={nextLabel} onPress={onNext} disabled={nextDisabled} loading={nextLoading} />
+        {onSkip && (
+          <View style={styles.footerButton}>
+            <PrimaryButton label="Skip" onPress={onSkip} variant="secondary" />
+          </View>
+        )}
+        <View style={styles.footerButton}>
+          <PrimaryButton label={nextLabel} onPress={onNext} disabled={nextDisabled} loading={nextLoading} />
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -78,4 +84,9 @@ const styles = StyleSheet.create({
   subtitle: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim, marginTop: -8 },
   content: { gap: 16, flex: 1 },
   footer: { flexDirection: "row", gap: 10, padding: spacing.screenPadding, paddingTop: 0 },
+  // PrimaryButton's own style is width:"100%" (correct for its normal
+  // full-width use elsewhere) - without this, two of them side-by-side in
+  // this row (Skip + Continue) would each claim the full row width and
+  // visually overlap instead of splitting it evenly.
+  footerButton: { flex: 1 },
 });
