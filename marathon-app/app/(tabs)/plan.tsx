@@ -15,10 +15,15 @@ import { BlockProfile } from "../../components/BlockProfile";
 import { PlanCalendarScroller } from "../../components/PlanCalendarScroller";
 import { DayDetailPanel } from "../../components/DayDetailPanel";
 import { SessionListRow } from "../../components/SessionListRow";
+import { NoPlanPrompt } from "../../components/NoPlanPrompt";
+import { useAuth } from "../../lib/auth/AuthContext";
+import { formatDistance } from "../../lib/units";
 
 export default function Plan() {
+  const { profile } = useAuth();
   const { loading, goal, plan, sessions, reload } = useActivePlanData();
   const [selectedDate, setSelectedDate] = useState(todayIso());
+  const unit = profile?.distance_unit ?? "km";
 
   if (loading) {
     return (
@@ -29,11 +34,7 @@ export default function Plan() {
   }
 
   if (!goal || !plan) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.body}>No active plan found.</Text>
-      </View>
-    );
+    return <NoPlanPrompt />;
   }
 
   const totalWeeks = plan.plan_original.totalWeeks;
@@ -79,7 +80,7 @@ export default function Plan() {
       <Card>
         <View style={styles.cardTitleRow}>
           <Text style={styles.cardTitleMain}>Week {currentWeek} mileage</Text>
-          <Text style={styles.cardTitleValue}>0 / {weekTargetKm.toFixed(1)}km</Text>
+          <Text style={styles.cardTitleValue}>0 / {formatDistance(weekTargetKm, unit)}</Text>
         </View>
         <View style={styles.progressBarTrack}>
           <View style={[styles.progressBarFill, { width: "0%" }]} />

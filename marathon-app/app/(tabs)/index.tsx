@@ -14,6 +14,8 @@ import { Card } from "../../components/ui/Card";
 import { MonthActivityChart } from "../../components/MonthActivityChart";
 import { PlanCalendarScroller } from "../../components/PlanCalendarScroller";
 import { DayDetailPanel } from "../../components/DayDetailPanel";
+import { NoPlanPrompt } from "../../components/NoPlanPrompt";
+import { formatDistance } from "../../lib/units";
 
 function monthRange(year: number, month: number): [string, string] {
   const start = `${year}-${String(month).padStart(2, "0")}-01`;
@@ -57,17 +59,14 @@ export default function Home() {
   }
 
   if (!goal || !plan) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.body}>No active plan found.</Text>
-      </View>
-    );
+    return <NoPlanPrompt />;
   }
 
   const totalWeeks = plan.plan_original.totalWeeks;
   const currentWeek = getCurrentWeekNumber(plan.start_date, totalWeeks);
   const weeklyVolumesKm = getWeeklyVolumesKm(sessions, totalWeeks);
   const weekTargetKm = weeklyVolumesKm[currentWeek - 1] ?? 0;
+  const unit = profile?.distance_unit ?? "km";
   const allDays = getAllPlanDays(sessions, plan.start_date, goal.goal_date);
   const selectedSession = sessions.find((s) => s.session_date === selectedDate) ?? null;
 
@@ -102,7 +101,9 @@ export default function Home() {
       contentContainerStyle={styles.container}
       refreshControl={<RefreshControl refreshing={false} onRefresh={reload} />}
     >
-      <Text style={styles.greeting}>Good to see you, {displayName}</Text>
+      <View style={styles.greetingRow}>
+        <Text style={styles.greeting}>Good to see you, {displayName}</Text>
+      </View>
 
       <View style={styles.countdownBlock}>
         <Text style={styles.countdownNumber}>
@@ -135,7 +136,7 @@ export default function Home() {
       <Card>
         <View style={styles.cardTitleRow}>
           <Text style={styles.cardTitleMain}>Weekly mileage</Text>
-          <Text style={styles.cardTitleValue}>0 / {weekTargetKm.toFixed(1)}km</Text>
+          <Text style={styles.cardTitleValue}>0 / {formatDistance(weekTargetKm, unit)}</Text>
         </View>
         <View style={styles.progressBarTrack}>
           <View style={[styles.progressBarFill, { width: "0%" }]} />
@@ -150,7 +151,13 @@ const styles = StyleSheet.create({
   container: { padding: spacing.screenPadding, paddingTop: 10 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
   body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
-  greeting: { fontFamily: fonts.bodyMedium, fontSize: type.pDim, color: colors.textDim, marginBottom: 14 },
+  greetingRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  greeting: { fontFamily: fonts.bodyMedium, fontSize: type.pDim, color: colors.textDim, flex: 1 },
   countdownBlock: { alignItems: "center", marginBottom: 18 },
   countdownNumber: { fontFamily: fonts.dataBold, fontSize: 42, color: colors.textPrimary },
   countdownSuffix: { fontFamily: fonts.dataMedium, fontSize: 18, color: colors.textDim },

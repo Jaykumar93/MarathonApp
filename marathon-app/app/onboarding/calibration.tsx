@@ -40,6 +40,13 @@ export default function Calibration() {
     router.push("/onboarding/training-days");
   }
 
+  // A calibration time with no paired distance is useless to the pace
+  // engine (Riegel's formula needs both) - it would silently fall through
+  // to the generic experience-level estimate with no indication to the
+  // user that their input was ignored. Require the pairing explicitly
+  // rather than letting that happen quietly.
+  const calibrationIncomplete = calibrationTime.length > 0 && !answers.calibrationRaceDistanceKm;
+
   return (
     <OnboardingStepLayout
       step={3}
@@ -47,6 +54,7 @@ export default function Calibration() {
       subtitle="Optional - skip this and we'll use broad pace estimates instead."
       onNext={handleNext}
       onSkip={handleSkip}
+      nextDisabled={calibrationIncomplete}
     >
       <TextField
         label="Goal finish time (HH:MM:SS, optional)"
@@ -60,24 +68,27 @@ export default function Calibration() {
           Or a recent race result
         </Text>
         <TextField
-          label="Time (HH:MM:SS)"
+          label="Duration (HH:MM:SS)"
           value={calibrationTime}
           onChangeText={setCalibrationTime}
           placeholder="0:50:00"
           keyboardType="numbers-and-punctuation"
         />
-        {calibrationTime.length > 0 && (
-          <View style={{ marginTop: 12 }}>
-            <Text style={{ fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textDim, marginBottom: 8 }}>
-              At what distance?
+        <View style={{ marginTop: 12 }}>
+          <Text style={{ fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textDim, marginBottom: 8 }}>
+            Distance
+          </Text>
+          <ChipSelect
+            options={CALIBRATION_DISTANCE_OPTIONS}
+            value={answers.calibrationRaceDistanceKm}
+            onChange={(v) => update({ calibrationRaceDistanceKm: v })}
+          />
+          {calibrationIncomplete && (
+            <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: "#B3261E", marginTop: 8 }}>
+              Pick the distance this time was run over, or clear the duration field to skip this section.
             </Text>
-            <ChipSelect
-              options={CALIBRATION_DISTANCE_OPTIONS}
-              value={answers.calibrationRaceDistanceKm}
-              onChange={(v) => update({ calibrationRaceDistanceKm: v })}
-            />
-          </View>
-        )}
+          )}
+        </View>
       </View>
     </OnboardingStepLayout>
   );

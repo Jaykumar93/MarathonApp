@@ -7,9 +7,13 @@ export interface Profile {
   id: string;
   email: string;
   full_name: string | null;
+  username: string | null;
   status: "pending" | "approved" | "rejected";
   access_granted: boolean;
   onboarding_completed_at: string | null;
+  theme_preference: "light" | "dark";
+  distance_unit: "km" | "mi";
+  created_at: string;
 }
 
 interface AuthContextValue {
