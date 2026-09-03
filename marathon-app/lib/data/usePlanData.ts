@@ -109,7 +109,14 @@ export function getAllPlanDays(sessions: PlanSessionRow[], startDate: string, go
   const today = todayIso();
   const sessionsByDate = new Map(sessions.map((s) => [s.session_date, s]));
 
-  const start = new Date(startDate + "T00:00:00Z");
+  // Signing up mid-week adds lead-in bridge sessions (week_number 0) dated
+  // before the plan's official Monday start (see buildLeadInSessions in
+  // the plan engine) - sessions are ordered by session_date ascending
+  // (getPlanSessions), so sessions[0] is the true earliest date whenever
+  // any exist, otherwise startDate itself.
+  const earliestDate = sessions.length > 0 && sessions[0].session_date < startDate ? sessions[0].session_date : startDate;
+
+  const start = new Date(earliestDate + "T00:00:00Z");
   const end = new Date(goalDate + "T00:00:00Z");
   const totalDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
