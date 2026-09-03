@@ -148,7 +148,7 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.screenBg },
-  container: { padding: spacing.screenPadding, paddingTop: 10 },
+  container: { padding: spacing.screenPadding, paddingTop: 0 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
   body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
   greetingRow: {
