@@ -342,3 +342,17 @@ User asked "what if we show a semi-circle progress bar around the days remaining
 **Verification approach**: this test account's plan was regenerated (via Edit Plan testing) earlier in the session, so "today" is genuinely the plan's day zero - progress is really `0`, which is the correct rendering (empty gray arc, no dot) but made it impossible to eyeball fill/dot/spacing against real data. Verified the 0% case is correctly empty (confirmed live), then temporarily hardcoded `progress={0.35}`/`{0.6}` in `index.tsx` for each visual check, reverting to the real `planProgress` value before every commit - never left a hardcoded value in.
 
 `npx tsc --noEmit` and all 51 tests clean throughout (no plan-engine changes - purely a Home-screen display component and one new pure date-math helper).
+
+---
+
+## Round 12 — tab-icon polish + countdown number font, with a couple of live course-corrections
+
+> "also can you make the icons for home n all a little minimal, also the text of 42 number is a little weird it feels like the 4 is cut from top make change for this as well"
+
+Two independent asks, both iterated live against direct follow-up feedback rather than landing right the first time:
+
+**Tab icons** (`app/(tabs)/_layout.tsx`): first pass dropped the outline/filled toggle entirely (always outline, color-only active state) - user's follow-up ("keep the icon outline, on click it should fill") asked for the *original* outline-inactive/filled-active behavior back, just confirming that's what "minimal" meant rather than removing the fill distinction altogether. Restored `TabIcon`'s `focused` prop and the outline→filled swap on the active tab; the actual "minimal" change that stuck was a smaller icon size (22→20). Also briefly tried "always filled" as a middle step per an ambiguous "fill would look good" message - reverted that too once the outline-at-rest / filled-when-active intent was clarified.
+
+**Countdown number font** (`components/CountdownArc.tsx`): the "4 looks cut off at the top" report was the same `SpaceGrotesk_700Bold` ascender-clipping issue from Round 5's original plain-text countdown (fixed there with `lineHeight`/`paddingTop` tuning) - recurring because `CountdownArc`'s number style never got that same treatment when it replaced the old text block in Round 11. Rather than re-patching the same font with more lineHeight/padding, switched the number and its "days" label to `fonts.monoSemiBold`/`monoMedium` (JetBrains Mono) - this app already uses the mono family for every other numeric/data readout (paces, distances, calendar day numbers), so a countdown number is squarely in that font's job description, and its metrics don't carry the same clipping risk Space Grotesk's bold weight had at this size.
+
+`npx tsc --noEmit` and all 51 tests clean. Verified live after each course-correction, not just the final state.
