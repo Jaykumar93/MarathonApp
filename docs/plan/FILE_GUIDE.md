@@ -77,6 +77,7 @@
 | [SessionListRow.tsx](../../marathon-app/components/SessionListRow.tsx) | One row in Plan's "this week's sessions" list — missed sessions get inline Move-to-tomorrow/Mark-done-anyway actions. |
 | [ui/Card.tsx](../../marathon-app/components/ui/Card.tsx) | Shared white rounded-card container with the standard shadow. |
 | [ui/ChipSelect.tsx](../../marathon-app/components/ui/ChipSelect.tsx) | Single-select chip group (distance presets, experience level, units, etc.). |
+| [ui/DateField.tsx](../../marathon-app/components/ui/DateField.tsx) | Day/Month/Year date picker - a closed field styled like `TextField`, opening a custom-styled modal list per part (not a native `<select>`/native calendar). Shows every day/month/year always; callers validate the result (e.g. `goalDate < today`) explicitly rather than the field hiding invalid options. |
 | [ui/PrimaryButton.tsx](../../marathon-app/components/ui/PrimaryButton.tsx) | The only button component in the app — primary/secondary variant, loading/disabled states. |
 | [ui/TextField.tsx](../../marathon-app/components/ui/TextField.tsx) | Labeled text input; defaults `autoCapitalize="none"` and `spellCheck={false}` (every current use is email/password/username/name). |
 
