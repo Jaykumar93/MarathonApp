@@ -88,6 +88,7 @@ function AuthGate() {
     const inOnboarding = segments[0] === "onboarding";
     const inWaitlist = segments[0] === "waitlist";
     const inSettings = segments[0] === "settings";
+    const inEditPlan = segments[0] === "edit-plan";
 
     if (!session) {
       if (!inAuthGroup) router.replace("/sign-in");
@@ -99,7 +100,7 @@ function AuthGate() {
       return;
     }
 
-    if (profile?.status === "approved" && !inTabsGroup && !inOnboarding && !inSettings) {
+    if (profile?.status === "approved" && !inTabsGroup && !inOnboarding && !inSettings && !inEditPlan) {
       router.replace("/(tabs)");
     }
   }, [session, profile, hasActiveGoal, segments]);
@@ -113,6 +114,7 @@ function AuthGate() {
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="settings" options={{ presentation: "card" }} />
+      <Stack.Screen name="edit-plan" options={{ presentation: "card" }} />
     </Stack>
   );
 }

@@ -5,6 +5,7 @@ import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
 import { ChipSelect } from "../../components/ui/ChipSelect";
 import { TextField } from "../../components/ui/TextField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
+import { parseHms } from "../../lib/timeFormat";
 import { colors, fonts } from "../../lib/theme";
 
 const CALIBRATION_DISTANCE_OPTIONS = [
@@ -13,15 +14,6 @@ const CALIBRATION_DISTANCE_OPTIONS = [
   { value: 21.0975, label: "Half marathon" },
   { value: 42.195, label: "Marathon" },
 ];
-
-function parseHms(raw: string): number | undefined {
-  if (!raw) return undefined;
-  const parts = raw.split(":").map(Number);
-  if (parts.some(Number.isNaN)) return undefined;
-  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
-  if (parts.length === 2) return parts[0] * 60 + parts[1];
-  return undefined;
-}
 
 export default function Calibration() {
   const router = useRouter();

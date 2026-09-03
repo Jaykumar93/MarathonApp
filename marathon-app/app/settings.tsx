@@ -192,11 +192,14 @@ export default function Settings() {
               goal. Your training history stays intact either way.
             </Text>
             {!confirmingDelete ? (
-              <PrimaryButton
-                label="Delete current plan"
-                variant="secondary"
-                onPress={() => setConfirmingDelete(true)}
-              />
+              <View style={{ gap: 10 }}>
+                <PrimaryButton label="Edit plan" onPress={() => router.push("/edit-plan")} />
+                <PrimaryButton
+                  label="Delete current plan"
+                  variant="secondary"
+                  onPress={() => setConfirmingDelete(true)}
+                />
+              </View>
             ) : (
               <View style={{ gap: 10 }}>
                 <Text style={styles.confirmText}>Are you sure? This can't be undone.</Text>

@@ -59,7 +59,8 @@
 | [app/(tabs)/track.tsx](../../marathon-app/app/(tabs)/track.tsx) | `/track` | Placeholder — "coming in Task 6" (GPS tracking). |
 | [app/(tabs)/activity.tsx](../../marathon-app/app/(tabs)/activity.tsx) | `/activity` | Placeholder — "coming in Task 5" (manual logging + history). |
 | [app/(tabs)/coach.tsx](../../marathon-app/app/(tabs)/coach.tsx) | `/coach` | Placeholder — "coming in Task 8" (AI coach). |
-| [app/settings.tsx](../../marathon-app/app/settings.tsx) | `/settings` | Outside the tabs group (pushed as a card). Editable name/username, email (read-only), distance-unit preference, dark-mode placeholder, current-plan deletion (two-step confirm), app version, sign out. Reachable from every tab via the header avatar, with or without an active plan. |
+| [app/settings.tsx](../../marathon-app/app/settings.tsx) | `/settings` | Outside the tabs group (pushed as a card). Editable name/username, email (read-only), distance-unit preference, dark-mode placeholder, "Edit plan"/current-plan deletion (two-step confirm), app version, sign out. Reachable from every tab via the header avatar, with or without an active plan. |
+| [app/edit-plan.tsx](../../marathon-app/app/edit-plan.tsx) | `/edit-plan` | Also outside the tabs group. Single-page form (all onboarding-equivalent fields at once, not a wizard), pre-filled from the current goal. Saving updates the goal, soft-deletes the current plan, and generates+inserts a fresh one - regeneration, not in-place mutation, matching the schema's `plans_one_current_per_goal` design. Reached from Settings' CURRENT PLAN section. |
 
 ## Components (`marathon-app/components/`)
 
@@ -71,6 +72,7 @@
 | [NoPlanPrompt.tsx](../../marathon-app/components/NoPlanPrompt.tsx) | Shown on Home/Plan when there's no active goal — "Create your plan" CTA into onboarding. Onboarding is optional, so landing here is a normal state, not an error. |
 | [OnboardingStepLayout.tsx](../../marathon-app/components/OnboardingStepLayout.tsx) | Shared wrapper for all 5 onboarding steps: progress dots, title/subtitle, Back (step 2+)/Exit-setup links, footer Skip/Continue buttons. |
 | [PlanCalendarScroller.tsx](../../marathon-app/components/PlanCalendarScroller.tsx) | Horizontal `FlatList` spanning the entire plan (including any mid-week lead-in days before the official start), one cell per day, colored by session type/status. Selected day fills solid; today gets a separate ring. |
+| [PlanFeasibilityWarnings.tsx](../../marathon-app/components/PlanFeasibilityWarnings.tsx) | Renders whatever a `generatePlan()` result has to say about feasibility — a hard refusal, a compressed-timeline notice, and/or a capped-goal-time notice. Shared by onboarding's final step and Edit Plan so both show identical warnings for identical inputs. |
 | [SessionListRow.tsx](../../marathon-app/components/SessionListRow.tsx) | One row in Plan's "this week's sessions" list — missed sessions get inline Move-to-tomorrow/Mark-done-anyway actions. |
 | [ui/Card.tsx](../../marathon-app/components/ui/Card.tsx) | Shared white rounded-card container with the standard shadow. |
 | [ui/ChipSelect.tsx](../../marathon-app/components/ui/ChipSelect.tsx) | Single-select chip group (distance presets, experience level, units, etc.). |
@@ -96,8 +98,8 @@
 
 | File | What it does |
 |---|---|
-| [goals.ts](../../marathon-app/lib/data/goals.ts) | `createGoal`, `getActiveGoal`, `deleteGoal` (soft-delete, one-way). |
-| [plans.ts](../../marathon-app/lib/data/plans.ts) | `createPlanWithSessions` (batched insert of plan + all sessions), `getCurrentPlan`, `getPlanSessions`, `markSessionDone`, `moveSessionToTomorrow`. |
+| [goals.ts](../../marathon-app/lib/data/goals.ts) | `createGoal`, `getActiveGoal`, `updateGoal` (descriptive fields only - used by Edit Plan), `deleteGoal` (soft-delete, one-way). |
+| [plans.ts](../../marathon-app/lib/data/plans.ts) | `createPlanWithSessions` (batched insert of plan + all sessions), `getCurrentPlan`, `getPlanSessions`, `markSessionDone`, `moveSessionToTomorrow`, `supersedePlan` (soft-delete a plan without touching its goal - used by Edit Plan before inserting the regenerated one). |
 | [activities.ts](../../marathon-app/lib/data/activities.ts) | `getActivitiesInRange`, `groupActivitiesByDate` — read-only so far (no write path yet; Task 5 builds the actual logging UI). |
 | [usePlanData.ts](../../marathon-app/lib/data/usePlanData.ts) | `useActivePlanData()` hook (loads goal+plan+sessions for the signed-in user) plus pure date-math helpers: `getCurrentWeekNumber`, `getWeekDateRange`, `getWeeklyVolumesKm`, `getAllPlanDays`. **Always derives "current week"/calendar range from real dates, never from `week_number`/session-row order** — a past bug (Task 4) showed row-order-based logic breaks the moment a session moves. |
 
@@ -110,6 +112,7 @@
 | [supabase.ts](../../marathon-app/lib/supabase.ts) | The Supabase client singleton (AsyncStorage-backed session persistence). Everything else imports `supabase` from here. |
 | [theme.ts](../../marathon-app/lib/theme.ts) | Design tokens (colors, fonts, spacing, shadows) — the "Pre-Dawn Run" system from `docs/design.md` turned into code. Light mode only; structured so a dark variant (Task 8) doesn't require restructuring. |
 | [units.ts](../../marathon-app/lib/units.ts) | `formatDistance`/`formatPace` — km↔mi conversion for display, independent of the km-based storage layer. Every screen showing a distance/pace goes through this. |
+| [timeFormat.ts](../../marathon-app/lib/timeFormat.ts) | `parseHms`/`formatHms` — HH:MM:SS ↔ total seconds. Shared by calibration/health-data (onboarding) and edit-plan. |
 
 ## Backend (`marathon-app/supabase/`)
 
