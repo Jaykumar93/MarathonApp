@@ -14,6 +14,10 @@ import { TextField } from "../components/ui/TextField";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PlanFeasibilityWarnings } from "../components/PlanFeasibilityWarnings";
 
+function isValidDate(s: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(new Date(s).getTime());
+}
+
 const DISTANCE_OPTIONS = [
   { value: 5, label: "5K" },
   { value: 10, label: "10K" },
@@ -92,7 +96,16 @@ export default function EditPlan() {
   const calibrationIncomplete = calibrationTime.length > 0 && !calibrationDistanceKm;
 
   const goalInput: GoalInput | null = useMemo(() => {
-    if (!initialized || !raceDistanceKm || !goalDate || !trainingDaysPerWeek || !longRunDay) return null;
+    // isValidDate matters here specifically because goalDate is a raw
+    // free-text field the user can be mid-edit on - unlike onboarding
+    // (where the date only reaches generatePlan() once, on submit, after
+    // its own isValidDate check), this preview recomputes on every
+    // keystroke, so an incomplete date like "2027-01-1" must not reach
+    // generatePlan() (it did, and crashed - Invalid Date propagates to
+    // NaN week counts and an Array(NaN) RangeError deep in the engine).
+    if (!initialized || !raceDistanceKm || !isValidDate(goalDate) || !trainingDaysPerWeek || !longRunDay) {
+      return null;
+    }
     return {
       raceDistanceKm,
       goalDate,
@@ -132,11 +145,20 @@ export default function EditPlan() {
       await createPlanWithSessions(session.user.id, goal.id, preview.plan);
       await reload();
       await refreshActiveGoal();
-      router.back();
+      goBack();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong updating your plan.");
       setSaving(false);
     }
+  }
+
+  // Falls back to the tabs rather than a raw router.back() - if this
+  // screen was reached with no history behind it (a direct link, or a
+  // page refresh while sitting on /edit-plan), back() has nowhere to go
+  // and logs a dev-only "GO_BACK not handled" warning without navigating.
+  function goBack() {
+    if (router.canGoBack()) router.back();
+    else router.replace("/(tabs)");
   }
 
   if (!goal || !initialized) {
@@ -150,7 +172,7 @@ export default function EditPlan() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
       <View style={styles.topRow}>
-        <Text style={styles.backLink} onPress={() => router.back()}>
+        <Text style={styles.backLink} onPress={goBack}>
           ‹ Back
         </Text>
       </View>
