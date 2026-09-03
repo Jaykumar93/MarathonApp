@@ -91,6 +91,7 @@ function AuthGate() {
     const inEditPlan = segments[0] === "edit-plan";
     const inLogActivity = segments[0] === "log-activity";
     const inRunSummary = segments[0] === "run-summary";
+    const inActiveRun = segments[0] === "active-run";
 
     if (!session) {
       if (!inAuthGroup) router.replace("/sign-in");
@@ -109,7 +110,8 @@ function AuthGate() {
       !inSettings &&
       !inEditPlan &&
       !inLogActivity &&
-      !inRunSummary
+      !inRunSummary &&
+      !inActiveRun
     ) {
       router.replace("/(tabs)");
     }
@@ -127,6 +129,7 @@ function AuthGate() {
       <Stack.Screen name="edit-plan" options={{ presentation: "card" }} />
       <Stack.Screen name="log-activity" options={{ presentation: "card" }} />
       <Stack.Screen name="run-summary" options={{ presentation: "card" }} />
+      <Stack.Screen name="active-run" options={{ presentation: "fullScreenModal" }} />
     </Stack>
   );
 }

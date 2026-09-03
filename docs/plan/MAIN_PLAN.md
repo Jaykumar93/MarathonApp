@@ -15,7 +15,7 @@
 | 3 | Plan-generator engine (standalone module) | Done | [03-plan-generator-engine.md](03-plan-generator-engine.md) |
 | 4 | Navigation + Home/Plan wired to real data | Done | [04-navigation-home-plan.md](04-navigation-home-plan.md) |
 | 5 | Manual activity logging end-to-end | Done | [05-manual-activity-logging.md](05-manual-activity-logging.md) |
-| 6 | GPS tracking, Active Run, maps | Not Started | — |
+| 6 | GPS tracking, Active Run, maps | In Progress | [06-gps-tracking-active-run.md](06-gps-tracking-active-run.md) |
 | 7 | Health Connect auto-sync (Android) | Not Started | — |
 | 8 | Trends, AI Coach (RAG), polish + first EAS build | Not Started | — |
 
