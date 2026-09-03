@@ -14,7 +14,7 @@
 | 2 | Supabase backend (schema + Auth + waitlist gate) | Done | [02-supabase-backend.md](02-supabase-backend.md) |
 | 3 | Plan-generator engine (standalone module) | Done | [03-plan-generator-engine.md](03-plan-generator-engine.md) |
 | 4 | Navigation + Home/Plan wired to real data | Done | [04-navigation-home-plan.md](04-navigation-home-plan.md) |
-| 5 | Manual activity logging end-to-end | Not Started | — |
+| 5 | Manual activity logging end-to-end | Done | [05-manual-activity-logging.md](05-manual-activity-logging.md) |
 | 6 | GPS tracking, Active Run, maps | Not Started | — |
 | 7 | Health Connect auto-sync (Android) | Not Started | — |
 | 8 | Trends, AI Coach (RAG), polish + first EAS build | Not Started | — |

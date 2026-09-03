@@ -3,6 +3,7 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native
 import { useAuth } from "../../lib/auth/AuthContext";
 import {
   getAllPlanDays,
+  getCurrentCalendarWeekRange,
   getCurrentWeekNumber,
   getPlanProgressFraction,
   getWeeklyVolumesKm,
@@ -17,6 +18,7 @@ import { MonthActivityChart } from "../../components/MonthActivityChart";
 import { PlanCalendarScroller } from "../../components/PlanCalendarScroller";
 import { DayDetailPanel } from "../../components/DayDetailPanel";
 import { NoPlanPrompt } from "../../components/NoPlanPrompt";
+import { LogFab } from "../../components/ui/LogFab";
 import { formatDistance } from "../../lib/units";
 
 function monthRange(year: number, month: number): [string, string] {
@@ -36,6 +38,7 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState(todayIso());
   const [monthActivities, setMonthActivities] = useState<ActivityRow[]>([]);
   const [selectedDayActivities, setSelectedDayActivities] = useState<ActivityRow[]>([]);
+  const [weekActivities, setWeekActivities] = useState<ActivityRow[]>([]);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -52,6 +55,16 @@ export default function Home() {
     );
   }, [session?.user?.id, selectedDate]);
 
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    const [weekStart, weekEnd] = getCurrentCalendarWeekRange();
+    const weekEndExclusive = new Date(weekEnd + "T00:00:00Z");
+    weekEndExclusive.setUTCDate(weekEndExclusive.getUTCDate() + 1);
+    getActivitiesInRange(session.user.id, weekStart, weekEndExclusive.toISOString().slice(0, 10)).then(
+      setWeekActivities
+    );
+  }, [session?.user?.id]);
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -61,13 +74,20 @@ export default function Home() {
   }
 
   if (!goal || !plan) {
-    return <NoPlanPrompt />;
+    return (
+      <View style={styles.screen}>
+        <NoPlanPrompt />
+        <LogFab />
+      </View>
+    );
   }
 
   const totalWeeks = plan.plan_original.totalWeeks;
   const currentWeek = getCurrentWeekNumber(plan.start_date, totalWeeks);
   const weeklyVolumesKm = getWeeklyVolumesKm(sessions, totalWeeks);
   const weekTargetKm = weeklyVolumesKm[currentWeek - 1] ?? 0;
+  const weekLoggedKm = weekActivities.reduce((sum, a) => sum + a.distance_meters / 1000, 0);
+  const weekProgressPct = weekTargetKm > 0 ? Math.min(1, weekLoggedKm / weekTargetKm) * 100 : 0;
   const unit = profile?.distance_unit ?? "km";
   const allDays = getAllPlanDays(sessions, plan.start_date, goal.goal_date);
   const selectedSession = sessions.find((s) => s.session_date === selectedDate) ?? null;
@@ -97,50 +117,56 @@ export default function Home() {
   }
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.container}
-      refreshControl={<RefreshControl refreshing={false} onRefresh={reload} />}
-    >
-      <View style={styles.countdownBlock}>
-        <CountdownArc daysRemaining={daysRemaining} progress={planProgress} />
-      </View>
-
-      <Text style={styles.sectionLabel}>CALENDAR</Text>
-      <Card>
-        <PlanCalendarScroller days={allDays} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-        <View style={styles.divider} />
-        <DayDetailPanel date={selectedDate} session={selectedSession} activities={selectedDayActivities} />
-      </Card>
-
-      <Text style={styles.sectionLabel}>ACTIVITY</Text>
-      <Card>
-        <MonthActivityChart
-          year={viewedYear}
-          month={viewedMonth}
-          activitiesByDate={groupActivitiesByDate(monthActivities)}
-          onPrevMonth={handlePrevMonth}
-          onNextMonth={handleNextMonth}
-          onSelectDate={setSelectedDate}
-          selectedDate={selectedDate}
-        />
-      </Card>
-
-      <Card>
-        <View style={styles.cardTitleRow}>
-          <Text style={styles.cardTitleMain}>Weekly mileage</Text>
-          <Text style={styles.cardTitleValue}>0 / {formatDistance(weekTargetKm, unit)}</Text>
+    <View style={styles.screen}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.container}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={reload} />}
+      >
+        <View style={styles.countdownBlock}>
+          <CountdownArc daysRemaining={daysRemaining} progress={planProgress} />
         </View>
-        <View style={styles.progressBarTrack}>
-          <View style={[styles.progressBarFill, { width: "0%" }]} />
-        </View>
-      </Card>
-    </ScrollView>
+
+        <Text style={styles.sectionLabel}>CALENDAR</Text>
+        <Card>
+          <PlanCalendarScroller days={allDays} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+          <View style={styles.divider} />
+          <DayDetailPanel date={selectedDate} session={selectedSession} activities={selectedDayActivities} />
+        </Card>
+
+        <Text style={styles.sectionLabel}>ACTIVITY</Text>
+        <Card>
+          <MonthActivityChart
+            year={viewedYear}
+            month={viewedMonth}
+            activitiesByDate={groupActivitiesByDate(monthActivities)}
+            onPrevMonth={handlePrevMonth}
+            onNextMonth={handleNextMonth}
+            onSelectDate={setSelectedDate}
+            selectedDate={selectedDate}
+          />
+        </Card>
+
+        <Card>
+          <View style={styles.cardTitleRow}>
+            <Text style={styles.cardTitleMain}>Weekly mileage</Text>
+            <Text style={styles.cardTitleValue}>
+              {formatDistance(weekLoggedKm, unit)} / {formatDistance(weekTargetKm, unit)}
+            </Text>
+          </View>
+          <View style={styles.progressBarTrack}>
+            <View style={[styles.progressBarFill, { width: `${weekProgressPct}%` }]} />
+          </View>
+        </Card>
+      </ScrollView>
+      <LogFab />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.screenBg },
+  scroll: { flex: 1 },
   container: { padding: spacing.screenPadding, paddingTop: 0 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
   body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },

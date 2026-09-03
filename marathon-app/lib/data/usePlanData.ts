@@ -48,6 +48,52 @@ export function todayIso(): string {
 }
 
 /**
+ * Monday-Sunday range containing today - the real calendar week, deliberately
+ * NOT the "official" plan week getCurrentWeekNumber resolves to. Those two
+ * disagree during the mid-week lead-in bridge (Round 4): today can be a real
+ * lead-in day while getCurrentWeekNumber is still clamped to "week 1" (which
+ * hasn't started yet by date). A "how much have I actually run this week"
+ * widget should track the calendar week the user is living in right now, not
+ * an abstract plan-week index - otherwise a logged lead-in run never shows
+ * up against any week's mileage total, which reads as "this app isn't
+ * tracking what I log."
+ */
+export function getCurrentCalendarWeekRange(): [string, string] {
+  const today = new Date(todayIso() + "T00:00:00Z");
+  const dayOfWeek = today.getUTCDay();
+  const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const monday = new Date(today);
+  monday.setUTCDate(today.getUTCDate() - daysSinceMonday);
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  return [monday.toISOString().slice(0, 10), sunday.toISOString().slice(0, 10)];
+}
+
+/**
+ * Actual logged distance per plan week, bucketed by real calendar date
+ * against the plan's start date (there's no week_number on activities the
+ * way there is on plan_sessions, so date math is the only option here -
+ * which also keeps this consistent with this file's own rule of never
+ * trusting row order/week_number for "which week is this" when a real date
+ * is available instead).
+ */
+export function getActualWeeklyVolumesKm(
+  activities: { start_time: string; distance_meters: number }[],
+  startDate: string,
+  totalWeeks: number
+): number[] {
+  const volumes = new Array(totalWeeks).fill(0);
+  const start = new Date(startDate + "T00:00:00Z").getTime();
+  for (const a of activities) {
+    const activityDate = new Date(a.start_time.slice(0, 10) + "T00:00:00Z").getTime();
+    const diffDays = Math.round((activityDate - start) / (1000 * 60 * 60 * 24));
+    const idx = Math.floor(diffDays / 7);
+    if (idx >= 0 && idx < totalWeeks) volumes[idx] += a.distance_meters / 1000;
+  }
+  return volumes;
+}
+
+/**
  * Pure date math against the plan's actual start date - deliberately NOT
  * derived from session rows' week_number or ordering. A moved session (see
  * moveSessionToTomorrow) changes session_date without touching

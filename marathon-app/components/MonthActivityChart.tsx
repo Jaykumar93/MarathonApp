@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { colors, fonts } from "../lib/theme";
 import type { ActivityRow } from "../lib/data/activities";
@@ -17,6 +17,8 @@ const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
+
+const TOOLTIP_WIDTH = 52;
 
 function daysInMonth(year: number, month: number): number {
   return new Date(Date.UTC(year, month, 0)).getUTCDate();
@@ -38,6 +40,11 @@ export function MonthActivityChart({
 }: MonthActivityChartProps) {
   const total = daysInMonth(year, month);
   const today = new Date().toISOString().slice(0, 10);
+  // Separate from `selectedDate` (which persists and drives DayDetailPanel
+  // below) - this is purely "is a finger down on this bar right now", so
+  // the tooltip appears on press and disappears the instant it's released,
+  // like a real tooltip rather than a sticky label.
+  const [pressedDate, setPressedDate] = useState<string | null>(null);
 
   const values = Array.from({ length: total }, (_, i) => {
     const day = i + 1;
@@ -79,9 +86,16 @@ export function MonthActivityChart({
               key={v.date}
               style={styles.barCol}
               onPress={() => onSelectDate?.(v.date)}
+              onPressIn={() => setPressedDate(v.date)}
+              onPressOut={() => setPressedDate((d) => (d === v.date ? null : d))}
               accessibilityRole="button"
               accessibilityLabel={`${MONTH_NAMES[month - 1]} ${v.day}, ${v.km > 0 ? `${v.km.toFixed(1)}km logged` : "no run logged"}`}
             >
+              {pressedDate === v.date && (
+                <View style={styles.tooltip} pointerEvents="none">
+                  <Text style={styles.tooltipValue}>{v.km > 0 ? `${v.km.toFixed(1)}km` : "No run"}</Text>
+                </View>
+              )}
               <View style={styles.barTrack}>
                 <View
                   style={[
@@ -105,8 +119,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 10 },
   navArrow: { fontFamily: fonts.dataBold, fontSize: 20, color: colors.textDim, paddingHorizontal: 6 },
   monthLabel: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.textPrimary },
-  barRow: { alignItems: "flex-end", gap: 4, paddingBottom: 2 },
-  barCol: { alignItems: "center", width: 16 },
+  barRow: { alignItems: "flex-end", gap: 4, paddingBottom: 2, paddingTop: 26 },
+  barCol: { alignItems: "center", width: 16, position: "relative" },
   barTrack: { height: 50, width: 8, justifyContent: "flex-end" },
   bar: { width: 8, borderRadius: 3, minHeight: 2 },
   barFilled: { backgroundColor: colors.accent },
@@ -114,4 +128,16 @@ const styles = StyleSheet.create({
   barSelected: { backgroundColor: colors.contour },
   dayLabel: { fontFamily: fonts.mono, fontSize: 8, color: colors.textFaint, marginTop: 4 },
   dayLabelToday: { color: colors.accent, fontFamily: fonts.monoSemiBold },
+  tooltip: {
+    position: "absolute",
+    top: -24,
+    left: -(TOOLTIP_WIDTH - 16) / 2,
+    width: TOOLTIP_WIDTH,
+    backgroundColor: colors.predawn,
+    borderRadius: 7,
+    paddingVertical: 3,
+    alignItems: "center",
+    zIndex: 10,
+  },
+  tooltipValue: { fontFamily: fonts.dataBold, fontSize: 10.5, color: "#fff" },
 });

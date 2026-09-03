@@ -98,6 +98,13 @@ export async function getCurrentPlan(goalId: string): Promise<PlanRow | null> {
   return data as PlanRow | null;
 }
 
+/** Looked up by id when a screen (e.g. log-activity) only has a plan_session_id route param to work from, not the row itself. */
+export async function getPlanSessionById(id: string): Promise<PlanSessionRow | null> {
+  const { data, error } = await supabase.from("plan_sessions").select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return data as PlanSessionRow | null;
+}
+
 export async function getPlanSessions(planId: string): Promise<PlanSessionRow[]> {
   const { data, error } = await supabase
     .from("plan_sessions")
