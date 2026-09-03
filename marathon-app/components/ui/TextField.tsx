@@ -14,6 +14,7 @@ export function TextField({ label, style, ...props }: TextFieldProps) {
         style={[styles.input, style]}
         placeholderTextColor={colors.textFaint}
         autoCapitalize="none"
+        spellCheck={false}
         {...props}
       />
     </View>

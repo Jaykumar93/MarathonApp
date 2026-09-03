@@ -53,7 +53,7 @@ export default function Home() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <Text style={styles.body}>Loading your plan...</Text>
+        <Text style={styles.body}>Loading your plan…</Text>
       </View>
     );
   }
@@ -74,8 +74,6 @@ export default function Home() {
     0,
     Math.ceil((new Date(goal.goal_date + "T00:00:00Z").getTime() - Date.now()) / (1000 * 60 * 60 * 24))
   );
-
-  const displayName = profile?.full_name || profile?.email.split("@")[0] || "there";
 
   function handlePrevMonth() {
     if (viewedMonth === 1) {
@@ -101,10 +99,6 @@ export default function Home() {
       contentContainerStyle={styles.container}
       refreshControl={<RefreshControl refreshing={false} onRefresh={reload} />}
     >
-      <View style={styles.greetingRow}>
-        <Text style={styles.greeting}>Good to see you, {displayName}</Text>
-      </View>
-
       <View style={styles.countdownBlock}>
         <Text style={styles.countdownNumber}>
           {daysRemaining}
@@ -148,19 +142,16 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.screenBg },
-  container: { padding: spacing.screenPadding, paddingTop: 0 },
+  container: { padding: spacing.screenPadding, paddingTop: 20 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
   body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
-  greetingRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 14,
-  },
-  greeting: { fontFamily: fonts.bodyMedium, fontSize: type.pDim, color: colors.textDim, flex: 1 },
   countdownBlock: { alignItems: "center", marginBottom: 18 },
-  countdownNumber: { fontFamily: fonts.dataBold, fontSize: 42, color: colors.textPrimary },
-  countdownSuffix: { fontFamily: fonts.dataMedium, fontSize: 18, color: colors.textDim },
+  // Explicit lineHeight (rather than the font's own metrics) keeps
+  // SpaceGrotesk_700Bold's tall digit ascenders from getting clipped at
+  // the top of the text box on web - without it the "1" in a number like
+  // "134" visibly loses its top edge.
+  countdownNumber: { fontFamily: fonts.dataBold, fontSize: 42, lineHeight: 52, color: colors.textPrimary },
+  countdownSuffix: { fontFamily: fonts.dataMedium, fontSize: 18, lineHeight: 24, color: colors.textDim },
   countdownSub: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim },
   sectionLabel: {
     fontFamily: fonts.monoMedium,

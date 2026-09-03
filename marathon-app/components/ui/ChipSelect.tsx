@@ -23,6 +23,8 @@ export function ChipSelect<T extends string | number>({ options, value, onChange
             key={String(opt.value)}
             onPress={() => onChange(opt.value)}
             style={[styles.chip, selected && styles.chipSelected]}
+            accessibilityRole="radio"
+            accessibilityState={{ selected }}
           >
             <Text style={[styles.label, selected && styles.labelSelected]}>{opt.label}</Text>
           </Pressable>

@@ -28,7 +28,7 @@ export default function Plan() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <Text style={styles.body}>Loading your plan...</Text>
+        <Text style={styles.body}>Loading your plan…</Text>
       </View>
     );
   }

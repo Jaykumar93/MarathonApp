@@ -1,7 +1,7 @@
 import { Tabs, useRouter } from "expo-router";
 import { ColorValue, Pressable, StyleSheet, Text } from "react-native";
 import { useAuth } from "../../lib/auth/AuthContext";
-import { colors, fonts } from "../../lib/theme";
+import { colors, fonts, type } from "../../lib/theme";
 
 function TabIcon({ symbol, color }: { symbol: string; color: ColorValue }) {
   return <Text style={{ fontSize: 20, color }}>{symbol}</Text>;
@@ -17,9 +17,30 @@ function ProfileButton() {
   const displayName = profile?.full_name || profile?.username || profile?.email?.split("@")[0] || "?";
 
   return (
-    <Pressable style={styles.avatar} onPress={() => router.push("/settings")} hitSlop={8}>
+    <Pressable
+      style={styles.avatar}
+      onPress={() => router.push("/settings")}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel="Open profile and settings"
+    >
       <Text style={styles.avatarInitial}>{displayName.charAt(0).toUpperCase()}</Text>
     </Pressable>
+  );
+}
+
+// Rendered as the Home tab's headerLeft - living in the exact same header
+// row as ProfileButton (headerRight) is the only way to guarantee they sit
+// on the same visual line, since anything placed in the scrollable content
+// below is a different layout tree from the native header and will never
+// reliably line up with it.
+function HomeGreeting() {
+  const { profile } = useAuth();
+  const displayName = profile?.full_name || profile?.email?.split("@")[0] || "there";
+  return (
+    <Text style={styles.greeting} numberOfLines={1}>
+      Good to see you, {displayName}
+    </Text>
   );
 }
 
@@ -38,7 +59,14 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontFamily: fonts.bodyMedium, fontSize: 11 },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: ({ color }) => <TabIcon symbol="⌂" color={color} /> }} />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          headerLeft: () => <HomeGreeting />,
+          tabBarIcon: ({ color }) => <TabIcon symbol="⌂" color={color} />,
+        }}
+      />
       <Tabs.Screen name="plan" options={{ title: "Plan", tabBarIcon: ({ color }) => <TabIcon symbol="▤" color={color} /> }} />
       <Tabs.Screen name="track" options={{ title: "Track", tabBarIcon: ({ color }) => <TabIcon symbol="●" color={color} /> }} />
       <Tabs.Screen name="activity" options={{ title: "Activity", tabBarIcon: ({ color }) => <TabIcon symbol="≡" color={color} /> }} />
@@ -58,4 +86,11 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   avatarInitial: { fontFamily: fonts.bodyBold, fontSize: 12, color: "#fff" },
+  greeting: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: type.pDim,
+    color: colors.textDim,
+    marginLeft: 18,
+    maxWidth: 220,
+  },
 });
