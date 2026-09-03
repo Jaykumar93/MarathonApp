@@ -1,0 +1,6 @@
+<svg width="432" height="432" viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg">
+  <!-- Android adaptive icon foreground layer - mark only, transparent bg,
+       kept within the ~66% center safe zone since OEM masks crop the rest. -->
+  <path d="M31,79 C31,58 77,56 77,32" fill="none" stroke="#FF5A1F" stroke-width="11" stroke-linecap="round"/>
+  <circle cx="77" cy="32" r="7.2" fill="#3E8E7E"/>
+</svg>

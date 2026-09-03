@@ -5,9 +5,9 @@
 
 ## What this project is
 
-A free, cross-platform marathon training app — a Runna alternative built entirely on free-tier infrastructure. Generates personalized training plans, tracks running activity in rich detail (auto-synced or manual), and layers an AI coach on top, grounded in the user's own training data. This is a personal/small-early-access project, not a commercial launch — no monetization, no public store listing planned yet.
+**App name: Stryde.** A free, cross-platform marathon training app — a Runna alternative built entirely on free-tier infrastructure. Generates personalized training plans, tracks running activity in rich detail (auto-synced or manual), and layers an AI coach on top, grounded in the user's own training data. This is a personal/small-early-access project, not a commercial launch — no monetization, no public store listing planned yet.
 
-**Current stage: spec and design are complete. No code has been written yet.** Everything below reflects finished decisions, not open questions, unless marked otherwise.
+**Current stage: spec and design are complete; build in progress (Tasks 1-3 done — environment/accounts, Supabase backend, plan-generator engine).** Everything below reflects finished decisions, not open questions, unless marked otherwise. Branding: logo/app-icon source files live in `docs/brand/` (`stryde-mark.svg` icon-only, `stryde-logo-full.svg` wordmark lockup) — see design.md's Pre-Dawn Run palette for the colors used.
 
 ---
 

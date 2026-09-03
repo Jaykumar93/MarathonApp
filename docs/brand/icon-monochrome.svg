@@ -1,0 +1,6 @@
+<svg width="432" height="432" viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg">
+  <!-- Android 13+ themed monochrome icon - single-color silhouette, transparent bg;
+       the system applies its own tint, so actual color here is irrelevant beyond alpha. -->
+  <path d="M31,79 C31,58 77,56 77,32" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round"/>
+  <circle cx="77" cy="32" r="7.2" fill="#FFFFFF"/>
+</svg>
