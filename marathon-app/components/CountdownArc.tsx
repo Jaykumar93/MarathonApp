@@ -84,8 +84,12 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: "center",
   },
-  number: { fontFamily: fonts.dataBold, fontSize: 36, lineHeight: 42, color: colors.textPrimary },
-  suffix: { fontFamily: fonts.dataMedium, fontSize: 15, lineHeight: 18, color: colors.textDim },
+  // JetBrains Mono, not Space Grotesk - matches the app's own convention of
+  // using the mono family for numeric/data readouts (paces, distances,
+  // day numbers), and its metrics don't have the ascender-clipping issue
+  // Space Grotesk's bold weight had at this size.
+  number: { fontFamily: fonts.monoSemiBold, fontSize: 34, lineHeight: 40, color: colors.textPrimary },
+  suffix: { fontFamily: fonts.monoMedium, fontSize: 13, lineHeight: 16, color: colors.textDim },
   sub: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim, marginTop: 3 },
   endpointLabelBox: {
     position: "absolute",
