@@ -45,8 +45,16 @@ export function PlanCalendarScroller({ days, selectedDate, onSelectDate }: PlanC
   const listRef = useRef<FlatList<CalendarDayInfo>>(null);
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const initialIndex = useMemo(() => {
-    const idx = days.findIndex((d) => d.date === today);
-    return idx >= 0 ? idx : 0;
+    const todayIdx = days.findIndex((d) => d.date === today);
+    if (todayIdx < 0) return 0;
+    // Land on the Monday of today's week, not today itself - otherwise the
+    // initial view shows a week starting wherever today happens to fall
+    // (e.g. Thu-Wed) instead of a clean Monday-Sunday week. Clamped at 0
+    // for the very first (lead-in) week, where the data genuinely doesn't
+    // go back before the day the plan was created.
+    const dayOfWeek = new Date(today + "T00:00:00Z").getUTCDay(); // 0=Sun..6=Sat
+    const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    return Math.max(0, todayIdx - daysSinceMonday);
   }, [days, today]);
 
   return (
