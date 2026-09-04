@@ -91,6 +91,51 @@ First bar-chart attempt sized each bar via a percentage string (`height: "${pct}
 
 ---
 
+---
+
+## Phase A follow-up — dark-mode bug sweep, calendar redesign, gear/activity polish
+
+A second pass, prompted by live user testing of the Phase A build above rather than new scope. Two categories of work: real dark-mode contrast bugs the original conversion missed (anything using a static, mode-invariant color as if it were theme-reactive), and a genuine UX problem with the Home/Plan calendar's navigation model.
+
+### More dark-mode contrast bugs (same root cause as Phase A1's, found by using the app)
+
+- **Tab bar had no `backgroundColor` at all** (`app/(tabs)/_layout.tsx`) — stayed light in dark mode by simple omission. Wired `colors.tabBarBg` in.
+- **Profile avatar circle disappeared entirely in dark mode** — its background was `colors.predawn`, which is the *literal same hex* as dark mode's `screenBg` (`#14161A` both). Switched it to `colors.accent` (bright orange, high contrast in both themes).
+- **`PlanCalendarScroller`'s upcoming-session cells**: hardcoded `bg: "#fff"` with `text: colors.predawn` — a white box with near-black text that, in dark mode, became a white box with *still near-black* text sitting on a dark screen (illegible), and the "today" ring used `colors.predawn` as its border (invisible against a dark background). Fixed to `colors.cardBg`/`colors.textPrimary`/`colors.textPrimary` respectively.
+- **`palette.contour` used as button/link text** (`PrimaryButton`'s secondary variant, `gear.tsx`'s Retire link, `SessionListRow`'s action text, log-activity's "+ Add details" link): contour measures ~1.9:1 contrast against the dark background, badly under WCAG's 4.5:1 minimum — this is what made Settings' "Sign out" and "Delete current plan" buttons unreadable in dark mode. Added a new `colors.secondaryAccent` token (same value as contour in light mode, a lightened tint — `#6BA696`, ~6.5:1 contrast — in dark mode) and moved every contour-as-text usage to it. `contour` itself is untouched for fills (session-type color coding still needs the true hue).
+- **Modal/bottom-sheet backgrounds** (Activity's Filters sheet, Track's choice sheet, the delete-confirmation sheet, Dropdown's option popup) all used `colors.cardBg`, which is deliberately translucent in dark mode (`rgba(255,255,255,0.055)`) — fine for an in-flow card sitting on the solid screen behind it, but the Filters sheet floating over a dimmed backdrop became "a lot transparent," in the user's words, effectively unreadable against the busy content behind it. Added a new, fully-opaque `colors.sheetBg` token (`#22252B` in dark mode) for exactly this "elevated overlay surface" role, distinct from `cardBg`'s in-flow-card role.
+- **A stray, undocumented `#B3261E` red** (used for form-validation error text in 11 files, distinct from and inconsistent with the app's actual `palette.danger` used everywhere else) unified to `palette.danger`.
+- **`BlockProfile`'s planned-mileage reference line** (Plan tab's "Training block" chart) used `colors.contour` at 25% opacity — reads as a faint hint of green on a light card, reads as nothing at all on a dark one. Swapped to `colors.cardLine`, the token already tuned per-theme for exactly this "faint but visible line" role (borders, dividers) elsewhere in the app.
+
+### Calendar redesign — month is a page, not an infinite strip
+
+Reported behavior: sliding the day strip past the end of a month kept scrolling with no visible sign the month had changed. Rebuilt `PlanCalendarScroller` around a paged model instead of the previous "whole-plan continuous FlatList": it now renders only the currently-viewed month's days, so dragging the strip hits a hard, visible stop at the first/last day of that month. Added:
+- A `‹ Month Year ›` header (previously the strip had no month label at all) with arrows that jump a whole month, disabled at the start/end of the plan's actual date range.
+- A swipe gesture on the header itself for the same month-jump, alongside the arrows.
+- A swipe gesture on the day-detail card below the strip (Home and Plan both) that moves the selection ±1 day, without navigating into the tapped session's own detail screen.
+- Navigating to a different month now also moves the selection: to today, if that's the month being returned to, otherwise to the 1st (or the plan's actual earliest day, for a lead-in month). A day-to-day swipe crossing a month boundary is different — it keeps whatever specific day was swiped to, not a default.
+
+Built a small `useHorizontalSwipe` hook (`lib/useHorizontalSwipe.ts`) on core React Native's `PanResponder` rather than adding `react-native-gesture-handler` — a discrete "drag past ~40px, act on release" gesture, not a true finger-follows-content slide (documented and explained to the user directly, including the tradeoff against a fuller animated-page-transition version that wasn't built). Two real bugs surfaced building this:
+1. **Nested Pressables stole the touch on a real device.** The day-detail card contains its own full-card `Pressable`s (the planned/logged session rows). `onMoveShouldSetPanResponder` alone (bubble phase) let a real device's responder negotiation grant the touch to the nested Pressable first, so the outer swipe never fired — reproduced only via a genuine device-shaped test (dragging directly over the nested card, not over plain text, which is what the first browser-based check happened to do). Fixed by also setting `onMoveShouldSetPanResponderCapture` to the same check, letting the parent intercept before the child gets a chance, but only once real horizontal movement is detected (an ordinary tap on the card is unaffected).
+2. **The day-strip force-scrolled on every day-swipe, not just a month change.** `PlanCalendarScroller`'s scroll-reset effect was correctly keyed on the month-filtered day array's *reference*, not on `selectedDate` — but `allDays` (the full `days` prop, computed in `index.tsx`/`plan.tsx`) was rebuilt with a fresh array identity on every render, including every `selectedDate` tick from a day-swipe. Fixed by memoizing `allDays` (guarded for `plan`/`goal` still being null, since the memo has to sit above the loading/no-plan early returns — a hook can't be called conditionally).
+
+Also added the day-swipe to the Plan tab (it already inherited the month-paging/header/arrows automatically, being the same shared component) and proactively fixed the identical un-memoized-`allDays` pattern there before it could reproduce the same force-scroll bug.
+
+### Gear/Activity polish
+
+- Activity History rows now show a small route-shape SVG thumbnail (reusing the existing `lib/routeShape.ts` projection, same technique `ShareRouteCard`/`run-summary.tsx` already draw at full size) for GPS-tracked runs, or an activity-type icon for manually-logged ones — new `components/ActivityThumbnail.tsx`.
+- Trends' weekly-mileage bars and consistency-grid cells gained the same press-and-hold "show the exact value" tooltip Home's month chart already had.
+
+### Post-implementation review pass (before committing)
+
+A deliberate code-review pass over everything above, looking for redundancy/hardcoding/edge cases rather than new features. Found and fixed:
+- The press-and-hold tooltip (state + show/hide + positioning) had been built three separate times (Home's month chart, Trends' mileage bars, Trends' consistency grid). Extracted to `components/ui/PressTooltip.tsx`; each caller now just wraps its bar/cell in it and passes a label.
+- `allDays`'s memoization and the day-swipe-handler setup were copy-pasted verbatim between `index.tsx` and `plan.tsx`. Extracted to `usePlanCalendarDays`/`useDaySwipeNavigation` in `lib/data/usePlanData.ts`.
+- `PlanCalendarScroller` computed "today" once via `useMemo(..., [])` at mount — stale if the app stays open across midnight. Changed to recompute every render.
+- `new Date().toISOString().slice(0, 10)` (today, as a plain ISO string) was reimplemented inline in six places instead of calling the existing `todayIso()` export — consolidated all six.
+
+`tsc` and the full test suite (103 tests) stayed clean throughout both rounds; the calendar/swipe/tooltip changes were re-verified live in the Browser tool after the consolidation to confirm no visual/behavioral regression.
+
 ## Open items
 
 - **Sentry DSN** — needs a real value from the user before crash reporting does anything beyond "wired but silent."
