@@ -13,6 +13,10 @@ export interface Profile {
   onboarding_completed_at: string | null;
   theme_preference: "light" | "dark";
   distance_unit: "km" | "mi";
+  voice_coaching_enabled: boolean;
+  voice_announcement_interval_km: number;
+  /** Written by onboarding's health-data step; 'none' means no source was ever chosen. Column already existed in the DB (Task 2) - this type just catches the TS side up to it. */
+  health_data_source: "health_connect" | "healthkit" | "manual" | "none" | null;
   created_at: string;
 }
 

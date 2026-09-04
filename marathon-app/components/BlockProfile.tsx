@@ -1,7 +1,7 @@
 import React from "react";
 import { View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
-import { colors } from "../lib/theme";
+import { useTheme } from "../lib/theme/ThemeContext";
 
 interface BlockProfileProps {
   /** Planned weekly distance in km, index 0 = week 1. */
@@ -33,6 +33,7 @@ function pointsToPath(points: { x: number; y: number }[]): string {
 }
 
 export function BlockProfile({ weeklyVolumesKm, actualWeeklyVolumesKm, currentWeek, variant }: BlockProfileProps) {
+  const { colors } = useTheme();
   const width = variant === "mini" ? 300 : 280;
   const height = variant === "mini" ? 50 : 66;
   const padY = variant === "mini" ? 6 : 8;
@@ -73,11 +74,15 @@ export function BlockProfile({ weeklyVolumesKm, actualWeeklyVolumesKm, currentWe
   return (
     <View>
       <Svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+        {/* Was colors.contour at 25% opacity - a dark green that faint
+            reads fine on a light card but is essentially invisible against
+            a dark one. cardLine is already the app's "faint but visible
+            line, tuned per theme" token (borders, dividers) - the same fit
+            here. */}
         <Path
           d={pointsToPath(points)}
           fill="none"
-          stroke={colors.contour}
-          strokeOpacity={0.25}
+          stroke={colors.cardLine}
           strokeWidth={1.5}
           strokeDasharray="3,4"
         />

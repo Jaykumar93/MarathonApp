@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { colors, fonts, spacing } from "../lib/theme";
+import { fonts, spacing } from "../lib/theme";
+import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { PrimaryButton } from "./ui/PrimaryButton";
 
 interface OnboardingStepLayoutProps {
@@ -28,6 +29,8 @@ export function OnboardingStepLayout({
   onSkip,
 }: OnboardingStepLayoutProps) {
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -71,22 +74,24 @@ export function OnboardingStepLayout({
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.screenBg },
-  container: { flexGrow: 1, padding: spacing.screenPadding, gap: 18 },
-  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  backLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
-  exitLink: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textFaint },
-  progressRow: { flexDirection: "row", gap: 6 },
-  progressDot: { flex: 1, height: 4, borderRadius: 2, backgroundColor: colors.cardLine },
-  progressDotActive: { backgroundColor: colors.accent },
-  title: { fontFamily: fonts.dataBold, fontSize: 24, color: colors.textPrimary },
-  subtitle: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim, marginTop: -8 },
-  content: { gap: 16, flex: 1 },
-  footer: { flexDirection: "row", gap: 10, padding: spacing.screenPadding, paddingTop: 0 },
-  // PrimaryButton's own style is width:"100%" (correct for its normal
-  // full-width use elsewhere) - without this, two of them side-by-side in
-  // this row (Skip + Continue) would each claim the full row width and
-  // visually overlap instead of splitting it evenly.
-  footerButton: { flex: 1 },
-});
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.screenBg },
+    container: { flexGrow: 1, padding: spacing.screenPadding, gap: 18 },
+    topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    backLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
+    exitLink: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textFaint },
+    progressRow: { flexDirection: "row", gap: 6 },
+    progressDot: { flex: 1, height: 4, borderRadius: 2, backgroundColor: colors.cardLine },
+    progressDotActive: { backgroundColor: colors.accent },
+    title: { fontFamily: fonts.dataBold, fontSize: 24, color: colors.textPrimary },
+    subtitle: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim, marginTop: -8 },
+    content: { gap: 16, flex: 1 },
+    footer: { flexDirection: "row", gap: 10, padding: spacing.screenPadding, paddingTop: 0 },
+    // PrimaryButton's own style is width:"100%" (correct for its normal
+    // full-width use elsewhere) - without this, two of them side-by-side in
+    // this row (Skip + Continue) would each claim the full row width and
+    // visually overlap instead of splitting it evenly.
+    footerButton: { flex: 1 },
+  });
+}

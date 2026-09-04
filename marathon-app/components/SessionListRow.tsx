@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, fonts, type } from "../lib/theme";
+import { fonts, type } from "../lib/theme";
+import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import type { PlanSessionRow } from "../lib/data/plans";
 import { useAuth } from "../lib/auth/AuthContext";
 import { formatDistance, formatPace } from "../lib/units";
-import { SESSION_TYPE_COLOR, SESSION_TYPE_LABEL } from "../lib/sessionTypes";
+import { SESSION_TYPE_COLOR, SESSION_TYPE_LABEL, formatIntervalStructureSummary } from "../lib/sessionTypes";
+import { todayIso } from "../lib/data/usePlanData";
 
 function formatDate(iso: string): string {
   const d = new Date(iso + "T00:00:00Z");
@@ -13,7 +15,7 @@ function formatDate(iso: string): string {
 }
 
 function isPastDate(iso: string): boolean {
-  return iso < new Date().toISOString().slice(0, 10);
+  return iso < todayIso();
 }
 
 interface SessionListRowProps {
@@ -25,6 +27,8 @@ interface SessionListRowProps {
 
 export function SessionListRow({ session, isToday, onMoveToTomorrow, onMarkDoneAnyway }: SessionListRowProps) {
   const { profile } = useAuth();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const unit = profile?.distance_unit ?? "km";
   const isMissed =
     session.status === "missed" || (isPastDate(session.session_date) && session.status === "pending");
@@ -50,6 +54,11 @@ export function SessionListRow({ session, isToday, onMoveToTomorrow, onMarkDoneA
               : ""}
           </Text>
         )}
+        {session.interval_structure && (
+          <Text style={[styles.detail, isMissed && { color: colors.textFaint }]}>
+            {formatIntervalStructureSummary(session.interval_structure, unit)}
+          </Text>
+        )}
         {isToday && prep?.prep && <Text style={styles.prepLine}>Prep: {prep.prep}</Text>}
       </View>
       <View style={styles.trailing}>
@@ -70,31 +79,33 @@ export function SessionListRow({ session, isToday, onMoveToTomorrow, onMarkDoneA
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 11,
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.cardLine,
-  },
-  edge: { width: 5, height: 28, borderRadius: 3 },
-  body: { flex: 1 },
-  title: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.textPrimary },
-  detail: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
-  prepLine: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
-  trailing: { alignItems: "flex-end" },
-  doneLabel: { fontFamily: fonts.mono, fontSize: 10, color: colors.textDim },
-  upcomingLabel: { fontFamily: fonts.mono, fontSize: 10, color: colors.textFaint },
-  actionRow: { flexDirection: "row", gap: 6 },
-  actionBtn: {
-    borderWidth: 1,
-    borderColor: colors.cardLine,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  actionText: { fontFamily: fonts.bodyMedium, fontSize: 10.5, color: colors.contour },
-});
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 11,
+      paddingVertical: 10,
+      paddingHorizontal: 4,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.cardLine,
+    },
+    edge: { width: 5, height: 28, borderRadius: 3 },
+    body: { flex: 1 },
+    title: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.textPrimary },
+    detail: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
+    prepLine: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
+    trailing: { alignItems: "flex-end" },
+    doneLabel: { fontFamily: fonts.mono, fontSize: 10, color: colors.textDim },
+    upcomingLabel: { fontFamily: fonts.mono, fontSize: 10, color: colors.textFaint },
+    actionRow: { flexDirection: "row", gap: 6 },
+    actionBtn: {
+      borderWidth: 1,
+      borderColor: colors.cardLine,
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    actionText: { fontFamily: fonts.bodyMedium, fontSize: 10.5, color: colors.secondaryAccent },
+  });
+}

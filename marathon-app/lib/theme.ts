@@ -1,30 +1,26 @@
-// Pre-Dawn Run design system tokens (design.md). Light mode only for now -
-// dark mode is explicit Task 8 scope. Structured as flat token objects so a
-// dark variant can be added later without restructuring call sites.
+import type { ViewStyle } from "react-native";
 
-export const colors = {
+// Pre-Dawn Run design system tokens (design.md). See lib/theme/ThemeContext.tsx
+// for the live light/dark theme hook - this file only holds the palette
+// values that stay the same in both modes ("semantic colors... were chosen
+// to hold sufficient contrast on both --predawn and --frost", design.md §3)
+// plus the two raw surface bases themselves. Anything that actually differs
+// between light and dark (screen/card backgrounds, text tiers, borders,
+// input fields, tab bar, calendar cell states) lives in ThemeContext's
+// lightColors/darkColors instead - useTheme() merges this palette with
+// whichever of those is active into one `colors` object, so call sites
+// still just do `colors.accent` / `colors.textPrimary` uniformly without
+// needing to know which tokens are static vs. mode-dependent.
+export const palette = {
   predawn: "#14161A",
   frost: "#EEEFEA",
   accent: "#FF5A1F", // Course Marking - CTAs, tempo runs
   contour: "#2B4C43", // Contour Ink - long runs, secondary/planned data
   success: "#3E8E7E", // Negative Split - easy runs, on-target/completed
   warning: "#F2B705", // Caution Flare - plan-adjustment, near-threshold
-
-  textPrimary: "#14161A",
-  textDim: "#6B6E73",
-  textFaint: "#9A9D9F",
-
-  cardBg: "#FFFFFF",
-  cardLine: "rgba(20,22,26,0.07)",
-  screenBg: "#EEEFEA",
-
-  missedBg: "#DCDCD7",
-  missedText: "#8A8D92",
-  terrainFuture: "#E2E4DE",
-
-  warningBg: "rgba(242,183,5,0.14)",
-  warningBorder: "rgba(242,183,5,0.4)",
-  warningText: "#4A3C04",
+  danger: "#D9483A", // destructive actions - delete, discard
+  dangerBg: "rgba(217,72,58,0.1)",
+  dangerBorder: "rgba(217,72,58,0.35)",
 } as const;
 
 export const fonts = {
@@ -57,12 +53,14 @@ export const spacing = {
   cardRadius: 16,
 } as const;
 
-export const shadows = {
-  card: {
-    shadowColor: "#14161A",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 14,
-    elevation: 2,
-  },
-} as const;
+/**
+ * `userSelect` isn't part of React Native's own ViewStyle type (it's a
+ * react-native-web-only CSS passthrough), so this is cast once here instead
+ * of at every call site. Needed wherever a PanResponder swipe gesture sits
+ * on top of text - without it, dragging on web starts a native text
+ * selection instead of the swipe (see lib/useHorizontalSwipe.ts).
+ */
+// react-native's own ViewStyle type doesn't declare `userSelect` at all
+// (react-native-web supports it as a CSS passthrough regardless), so
+// StyleProp<ViewStyle> rejects it structurally unless force-cast here, once.
+export const noSelectStyle = { userSelect: "none" } as ViewStyle;

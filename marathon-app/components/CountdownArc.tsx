@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
-import { colors, fonts, type } from "../lib/theme";
+import { fonts, type } from "../lib/theme";
+import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 
 interface CountdownArcProps {
   daysRemaining: number;
@@ -31,6 +32,8 @@ const ARC_PATH = `M ${CX - R} ${CY} A ${R} ${R} 0 0 1 ${CX + R} ${CY}`;
  * already uses for weekly volume, applied here instead of a plain number.
  */
 export function CountdownArc({ daysRemaining, progress }: CountdownArcProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const clamped = Math.min(1, Math.max(0, progress));
   const dot = pointOnArc(clamped);
 
@@ -75,32 +78,34 @@ export function CountdownArc({ daysRemaining, progress }: CountdownArcProps) {
 
 const LABEL_BOX_WIDTH = 70;
 
-const styles = StyleSheet.create({
-  wrap: { width: WIDTH, height: HEIGHT, alignSelf: "center" },
-  labelBlock: {
-    position: "absolute",
-    top: 48,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-  },
-  // JetBrains Mono, not Space Grotesk - matches the app's own convention of
-  // using the mono family for numeric/data readouts (paces, distances,
-  // day numbers), and its metrics don't have the ascender-clipping issue
-  // Space Grotesk's bold weight had at this size.
-  number: { fontFamily: fonts.monoSemiBold, fontSize: 34, lineHeight: 40, color: colors.textPrimary },
-  suffix: { fontFamily: fonts.monoMedium, fontSize: 13, lineHeight: 16, color: colors.textDim },
-  sub: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim, marginTop: 3 },
-  endpointLabelBox: {
-    position: "absolute",
-    top: CY + 8,
-    width: LABEL_BOX_WIDTH,
-    alignItems: "center",
-  },
-  endpointLabel: {
-    fontFamily: fonts.monoMedium,
-    fontSize: 8.5,
-    letterSpacing: 0.6,
-    color: colors.textFaint,
-  },
-});
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    wrap: { width: WIDTH, height: HEIGHT, alignSelf: "center" },
+    labelBlock: {
+      position: "absolute",
+      top: 48,
+      left: 0,
+      right: 0,
+      alignItems: "center",
+    },
+    // JetBrains Mono, not Space Grotesk - matches the app's own convention of
+    // using the mono family for numeric/data readouts (paces, distances,
+    // day numbers), and its metrics don't have the ascender-clipping issue
+    // Space Grotesk's bold weight had at this size.
+    number: { fontFamily: fonts.monoSemiBold, fontSize: 34, lineHeight: 40, color: colors.textPrimary },
+    suffix: { fontFamily: fonts.monoMedium, fontSize: 13, lineHeight: 16, color: colors.textDim },
+    sub: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim, marginTop: 3 },
+    endpointLabelBox: {
+      position: "absolute",
+      top: CY + 8,
+      width: LABEL_BOX_WIDTH,
+      alignItems: "center",
+    },
+    endpointLabel: {
+      fontFamily: fonts.monoMedium,
+      fontSize: 8.5,
+      letterSpacing: 0.6,
+      color: colors.textFaint,
+    },
+  });
+}

@@ -1,5 +1,5 @@
 import { supabase } from "../supabase";
-import type { GeneratedPlan } from "../planEngine/types";
+import type { GeneratedPlan, IntervalStructure } from "../planEngine/types";
 
 export interface PlanRow {
   id: string;
@@ -22,6 +22,8 @@ export interface PlanSessionRow {
   planned_duration_seconds: number | null;
   planned_pace_seconds_per_km: number | null;
   prep_recovery: unknown;
+  /** Only ever set on session_type "interval" - see planEngine/types.ts. */
+  interval_structure: IntervalStructure | null;
   status: "pending" | "completed" | "missed" | "moved" | "cancelled";
   original_session_date: string | null;
   back_to_back_group: string | null;
@@ -63,6 +65,7 @@ export async function createPlanWithSessions(
     planned_duration_seconds: s.plannedDurationSeconds,
     planned_pace_seconds_per_km: s.plannedPaceSecondsPerKm,
     prep_recovery: s.prepRecovery,
+    interval_structure: s.intervalStructure ?? null,
     back_to_back_group: s.backToBackGroup ?? null,
   }));
 
@@ -121,6 +124,12 @@ export async function markSessionDone(sessionId: string): Promise<void> {
     .from("plan_sessions")
     .update({ status: "completed" })
     .eq("id", sessionId);
+  if (error) throw error;
+}
+
+/** Reverts a session back to pending - used when the activity that completed it is deleted and nothing else covers it (see deleteActivity). */
+export async function markSessionPending(sessionId: string): Promise<void> {
+  const { error } = await supabase.from("plan_sessions").update({ status: "pending" }).eq("id", sessionId);
   if (error) throw error;
 }
 

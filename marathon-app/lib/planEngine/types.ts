@@ -85,6 +85,26 @@ export interface PrepRecovery {
   recovery: string;
 }
 
+/**
+ * The actual shape of an interval workout - warmup, N reps at interval
+ * pace each followed by a recovery jog, cooldown. Only ever set on
+ * sessionType "interval" sessions (see intervalStructure.ts); every other
+ * session type keeps using the flat plannedDistanceMeters/
+ * plannedPaceSecondsPerKm fields alone, same as before this existed.
+ * plannedDistanceMeters/plannedDurationSeconds on the session are derived
+ * FROM this structure once it's built (warmup + reps*(rep+recovery) +
+ * cooldown), not the other way around - see buildIntervalStructure.
+ */
+export interface IntervalStructure {
+  warmupMeters: number;
+  reps: number;
+  repDistanceMeters: number;
+  repPaceSecondsPerKm: number;
+  recoveryDistanceMeters: number;
+  recoveryPaceSecondsPerKm: number;
+  cooldownMeters: number;
+}
+
 export interface PlanSessionDraft {
   sessionDate: string; // ISO date
   /** 1-indexed within the periodized plan. 0 marks a lead-in bridge day
@@ -99,6 +119,8 @@ export interface PlanSessionDraft {
   plannedDurationSeconds: number | null;
   plannedPaceSecondsPerKm: number | null;
   prepRecovery: PrepRecovery | null;
+  /** Only ever set on sessionType "interval" - see IntervalStructure. */
+  intervalStructure?: IntervalStructure | null;
   /**
    * Groups a back-to-back long-run pair (ultra-specific - e.g. a 25-mile
    * Saturday run and a 20-mile Sunday run sharing the same group id).

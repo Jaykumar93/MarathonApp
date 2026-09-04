@@ -2,12 +2,13 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../lib/auth/AuthContext";
-import { useActivePlanData } from "../lib/data/usePlanData";
+import { todayIso, useActivePlanData } from "../lib/data/usePlanData";
 import { updateGoal, type CreateGoalInput } from "../lib/data/goals";
 import { supersedePlan, createPlanWithSessions } from "../lib/data/plans";
 import { generatePlan, type DayOfWeek, type ExperienceLevel, type GoalInput } from "../lib/planEngine";
 import { parseHms, formatHms } from "../lib/timeFormat";
-import { colors, fonts, spacing, type } from "../lib/theme";
+import { fonts, palette, spacing, type } from "../lib/theme";
+import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { ChipSelect } from "../components/ui/ChipSelect";
 import { TextField } from "../components/ui/TextField";
@@ -53,6 +54,8 @@ const DAY_OF_WEEK_OPTIONS: { value: DayOfWeek; label: string }[] = [
 
 export default function EditPlan() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { session, refreshActiveGoal } = useAuth();
   const { goal, plan, reload } = useActivePlanData();
 
@@ -99,7 +102,7 @@ export default function EditPlan() {
   // DateField offers every day/month/year, including ones already behind
   // today - checked explicitly here rather than left to surface as a
   // confusing negative week count out of generatePlan()'s schedule check.
-  const isPastDate = isValidDate(goalDate) && goalDate < new Date().toISOString().slice(0, 10);
+  const isPastDate = isValidDate(goalDate) && goalDate < todayIso();
 
   const goalInput: GoalInput | null = useMemo(() => {
     // isValidDate matters here specifically because DateField's value could
@@ -316,26 +319,28 @@ export default function EditPlan() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.screenBg },
-  container: { padding: spacing.screenPadding, paddingTop: 24, gap: 4 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
-  body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
-  topRow: { marginBottom: 10 },
-  backLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
-  header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary },
-  subtitle: { fontFamily: fonts.body, fontSize: 13, color: colors.textDim, marginBottom: 16 },
-  sectionLabel: {
-    fontFamily: fonts.monoMedium,
-    fontSize: type.sectionLabel,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    color: colors.textFaint,
-    marginTop: 4,
-    marginBottom: 7,
-  },
-  fieldLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textDim, marginBottom: 8 },
-  fieldGap: { marginTop: 14 },
-  errorText: { fontFamily: fonts.body, fontSize: 12.5, color: "#B3261E" },
-  saveButton: { marginTop: 8, marginBottom: 12 },
-});
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.screenBg },
+    container: { padding: spacing.screenPadding, paddingTop: 24, gap: 4 },
+    center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
+    body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
+    topRow: { marginBottom: 10 },
+    backLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
+    header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary },
+    subtitle: { fontFamily: fonts.body, fontSize: 13, color: colors.textDim, marginBottom: 16 },
+    sectionLabel: {
+      fontFamily: fonts.monoMedium,
+      fontSize: type.sectionLabel,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+      color: colors.textFaint,
+      marginTop: 4,
+      marginBottom: 7,
+    },
+    fieldLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textDim, marginBottom: 8 },
+    fieldGap: { marginTop: 14 },
+    errorText: { fontFamily: fonts.body, fontSize: 12.5, color: palette.danger },
+    saveButton: { marginTop: 8, marginBottom: 12 },
+  });
+}

@@ -7,7 +7,9 @@ import { TextField } from "../../components/ui/TextField";
 import { DateField } from "../../components/ui/DateField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
 import { computeAvailableWeeks, getMinWeeks, resolveStartDate, STRUCTURAL_MIN_WEEKS } from "../../lib/planEngine";
-import { colors, fonts } from "../../lib/theme";
+import { fonts, palette } from "../../lib/theme";
+import { useTheme } from "../../lib/theme/ThemeContext";
+import { todayIso } from "../../lib/data/usePlanData";
 
 const DISTANCE_OPTIONS = [
   { value: 5, label: "5K" },
@@ -23,6 +25,7 @@ function isValidDate(s: string): boolean {
 
 export default function RaceTarget() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { answers, update } = useOnboarding();
   const [customDistance, setCustomDistance] = useState("");
   const [goalDate, setGoalDate] = useState(answers.goalDate ?? "");
@@ -34,7 +37,7 @@ export default function RaceTarget() {
   // tight-timeline warning below. A past date isn't a scheduling problem
   // the plan can compress around, it's not a valid race date at all, so it
   // gets its own plain message instead of surfacing as a negative week count.
-  const isPastDate = isValidDate(goalDate) && goalDate < new Date().toISOString().slice(0, 10);
+  const isPastDate = isValidDate(goalDate) && goalDate < todayIso();
 
   // Live feedback as soon as distance + date are both known, rather than
   // waiting until the final onboarding step to tell the user their
@@ -43,7 +46,7 @@ export default function RaceTarget() {
   // display so the user can adjust before investing in the rest of setup.
   const scheduleWarning = useMemo(() => {
     if (!answers.raceDistanceKm || !isValidDate(goalDate) || isPastDate) return null;
-    const start = resolveStartDate(new Date().toISOString().slice(0, 10));
+    const start = resolveStartDate(todayIso());
     const availableWeeks = computeAvailableWeeks(start, goalDate);
     const minWeeksRecommended = getMinWeeks(answers.raceDistanceKm);
     if (availableWeeks >= minWeeksRecommended) return null;
@@ -92,12 +95,12 @@ export default function RaceTarget() {
       />
       <DateField label="Race date" value={goalDate} onChange={setGoalDate} />
       {isPastDate && (
-        <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: "#B3261E" }}>
+        <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: palette.danger }}>
           Race date must be in the future - pick a date after today.
         </Text>
       )}
       {!isPastDate && scheduleWarning && (
-        <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: "#B3261E" }}>
+        <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: palette.danger }}>
           {scheduleWarning.tooTight
             ? `Only ${scheduleWarning.availableWeeks} week${scheduleWarning.availableWeeks === 1 ? "" : "s"} until race day - that's not enough time to build a safe plan for this distance (needs at least ${STRUCTURAL_MIN_WEEKS}). Pick a later date.`
             : `Only ${scheduleWarning.availableWeeks} weeks until race day - typical plans for this distance use ${scheduleWarning.minWeeksRecommended}+. We can still build you a plan, but it'll be a compressed, higher-effort ramp-up than we'd normally recommend.`}

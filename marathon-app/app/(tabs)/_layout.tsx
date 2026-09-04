@@ -1,8 +1,10 @@
+import { useMemo } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import { ColorValue, Pressable, StyleSheet, Text } from "react-native";
 import { useAuth } from "../../lib/auth/AuthContext";
-import { colors, fonts, type } from "../../lib/theme";
+import { fonts, type } from "../../lib/theme";
+import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -19,6 +21,8 @@ function TabIcon({ name, focused, color }: { name: IoniconName; focused: boolean
 function ProfileButton() {
   const router = useRouter();
   const { profile } = useAuth();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const displayName = profile?.full_name || profile?.username || profile?.email?.split("@")[0] || "?";
 
   return (
@@ -41,6 +45,8 @@ function ProfileButton() {
 // reliably line up with it.
 function HomeGreeting() {
   const { profile } = useAuth();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const displayName = profile?.full_name || profile?.email?.split("@")[0] || "there";
   return (
     <Text style={styles.greeting} numberOfLines={1}>
@@ -50,6 +56,7 @@ function HomeGreeting() {
 }
 
 export default function TabsLayout() {
+  const { colors } = useTheme();
   return (
     <Tabs
       screenOptions={{
@@ -60,7 +67,7 @@ export default function TabsLayout() {
         headerRight: () => <ProfileButton />,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textFaint,
-        tabBarStyle: { height: 74, paddingTop: 9, borderTopColor: colors.cardLine },
+        tabBarStyle: { height: 74, paddingTop: 9, backgroundColor: colors.tabBarBg, borderTopColor: colors.cardLine },
         tabBarLabelStyle: { fontFamily: fonts.bodyMedium, fontSize: 11 },
       }}
     >
@@ -83,6 +90,12 @@ export default function TabsLayout() {
         name="track"
         options={{
           title: "Track",
+          // Full-bleed map screen - no header, no tab bar, so there's
+          // nothing to distract from tracking. The only way back to the
+          // rest of the app is ending the run (active-run's Save/Discard
+          // both land back on a normal tab screen, which restores these).
+          headerShown: false,
+          tabBarStyle: { display: "none" },
           tabBarIcon: ({ color, focused }) => <TabIcon name="navigate-outline" focused={focused} color={color} />,
         }}
       />
@@ -106,22 +119,28 @@ export default function TabsLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.predawn,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-  },
-  avatarInitial: { fontFamily: fonts.bodyBold, fontSize: 12, color: "#fff" },
-  greeting: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: type.pDim,
-    color: colors.textDim,
-    marginLeft: 18,
-    maxWidth: 220,
-  },
-});
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    avatar: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      // Was colors.predawn - identical hex to dark mode's screenBg
+      // ("#14161A" both), so the circle vanished entirely against the dark
+      // header. Accent is the same bright orange in both themes, so it
+      // reads clearly against either background.
+      backgroundColor: colors.accent,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 16,
+    },
+    avatarInitial: { fontFamily: fonts.bodyBold, fontSize: 12, color: "#fff" },
+    greeting: {
+      fontFamily: fonts.bodyMedium,
+      fontSize: type.pDim,
+      color: colors.textDim,
+      marginLeft: 18,
+      maxWidth: 220,
+    },
+  });
+}

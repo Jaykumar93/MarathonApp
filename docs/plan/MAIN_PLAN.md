@@ -15,9 +15,9 @@
 | 3 | Plan-generator engine (standalone module) | Done | [03-plan-generator-engine.md](03-plan-generator-engine.md) |
 | 4 | Navigation + Home/Plan wired to real data | Done | [04-navigation-home-plan.md](04-navigation-home-plan.md) |
 | 5 | Manual activity logging end-to-end | Done | [05-manual-activity-logging.md](05-manual-activity-logging.md) |
-| 6 | GPS tracking, Active Run, maps | In Progress | [06-gps-tracking-active-run.md](06-gps-tracking-active-run.md) |
-| 7 | Health Connect auto-sync (Android) | Not Started | — |
-| 8 | Trends, AI Coach (RAG), polish + first EAS build | Not Started | — |
+| 6 | GPS tracking, Active Run, maps | Done | [06-gps-tracking-active-run.md](06-gps-tracking-active-run.md) |
+| 7 | Health Connect auto-sync (Android) | In Progress | [07-health-connect-sync.md](07-health-connect-sync.md) |
+| 8 | Trends, AI Coach (RAG), polish + first EAS build | In Progress | [08-trends-coach-polish.md](08-trends-coach-polish.md) |
 
 ---
 
@@ -89,6 +89,8 @@ Skip GPS for now — get the logging loop working with manual input first.
 - Offline-first recording, sync-on-reconnect
 - Writes to `activities` with `source` reflecting GPS-tracked runs, route as JSONB polyline, splits
 
+Marked Done with three items deliberately left blocked on Task 8's dev build (not achievable in Expo Go at all, same reasoning as Task 3 shipping with its own documented follow-up gap): the live/post-run map, the mockup's full mile-marker Pace Band, and OS-level background location actually taking effect (code already written). See [06-gps-tracking-active-run.md](06-gps-tracking-active-run.md)'s "Explicitly deferred" section and its implementation log's Open items for the full list, including what's built-but-unverified pending on-device testing.
+
 **Depends on:** Task 5 (extends the same activity-writing path manual logging established).
 **Blocks:** nothing downstream directly.
 
@@ -106,15 +108,13 @@ Skip GPS for now — get the logging loop working with manual input first.
 ---
 
 ### 8. Trends, AI Coach (RAG), polish
-Final phase before first real build.
-- Activity tab Trends screen (charts via victory-native or react-native-gifted-charts)
-- AI Coach: self-authored knowledge base → embeddings (Hugging Face Inference API / local sentence-transformers) → Supabase pgvector → Gemini Flash/Groq for chat + contextual insights
-- Gear tracking (shoe mileage, retirement nudge ~400–500mi)
-- Race Day Details screen
-- Export/Share (GPX/TCX, shareable activity cards)
-- Dark mode toggle (app-wide, Active Run excepted — already dark from Task 6)
-- Sentry crash reporting wired in
-- First real EAS Android build — used personally before any waitlist tester is invited in
+Final phase before first real build. Sequenced into six phases — see [08-trends-coach-polish.md](08-trends-coach-polish.md) for the full plan and rationale.
+- **Phase A** (no dev build needed) — Done: dark mode, gear tracking, Trends screen (hand-rolled SVG/View charts — `react-native-gifted-charts` was tried first but dropped, its `gifted-charts-core` dependency doesn't bundle for Expo web; see [implementation/08-trends-coach-polish.md](implementation/08-trends-coach-polish.md)), Sentry (wired in, no DSN configured yet).
+- **Phase B**: the dev build itself (set up early, not saved for last) — unblocks Task 6's live/post-run map and background location, and Task 7's real Health Connect sync, all in one prebuild cycle.
+- **Phase C**: AI Coach (RAG) — self-authored knowledge base → Hugging Face embeddings → Supabase pgvector → Gemini Flash (Groq failover) for chat + contextual insights.
+- **Phase D**: Race Day Details screen (depends on Phase C's Coach pipeline for its readiness summary).
+- **Phase E**: GPX/TCX export (shareable activity cards already shipped as a Task 6 follow-up).
+- **Phase F**: production polish — release-grade Sentry config, first real EAS Android build, the waitlist-readiness checklist below.
 
 **Depends on:** Task 5 (Trends needs activity data), Task 4 (Coach needs plan context).
 **Blocks:** nothing — final task.

@@ -1,20 +1,22 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import {
   getActualWeeklyVolumesKm,
-  getAllPlanDays,
   getCurrentCalendarWeekRange,
   getCurrentWeekNumber,
   getWeekDateRange,
   getWeeklyVolumesKm,
   todayIso,
   useActivePlanData,
+  useDaySwipeNavigation,
+  usePlanCalendarDays,
 } from "../../lib/data/usePlanData";
 import { markSessionDone, moveSessionToTomorrow, type PlanSessionRow } from "../../lib/data/plans";
 import { getActivitiesInRange, type ActivityRow } from "../../lib/data/activities";
 import { deleteGoal } from "../../lib/data/goals";
-import { colors, fonts, spacing, type } from "../../lib/theme";
+import { fonts, noSelectStyle, palette, spacing, type } from "../../lib/theme";
+import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Card } from "../../components/ui/Card";
 import { BlockProfile } from "../../components/BlockProfile";
 import { PlanCalendarScroller } from "../../components/PlanCalendarScroller";
@@ -29,8 +31,12 @@ import { formatDistance } from "../../lib/units";
 export default function Plan() {
   const router = useRouter();
   const { session, profile, refreshActiveGoal } = useAuth();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { loading, goal, plan, sessions, reload } = useActivePlanData();
   const [selectedDate, setSelectedDate] = useState(todayIso());
+  // Same day-navigation gesture as Home's day detail card.
+  const dayDetailSwipeHandlers = useDaySwipeNavigation(setSelectedDate);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [selectedDayActivities, setSelectedDayActivities] = useState<ActivityRow[]>([]);
@@ -68,6 +74,12 @@ export default function Plan() {
     );
   }, [session?.user?.id, plan, goal]);
 
+  // Has to sit above the loading/no-plan early returns below (every hook
+  // does); usePlanCalendarDays itself guards for plan/goal still being
+  // null, and memoizes so PlanCalendarScroller doesn't reset its scroll
+  // position on every unrelated re-render.
+  const allDays = usePlanCalendarDays(sessions, plan, goal);
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -93,7 +105,6 @@ export default function Plan() {
   const weekTargetKm = weeklyVolumesKm[currentWeek - 1] ?? 0;
   const weekLoggedKm = weekActivities.reduce((sum, a) => sum + a.distance_meters / 1000, 0);
   const weekProgressPct = weekTargetKm > 0 ? Math.min(1, weekLoggedKm / weekTargetKm) * 100 : 0;
-  const allDays = getAllPlanDays(sessions, plan.start_date, goal.goal_date);
   const selectedSession = sessions.find((s) => s.session_date === selectedDate) ?? null;
 
   const [weekStart, weekEnd] = getWeekDateRange(plan.start_date, currentWeek);
@@ -187,7 +198,9 @@ export default function Plan() {
         <Card>
           <PlanCalendarScroller days={allDays} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
           <View style={styles.divider} />
-          <DayDetailPanel date={selectedDate} session={selectedSession} activities={selectedDayActivities} />
+          <View {...dayDetailSwipeHandlers} style={noSelectStyle}>
+            <DayDetailPanel date={selectedDate} session={selectedSession} activities={selectedDayActivities} />
+          </View>
         </Card>
 
         <Text style={styles.sectionLabel}>THIS WEEK'S SESSIONS</Text>
@@ -208,7 +221,8 @@ export default function Plan() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.screenBg },
   scroll: { flex: 1 },
   container: { padding: spacing.screenPadding, paddingTop: 10 },
@@ -223,7 +237,7 @@ const styles = StyleSheet.create({
   header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary },
   headerActions: { flexDirection: "row", gap: 16 },
   headerActionText: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.textDim },
-  headerActionDanger: { color: "#B3261E" },
+  headerActionDanger: { color: palette.danger },
   confirmText: { fontFamily: fonts.bodyMedium, fontSize: type.pDim, color: colors.textPrimary, marginBottom: 12 },
   confirmActions: { flexDirection: "row", gap: 10 },
   metaLine: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginBottom: 6 },
@@ -242,4 +256,5 @@ const styles = StyleSheet.create({
   cardTitleValue: { fontFamily: fonts.mono, fontSize: 10, color: colors.textDim },
   progressBarTrack: { height: 7, backgroundColor: colors.cardLine, borderRadius: 4, overflow: "hidden" },
   progressBarFill: { height: "100%", backgroundColor: colors.accent, borderRadius: 4 },
-});
+  });
+}

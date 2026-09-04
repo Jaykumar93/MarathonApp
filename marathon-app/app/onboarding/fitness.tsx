@@ -5,7 +5,8 @@ import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
 import { ChipSelect } from "../../components/ui/ChipSelect";
 import { TextField } from "../../components/ui/TextField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
-import { colors, fonts } from "../../lib/theme";
+import { fonts } from "../../lib/theme";
+import { useTheme } from "../../lib/theme/ThemeContext";
 
 const EXPERIENCE_OPTIONS = [
   { value: "beginner" as const, label: "Beginner" },
@@ -15,6 +16,7 @@ const EXPERIENCE_OPTIONS = [
 
 export default function Fitness() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { answers, update } = useOnboarding();
   const [mileage, setMileage] = useState(answers.currentWeeklyMileageKm?.toString() ?? "");
 

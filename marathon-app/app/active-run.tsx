@@ -1,29 +1,23 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import * as Location from "expo-location";
-import { useAuth } from "../lib/auth/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getPlanSessionById, type PlanSessionRow } from "../lib/data/plans";
-import { createActivity, type CreateActivityInput } from "../lib/data/activities";
-import { savePendingActivity } from "../lib/data/pendingActivities";
-import {
-  computeRouteDistanceMeters,
-  computeSplits,
-  computeElevationGainLoss,
-  computeRecentPaceSecondsPerKm,
-  type RoutePoint,
-} from "../lib/gpsStats";
-import { formatDistance, formatPace } from "../lib/units";
-import { colors, fonts } from "../lib/theme";
+import { COUNTDOWN_SECONDS, useRunTracking } from "../lib/runTracking/RunTrackingContext";
+import { computeRouteDistanceMeters, computeRecentPaceSecondsPerKm } from "../lib/gpsStats";
+import { getCurrentLeg, type RunLeg } from "../lib/intervalProgress";
+import { formatDistance, formatMeters, formatPace } from "../lib/units";
+import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
+import { fonts, palette } from "../lib/theme";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
+import { PhotoPicker } from "../components/ui/PhotoPicker";
+import { useAuth } from "../lib/auth/AuthContext";
 
-type RunState = "requesting-permission" | "permission-denied" | "running" | "paused" | "saving" | "error";
-
-const LOCATION_OPTIONS: Location.LocationOptions = {
-  accuracy: Location.Accuracy.Balanced,
-  timeInterval: 4000,
-  distanceInterval: 10,
-};
+function formatDateShort(iso: string): string {
+  const d = new Date(iso + "T00:00:00Z");
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
 
 function formatElapsed(totalSeconds: number): string {
   const h = Math.floor(totalSeconds / 3600);
@@ -34,10 +28,67 @@ function formatElapsed(totalSeconds: number): string {
     : `${m}:${String(s).padStart(2, "0")}`;
 }
 
+const LEG_KIND_LABEL: Record<RunLeg["kind"], string> = {
+  warmup: "WARMUP",
+  rep: "INTERVAL",
+  recovery: "RECOVERY JOG",
+  cooldown: "COOLDOWN",
+  complete: "WORKOUT COMPLETE",
+};
+
+/**
+ * The live text version of "continue next few km in xyz pace" - which leg
+ * of a structured interval workout (see lib/intervalProgress.ts) the
+ * runner is in right now, how much of it is left, and what pace it calls
+ * for. Voice cues for this are explicitly deferred (text only for now).
+ */
+function legMessage(leg: RunLeg, unit: "km" | "mi"): string {
+  switch (leg.kind) {
+    case "warmup":
+      return `${formatMeters(leg.metersRemainingInLeg)} easy, then reps begin`;
+    case "rep":
+      return `${formatMeters(leg.metersRemainingInLeg)} to go @ ${formatPace(leg.paceSecondsPerKm, unit)}`;
+    case "recovery":
+      return `${formatMeters(leg.metersRemainingInLeg)} easy jog @ ${formatPace(leg.paceSecondsPerKm, unit)}`;
+    case "cooldown":
+      return `${formatMeters(leg.metersRemainingInLeg)} easy to finish`;
+    case "complete":
+      return "Nice work - hit Stop when you're ready.";
+  }
+}
+
+function legKindLabel(leg: RunLeg): string {
+  if (leg.kind === "rep" || leg.kind === "recovery") {
+    return `${LEG_KIND_LABEL[leg.kind]} · REP ${leg.repNumber} OF ${leg.totalReps}`;
+  }
+  return LEG_KIND_LABEL[leg.kind];
+}
+
+/** Top-left, every phase - navigating away never stops tracking (see RunTrackingContext), so this is always safe to show. */
+function BackButton({ onPress, top }: { onPress: () => void; top: number }) {
+  return (
+    <Pressable
+      style={[styles.backButton, { top }]}
+      onPress={onPress}
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel="Back"
+    >
+      <Ionicons name="chevron-back" size={22} color="#fff" />
+    </Pressable>
+  );
+}
+
 /**
  * Permanently dark regardless of the app's own light/dark setting (still
  * Task 8), per the PRD's Active Run styling note - matches the reference
  * mockup's "always-dark, high-contrast for outdoor/sunlight use" screen.
+ *
+ * All the actual GPS-tracking state (location watch, timers, points) lives
+ * in RunTrackingContext, not here - this screen is a pure view over it, so
+ * navigating away mid-run (Track's back button, a tab switch, whatever)
+ * never interrupts tracking. Track shows a "resume tracking" affordance
+ * back into this same screen whenever a run is in progress.
  *
  * The map/route-visualization half of this screen (PRD's full mile-marker
  * Pace Band, live + post-run route rendering) is deliberately not built
@@ -50,190 +101,257 @@ function formatElapsed(totalSeconds: number): string {
  */
 export default function ActiveRun() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { session, profile } = useAuth();
   const params = useLocalSearchParams<{ planSessionId?: string }>();
+  const rt = useRunTracking();
   const unit = profile?.distance_unit ?? "km";
+  const voiceEnabled = profile?.voice_coaching_enabled ?? false;
 
-  const [runState, setRunState] = useState<RunState>("requesting-permission");
-  const [points, setPoints] = useState<RoutePoint[]>([]);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [plannedSession, setPlannedSession] = useState<PlanSessionRow | null>(null);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-
-  // Refs, not state - these drive a setInterval tick and a location
-  // callback, neither of which should re-subscribe just because a render
-  // happened; only the derived `elapsedSeconds`/`points` state needs to
-  // trigger re-renders.
-  const watchSubscription = useRef<Location.LocationSubscription | null>(null);
-  const startTimeRef = useRef<number | null>(null);
-  const pausedAccumulatedRef = useRef(0);
-  const runSegmentStartRef = useRef<number | null>(null);
-  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [previewSession, setPreviewSession] = useState<PlanSessionRow | null>(null);
+  const [confirmingDiscard, setConfirmingDiscard] = useState(false);
+  const [runName, setRunName] = useState("");
+  const [runDescription, setRunDescription] = useState("");
+  const [runPhotos, setRunPhotos] = useState<string[]>([]);
 
   useEffect(() => {
-    if (params.planSessionId) {
-      getPlanSessionById(params.planSessionId).then(setPlannedSession);
+    if (params.planSessionId && rt.phase === "idle") {
+      getPlanSessionById(params.planSessionId).then(setPreviewSession);
     }
-  }, [params.planSessionId]);
+  }, [params.planSessionId, rt.phase]);
 
+  // Default name, once - "Easy run" alone looks identical on every easy
+  // day; folding in the date and distance (like Strava's own default
+  // titles) keeps two runs of the same type actually distinguishable in
+  // Activity History and on a shared card. Guarded by rt.phase (not
+  // !runName alone) so it only ever seeds once per run, not on every
+  // render while the field is still empty.
   useEffect(() => {
-    start();
-    return () => {
-      watchSubscription.current?.remove();
-      if (tickRef.current) clearInterval(tickRef.current);
-    };
+    if (rt.phase === "finished" && rt.finalStats && !runName) {
+      const typeLabel =
+        rt.plannedSession && rt.plannedSession.session_type !== "rest"
+          ? SESSION_TYPE_LABEL[rt.plannedSession.session_type] ?? rt.plannedSession.session_type
+          : "Free run";
+      const distanceKm = rt.finalStats.distanceMeters / 1000;
+      setRunName(`${typeLabel} · ${formatDateShort(rt.finalStats.startIso.slice(0, 10))} · ${formatDistance(distanceKm, unit)}`);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function onLocationUpdate(location: Location.LocationObject) {
-    setPoints((prev) => [
-      ...prev,
-      {
-        lat: location.coords.latitude,
-        lng: location.coords.longitude,
-        timestamp: location.timestamp,
-        altitude: location.coords.altitude,
-      },
-    ]);
-  }
-
-  async function start() {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      setRunState("permission-denied");
-      return;
-    }
-
-    startTimeRef.current = Date.now();
-    runSegmentStartRef.current = Date.now();
-    setRunState("running");
-
-    tickRef.current = setInterval(() => {
-      if (runSegmentStartRef.current == null) return;
-      setElapsedSeconds(pausedAccumulatedRef.current + (Date.now() - runSegmentStartRef.current) / 1000);
-    }, 1000);
-
-    watchSubscription.current = await Location.watchPositionAsync(LOCATION_OPTIONS, onLocationUpdate);
-  }
-
-  function handlePause() {
-    if (runSegmentStartRef.current != null) {
-      pausedAccumulatedRef.current += (Date.now() - runSegmentStartRef.current) / 1000;
-      runSegmentStartRef.current = null;
-    }
-    watchSubscription.current?.remove();
-    watchSubscription.current = null;
-    setRunState("paused");
-  }
-
-  async function handleResume() {
-    runSegmentStartRef.current = Date.now();
-    setRunState("running");
-    watchSubscription.current = await Location.watchPositionAsync(LOCATION_OPTIONS, onLocationUpdate);
-  }
-
-  async function handleStop() {
-    watchSubscription.current?.remove();
-    watchSubscription.current = null;
-    if (tickRef.current) clearInterval(tickRef.current);
-    if (runSegmentStartRef.current != null) {
-      pausedAccumulatedRef.current += (Date.now() - runSegmentStartRef.current) / 1000;
-      runSegmentStartRef.current = null;
-    }
-
-    if (!session?.user?.id) return;
-    setRunState("saving");
-
-    const finalDurationSeconds = Math.round(pausedAccumulatedRef.current);
-    const distanceMeters = computeRouteDistanceMeters(points);
-    const splits = computeSplits(points);
-    const { gainMeters, lossMeters } = computeElevationGainLoss(points);
-    const startIso = new Date(startTimeRef.current ?? Date.now()).toISOString();
-
-    const input: CreateActivityInput = {
-      activityType: plannedSession && plannedSession.session_type !== "rest" ? plannedSession.session_type : "easy",
-      date: startIso.slice(0, 10),
-      startTimeIso: startIso,
-      distanceMeters,
-      durationSeconds: finalDurationSeconds,
-      elevationGainMeters: gainMeters,
-      elevationLossMeters: lossMeters,
-      splits,
-      route: points,
-      planId: plannedSession?.plan_id,
-      planSessionId: plannedSession?.id,
-    };
-
-    try {
-      const activity = await createActivity(session.user.id, input);
-      router.replace(`/run-summary?id=${activity.id}`);
-    } catch {
-      await savePendingActivity(session.user.id, input);
-      setStatusMessage("Couldn't reach the server - this run is saved on your device and will sync automatically.");
-      setRunState("error");
-    }
-  }
+  }, [rt.phase]);
 
   function goBack() {
-    watchSubscription.current?.remove();
-    if (tickRef.current) clearInterval(tickRef.current);
     if (router.canGoBack()) router.back();
     else router.replace("/(tabs)/track");
   }
 
-  if (runState === "requesting-permission") {
+  async function handleSave() {
+    const id = await rt.save({
+      name: runName.trim() || undefined,
+      notes: runDescription.trim() || undefined,
+      photoUrls: runPhotos,
+    });
+    if (id) router.replace(`/run-summary?id=${id}`);
+  }
+
+  function handleDiscard() {
+    setConfirmingDiscard(false);
+    rt.discard();
+    router.replace("/(tabs)");
+  }
+
+  const backTop = insets.top + 12;
+
+  // ---- Non-tracking states -------------------------------------------------
+
+  if (rt.phase === "idle") {
     return (
       <View style={styles.center}>
+        <BackButton onPress={goBack} top={backTop} />
+        <Text style={styles.centerTitle}>Ready to run?</Text>
+        {previewSession && previewSession.session_type !== "rest" && (
+          <Text style={styles.centerText}>
+            This will fulfill today's {SESSION_TYPE_LABEL[previewSession.session_type] ?? previewSession.session_type}
+            {previewSession.planned_distance_meters ? ` · ${formatDistance(previewSession.planned_distance_meters / 1000, unit)}` : ""}
+          </Text>
+        )}
+        <Text style={styles.centerText}>
+          You'll get a {COUNTDOWN_SECONDS}-second countdown before tracking starts{voiceEnabled ? ", with voice cues along the way." : "."}
+        </Text>
+        <View style={styles.centerButton}>
+          <PrimaryButton label="Start" onPress={() => rt.startRun(params.planSessionId)} />
+        </View>
+      </View>
+    );
+  }
+
+  if (rt.phase === "requesting-permission") {
+    return (
+      <View style={styles.center}>
+        <BackButton onPress={goBack} top={backTop} />
         <Text style={styles.centerText}>Getting ready…</Text>
       </View>
     );
   }
 
-  if (runState === "permission-denied") {
+  if (rt.phase === "permission-denied") {
     return (
       <View style={styles.center}>
+        <BackButton onPress={goBack} top={backTop} />
         <Text style={styles.centerTitle}>Location access needed</Text>
         <Text style={styles.centerText}>
           Stryde needs your location while a run is active to track your route, distance, and pace. You can
           allow it from your phone's Settings, then try again.
         </Text>
         <View style={styles.centerButton}>
-          <PrimaryButton label="Back" onPress={goBack} />
+          <PrimaryButton
+            label="Back"
+            onPress={() => {
+              rt.discard();
+              goBack();
+            }}
+          />
         </View>
       </View>
     );
   }
 
-  if (runState === "error") {
+  if (rt.phase === "countdown") {
     return (
       <View style={styles.center}>
+        <BackButton onPress={goBack} top={backTop} />
+        <Text style={styles.countdownNumber}>{rt.countdownNumber}</Text>
+        <Text style={styles.centerText}>Get ready…</Text>
+      </View>
+    );
+  }
+
+  if (rt.phase === "save-error") {
+    return (
+      <View style={styles.center}>
+        <BackButton onPress={goBack} top={backTop} />
         <Text style={styles.centerTitle}>Run saved</Text>
-        <Text style={styles.centerText}>{statusMessage}</Text>
+        <Text style={styles.centerText}>{rt.statusMessage}</Text>
         <View style={styles.centerButton}>
-          <PrimaryButton label="Done" onPress={() => router.replace("/(tabs)/track")} />
+          <PrimaryButton
+            label="Done"
+            onPress={() => {
+              rt.discard();
+              router.replace("/(tabs)/track");
+            }}
+          />
         </View>
       </View>
     );
   }
 
-  const isSaving = runState === "saving";
-  const distanceMeters = computeRouteDistanceMeters(points);
+  if (rt.phase === "finished" && rt.finalStats) {
+    const distanceKm = rt.finalStats.distanceMeters / 1000;
+    const pace = distanceKm > 0 ? rt.finalStats.durationSeconds / distanceKm : null;
+    return (
+      <View style={styles.finishedScreen}>
+        <BackButton onPress={goBack} top={backTop} />
+        <ScrollView style={styles.scrollFlex} contentContainerStyle={styles.finishedContainer} keyboardShouldPersistTaps="handled">
+          <Text style={styles.centerTitle}>Run finished</Text>
+          <View style={styles.finishedStatRow}>
+            <View style={styles.finishedStat}>
+              <Text style={styles.paceLabel}>DISTANCE</Text>
+              <Text style={styles.finishedStatValue}>{formatDistance(distanceKm, unit)}</Text>
+            </View>
+            <View style={styles.finishedStat}>
+              <Text style={styles.paceLabel}>TIME</Text>
+              <Text style={styles.finishedStatValue}>{formatElapsed(rt.finalStats.durationSeconds)}</Text>
+            </View>
+            <View style={styles.finishedStat}>
+              <Text style={styles.paceLabel}>PACE</Text>
+              <Text style={styles.finishedStatValue}>{formatPace(pace, unit) || "--"}</Text>
+            </View>
+          </View>
+
+          {!confirmingDiscard ? (
+            <>
+              <View style={styles.formSection}>
+                <Text style={styles.formLabel}>Name (optional)</Text>
+                <TextInput
+                  style={styles.darkInput}
+                  value={runName}
+                  onChangeText={setRunName}
+                  placeholder="e.g. Sunday long run"
+                  placeholderTextColor="#6b6e73"
+                />
+              </View>
+              <View style={styles.formSection}>
+                <Text style={styles.formLabel}>Description (optional)</Text>
+                <TextInput
+                  style={[styles.darkInput, styles.darkInputMultiline]}
+                  value={runDescription}
+                  onChangeText={setRunDescription}
+                  placeholder="How it went, anything worth remembering"
+                  placeholderTextColor="#6b6e73"
+                  multiline
+                />
+              </View>
+              {session?.user?.id && (
+                <View style={styles.formSection}>
+                  <Text style={styles.formLabel}>Photos (optional, up to 3)</Text>
+                  <PhotoPicker userId={session.user.id} photos={runPhotos} onChange={setRunPhotos} variant="dark" />
+                </View>
+              )}
+
+              <View style={styles.centerButton}>
+                <PrimaryButton label="Save run" onPress={handleSave} />
+              </View>
+              <View style={{ marginTop: 10, width: "100%", maxWidth: 280 }}>
+                <PrimaryButton label="Discard this run" variant="dangerOutline" onPress={() => setConfirmingDiscard(true)} />
+              </View>
+            </>
+          ) : (
+            <View style={styles.confirmBox}>
+              <Ionicons name="warning" size={22} color={palette.danger} style={{ marginBottom: 6 }} />
+              <Text style={styles.confirmText}>Discard this run? This can't be undone.</Text>
+              <View style={styles.centerButton}>
+                <PrimaryButton label="Yes, discard it" variant="danger" onPress={handleDiscard} />
+              </View>
+              <View style={{ marginTop: 10, width: "100%", maxWidth: 280 }}>
+                <PrimaryButton label="Keep it" variant="secondary" onPress={() => setConfirmingDiscard(false)} />
+              </View>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    );
+  }
+
+  if (rt.phase === "saving") {
+    return (
+      <View style={styles.center}>
+        <BackButton onPress={goBack} top={backTop} />
+        <Text style={styles.centerText}>Saving…</Text>
+      </View>
+    );
+  }
+
+  // ---- Tracking states (running / paused) ----------------------------------
+
+  const distanceMeters = computeRouteDistanceMeters(rt.points);
   const distanceKm = distanceMeters / 1000;
-  const currentPace = computeRecentPaceSecondsPerKm(points, 60);
-  const targetPaceSecondsPerKm = plannedSession?.planned_pace_seconds_per_km ?? null;
+  const currentPace = computeRecentPaceSecondsPerKm(rt.points, 60);
+  const targetPaceSecondsPerKm = rt.plannedSession?.planned_pace_seconds_per_km ?? null;
   const paceDeltaSecondsPerKm = currentPace != null && targetPaceSecondsPerKm ? currentPace - targetPaceSecondsPerKm : null;
+  const currentLeg = rt.plannedSession?.interval_structure
+    ? getCurrentLeg(rt.plannedSession.interval_structure, distanceMeters)
+    : null;
 
   return (
     <View style={styles.screen}>
+      <BackButton onPress={goBack} top={backTop} />
       <View style={styles.header}>
-        <View style={[styles.liveDot, runState === "paused" && styles.liveDotPaused]} />
-        <Text style={styles.headerText}>{runState === "paused" ? "PAUSED" : "TRACKING"}</Text>
+        <View style={[styles.liveDot, rt.phase === "paused" && styles.liveDotPaused]} />
+        <Text style={styles.headerText}>{rt.phase === "paused" ? "PAUSED" : "TRACKING"}</Text>
       </View>
 
       <View style={styles.paceBlock}>
         <Text style={styles.paceValue}>{currentPace != null ? formatPace(currentPace, unit).replace(`/${unit}`, "") : "--:--"}</Text>
         <Text style={styles.paceLabel}>CURRENT PACE / {unit.toUpperCase()}</Text>
-        {targetPaceSecondsPerKm != null && (
+        {targetPaceSecondsPerKm != null && !currentLeg && (
           <Text style={styles.paceTarget}>
             Goal {formatPace(targetPaceSecondsPerKm, unit)}
             {paceDeltaSecondsPerKm != null && (
@@ -247,6 +365,13 @@ export default function ActiveRun() {
         )}
       </View>
 
+      {currentLeg && (
+        <View style={[styles.intervalBox, currentLeg.kind === "recovery" && styles.intervalBoxRecovery]}>
+          <Text style={styles.intervalKind}>{legKindLabel(currentLeg)}</Text>
+          <Text style={styles.intervalMessage}>{legMessage(currentLeg, unit)}</Text>
+        </View>
+      )}
+
       <View style={styles.statRow}>
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>DIST</Text>
@@ -254,19 +379,21 @@ export default function ActiveRun() {
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>TIME</Text>
-          <Text style={styles.statValue}>{formatElapsed(elapsedSeconds)}</Text>
+          <Text style={styles.statValue}>{formatElapsed(rt.elapsedSeconds)}</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>PTS</Text>
-          <Text style={styles.statValue}>{points.length}</Text>
+          <Text style={styles.statValue}>{rt.points.length}</Text>
         </View>
       </View>
 
-      {plannedSession && plannedSession.session_type !== "rest" && (
+      {rt.plannedSession && rt.plannedSession.session_type !== "rest" && !currentLeg && (
         <View style={styles.plannedNote}>
           <Text style={styles.plannedNoteText}>
-            Fulfilling today's {plannedSession.session_type} run
-            {plannedSession.planned_distance_meters ? ` · ${formatDistance(plannedSession.planned_distance_meters / 1000, unit)}` : ""}
+            Fulfilling today's {rt.plannedSession.session_type} run
+            {rt.plannedSession.planned_distance_meters
+              ? ` · ${formatDistance(rt.plannedSession.planned_distance_meters / 1000, unit)}`
+              : ""}
           </Text>
         </View>
       )}
@@ -276,27 +403,17 @@ export default function ActiveRun() {
       </View>
 
       <View style={styles.controls}>
-        {runState === "paused" ? (
-          <Pressable
-            style={[styles.pauseBtn, runState !== "paused" && styles.stopBtnDisabled]}
-            onPress={handleResume}
-            disabled={isSaving}
-            accessibilityRole="button"
-          >
+        {rt.phase === "paused" ? (
+          <Pressable style={styles.pauseBtn} onPress={rt.resume} accessibilityRole="button">
             <Text style={styles.pauseBtnText}>Resume</Text>
           </Pressable>
         ) : (
-          <Pressable style={[styles.pauseBtn, isSaving && styles.stopBtnDisabled]} onPress={handlePause} disabled={isSaving} accessibilityRole="button">
+          <Pressable style={styles.pauseBtn} onPress={rt.pause} accessibilityRole="button">
             <Text style={styles.pauseBtnText}>Pause</Text>
           </Pressable>
         )}
-        <Pressable
-          style={[styles.stopBtn, isSaving && styles.stopBtnDisabled]}
-          onPress={handleStop}
-          disabled={isSaving}
-          accessibilityRole="button"
-        >
-          <Text style={styles.stopBtnText}>{isSaving ? "Saving…" : "Stop"}</Text>
+        <Pressable style={styles.stopBtn} onPress={rt.stop} accessibilityRole="button">
+          <Text style={styles.stopBtnText}>Stop</Text>
         </Pressable>
       </View>
     </View>
@@ -304,28 +421,68 @@ export default function ActiveRun() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.predawn, padding: 20, paddingTop: 48 },
+  screen: { flex: 1, backgroundColor: palette.predawn, padding: 20, paddingTop: 48 },
   center: {
     flex: 1,
-    backgroundColor: colors.predawn,
+    backgroundColor: palette.predawn,
     alignItems: "center",
     justifyContent: "center",
     padding: 32,
     gap: 10,
   },
+  finishedScreen: { flex: 1, backgroundColor: palette.predawn },
+  scrollFlex: { flex: 1 },
+  finishedContainer: { flexGrow: 1, alignItems: "center", padding: 32, paddingTop: 64, gap: 10 },
+  formSection: { width: "100%", maxWidth: 340, marginTop: 4 },
+  formLabel: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: "#c7c9cb", marginBottom: 6 },
+  darkInput: {
+    height: 46,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    fontFamily: fonts.body,
+    fontSize: 14.5,
+    color: "#fff",
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  darkInputMultiline: { height: 72, paddingTop: 12, textAlignVertical: "top" },
+  backButton: {
+    position: "absolute",
+    left: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
   centerTitle: { fontFamily: fonts.dataBold, fontSize: 19, color: "#fff", textAlign: "center" },
   centerText: { fontFamily: fonts.body, fontSize: 14, color: "#c7c9cb", textAlign: "center" },
   centerButton: { marginTop: 12, width: "100%", maxWidth: 280 },
+  countdownNumber: { fontFamily: fonts.dataBold, fontSize: 96, color: "#fff", lineHeight: 104 },
+  confirmBox: { alignItems: "center", marginTop: 20, width: "100%" },
+  confirmText: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: palette.danger, textAlign: "center", marginBottom: 4 },
+  finishedStatRow: { flexDirection: "row", gap: 8, marginVertical: 20, width: "100%", maxWidth: 340 },
+  finishedStat: {
+    flex: 1,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  finishedStatValue: { fontFamily: fonts.dataBold, fontSize: 17, color: "#fff" },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 18 },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success },
-  liveDotPaused: { backgroundColor: colors.warning },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: palette.success },
+  liveDotPaused: { backgroundColor: palette.warning },
   headerText: { fontFamily: fonts.monoSemiBold, fontSize: 11, letterSpacing: 1.5, color: "#c7c9cb" },
   paceBlock: { alignItems: "center", marginBottom: 20 },
   paceValue: { fontFamily: fonts.dataBold, fontSize: 56, color: "#fff", lineHeight: 64 },
   paceLabel: { fontFamily: fonts.monoMedium, fontSize: 11, letterSpacing: 1, color: "#8a8d92", marginTop: 4 },
   paceTarget: { fontFamily: fonts.body, fontSize: 13, color: "#c7c9cb", marginTop: 8 },
-  paceAhead: { color: colors.success, fontFamily: fonts.bodySemiBold },
-  paceBehind: { color: colors.warning, fontFamily: fonts.bodySemiBold },
+  paceAhead: { color: palette.success, fontFamily: fonts.bodySemiBold },
+  paceBehind: { color: palette.warning, fontFamily: fonts.bodySemiBold },
   statRow: { flexDirection: "row", gap: 8, marginBottom: 14 },
   statCard: {
     flex: 1,
@@ -338,6 +495,21 @@ const styles = StyleSheet.create({
   statValue: { fontFamily: fonts.dataBold, fontSize: 15, color: "#fff" },
   plannedNote: { marginBottom: 12, alignItems: "center" },
   plannedNoteText: { fontFamily: fonts.body, fontSize: 12, color: "#8a8d92", textAlign: "center" },
+  intervalBox: {
+    backgroundColor: "rgba(255,90,31,0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(255,90,31,0.35)",
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  intervalBoxRecovery: {
+    backgroundColor: "rgba(62,142,126,0.14)",
+    borderColor: "rgba(62,142,126,0.35)",
+  },
+  intervalKind: { fontFamily: fonts.monoSemiBold, fontSize: 11, letterSpacing: 1, color: "#fff", marginBottom: 4 },
+  intervalMessage: { fontFamily: fonts.bodySemiBold, fontSize: 14.5, color: "#fff" },
   mapPlaceholder: {
     flex: 1,
     minHeight: 100,
@@ -360,7 +532,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   pauseBtnText: { fontFamily: fonts.bodySemiBold, fontSize: 15.5, color: "#fff" },
-  stopBtn: { flex: 1, height: 56, borderRadius: 14, backgroundColor: colors.accent, alignItems: "center", justifyContent: "center" },
-  stopBtnDisabled: { opacity: 0.6 },
+  stopBtn: { flex: 1, height: 56, borderRadius: 14, backgroundColor: palette.accent, alignItems: "center", justifyContent: "center" },
   stopBtnText: { fontFamily: fonts.bodySemiBold, fontSize: 15.5, color: "#fff" },
 });

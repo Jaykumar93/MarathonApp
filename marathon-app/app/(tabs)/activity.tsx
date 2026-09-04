@@ -6,8 +6,9 @@ import { getAllActivities, type ActivityRow } from "../../lib/data/activities";
 import { computeActivityStats } from "../../lib/activityStats";
 import { getCurrentCalendarWeekRange, todayIso } from "../../lib/data/usePlanData";
 import { formatDistance, formatPace } from "../../lib/units";
-import { SESSION_TYPE_COLOR, SESSION_TYPE_LABEL, ACTIVITY_TYPE_OPTIONS } from "../../lib/sessionTypes";
-import { colors, fonts, spacing, type } from "../../lib/theme";
+import { SESSION_TYPE_LABEL, ACTIVITY_TYPE_OPTIONS } from "../../lib/sessionTypes";
+import { fonts, spacing, type } from "../../lib/theme";
+import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Card } from "../../components/ui/Card";
 import { Dropdown } from "../../components/ui/Dropdown";
 import { Badge } from "../../components/ui/Badge";
@@ -15,6 +16,14 @@ import { DateField } from "../../components/ui/DateField";
 import { TextField } from "../../components/ui/TextField";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { LogFab } from "../../components/ui/LogFab";
+import { ChipSelect } from "../../components/ui/ChipSelect";
+import { TrendsView } from "../../components/TrendsView";
+import { ActivityThumbnail } from "../../components/ActivityThumbnail";
+
+const SUBVIEW_OPTIONS = [
+  { value: "history" as const, label: "History" },
+  { value: "trends" as const, label: "Trends" },
+];
 
 const TYPE_OPTIONS = [{ value: "all", label: "All types" }, ...ACTIVITY_TYPE_OPTIONS];
 
@@ -86,6 +95,8 @@ interface MonthGroup {
 export default function Activity() {
   const router = useRouter();
   const { session, profile } = useAuth();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const unit = profile?.distance_unit ?? "km";
 
   const [activities, setActivities] = useState<ActivityRow[]>([]);
@@ -97,6 +108,7 @@ export default function Activity() {
   const [customTo, setCustomTo] = useState("");
   const [minDistanceKm, setMinDistanceKm] = useState("");
   const [minDurationMin, setMinDurationMin] = useState("");
+  const [subview, setSubview] = useState<"history" | "trends">("history");
 
   const reload = React.useCallback(() => {
     if (!session?.user?.id) return;
@@ -190,6 +202,14 @@ export default function Activity() {
       >
         <Text style={styles.header}>Activity</Text>
 
+        <View style={styles.subviewRow}>
+          <ChipSelect options={SUBVIEW_OPTIONS} value={subview} onChange={setSubview} />
+        </View>
+
+        {subview === "trends" ? (
+          <TrendsView activities={activities} unit={unit} />
+        ) : (
+          <>
         <View style={styles.statRow}>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>THIS WEEK</Text>
@@ -313,7 +333,7 @@ export default function Activity() {
                       onPress={() => router.push(`/run-summary?id=${a.id}`)}
                       accessibilityRole="button"
                     >
-                      <View style={[styles.edge, { backgroundColor: SESSION_TYPE_COLOR[a.activity_type] ?? colors.contour }]} />
+                      <ActivityThumbnail activity={a} />
                       <View style={styles.rowBody}>
                         <Text style={styles.rowTitle}>{SESSION_TYPE_LABEL[a.activity_type] ?? a.activity_type}</Text>
                         <Text style={styles.rowDate}>{formatShortDate(a.start_time.slice(0, 10))}</Text>
@@ -330,19 +350,23 @@ export default function Activity() {
             </View>
           ))
         )}
+          </>
+        )}
       </ScrollView>
       <LogFab />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.screenBg },
   scroll: { flex: 1 },
   container: { padding: spacing.screenPadding, paddingTop: 10, paddingBottom: 90 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
   body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
   header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary, marginBottom: 12 },
+  subviewRow: { marginBottom: 14 },
   statRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
   statCard: { flex: 1, backgroundColor: colors.cardBg, borderRadius: spacing.cardRadius, paddingVertical: 12, alignItems: "center" },
   statLabel: { fontFamily: fonts.monoMedium, fontSize: type.statLabel, color: colors.textFaint, marginBottom: 4 },
@@ -366,7 +390,7 @@ const styles = StyleSheet.create({
   modalWrap: { flex: 1, justifyContent: "flex-end" },
   modalBackdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(20,22,26,0.45)" },
   modalSheet: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.sheetBg,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -397,9 +421,9 @@ const styles = StyleSheet.create({
     borderColor: colors.cardLine,
     backgroundColor: colors.screenBg,
   },
-  edge: { width: 5, height: 28, borderRadius: 3 },
   rowBody: { flex: 1 },
   rowTitle: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.textPrimary },
   rowDate: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
   rowStats: { fontFamily: fonts.mono, fontSize: type.pDim, color: colors.textDim, textAlign: "right", lineHeight: 16 },
-});
+  });
+}

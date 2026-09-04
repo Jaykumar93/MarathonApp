@@ -1,11 +1,14 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../lib/auth/AuthContext";
 import { supabase } from "../lib/supabase";
-import { colors, fonts, spacing } from "../lib/theme";
+import { fonts, spacing } from "../lib/theme";
+import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 
 export default function Waitlist() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { profile, refreshProfile } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -41,16 +44,18 @@ export default function Waitlist() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flexGrow: 1, justifyContent: "center", padding: spacing.screenPadding, gap: 14, backgroundColor: colors.screenBg },
-  badge: {
-    fontFamily: fonts.monoMedium,
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    color: colors.warning,
-  },
-  title: { fontFamily: fonts.dataBold, fontSize: 26, color: colors.textPrimary },
-  body: { fontFamily: fonts.body, fontSize: 14.5, lineHeight: 21, color: colors.textDim },
-  actions: { gap: 10, marginTop: 8 },
-});
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    container: { flexGrow: 1, justifyContent: "center", padding: spacing.screenPadding, gap: 14, backgroundColor: colors.screenBg },
+    badge: {
+      fontFamily: fonts.monoMedium,
+      fontSize: 11,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+      color: colors.warning,
+    },
+    title: { fontFamily: fonts.dataBold, fontSize: 26, color: colors.textPrimary },
+    body: { fontFamily: fonts.body, fontSize: 14.5, lineHeight: 21, color: colors.textDim },
+    actions: { gap: 10, marginTop: 8 },
+  });
+}

@@ -4,7 +4,8 @@ import { useRouter } from "expo-router";
 import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
 import { ChipSelect } from "../../components/ui/ChipSelect";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
-import { colors, fonts } from "../../lib/theme";
+import { fonts } from "../../lib/theme";
+import { useTheme } from "../../lib/theme/ThemeContext";
 import type { DayOfWeek } from "../../lib/planEngine/types";
 
 const DAYS_OPTIONS = [1, 2, 3, 4, 5, 6, 7].map((n) => ({ value: n, label: String(n) }));
@@ -20,6 +21,7 @@ const DAY_OF_WEEK_OPTIONS: { value: DayOfWeek; label: string }[] = [
 
 export default function TrainingDays() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { answers, update } = useOnboarding();
 
   function handleNext() {

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { colors, fonts } from "../../lib/theme";
+import { fonts } from "../../lib/theme";
+import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Dropdown } from "./Dropdown";
 
 const MONTH_NAMES = [
@@ -48,6 +49,8 @@ interface DateFieldProps {
  * isPastDate check, and log-activity.tsx's isFutureDate one.
  */
 export function DateField({ label, value, onChange, yearsAhead = 5, yearsBack = 0, defaultOffsetDays = 84 }: DateFieldProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const today = useMemo(() => new Date(), []);
   const todayY = today.getUTCFullYear();
   const todayM = today.getUTCMonth() + 1;
@@ -96,8 +99,10 @@ export function DateField({ label, value, onChange, yearsAhead = 5, yearsBack = 
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { gap: 6 },
-  label: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.textDim },
-  row: { flexDirection: "row", gap: 8 },
-});
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    wrap: { gap: 6 },
+    label: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.textDim },
+    row: { flexDirection: "row", gap: 8 },
+  });
+}

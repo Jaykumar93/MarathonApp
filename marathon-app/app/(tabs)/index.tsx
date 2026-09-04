@@ -1,17 +1,22 @@
-import React, { useEffect, useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../lib/auth/AuthContext";
 import {
-  getAllPlanDays,
   getCurrentCalendarWeekRange,
   getCurrentWeekNumber,
   getPlanProgressFraction,
   getWeeklyVolumesKm,
   todayIso,
   useActivePlanData,
+  useDaySwipeNavigation,
+  usePlanCalendarDays,
 } from "../../lib/data/usePlanData";
 import { getActivitiesInRange, groupActivitiesByDate, type ActivityRow } from "../../lib/data/activities";
-import { colors, fonts, spacing, type } from "../../lib/theme";
+import { getShoes, type ShoeRow } from "../../lib/data/shoes";
+import { fonts, noSelectStyle, spacing, type } from "../../lib/theme";
+import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Card } from "../../components/ui/Card";
 import { CountdownArc } from "../../components/CountdownArc";
 import { MonthActivityChart } from "../../components/MonthActivityChart";
@@ -29,13 +34,20 @@ function monthRange(year: number, month: number): [string, string] {
 }
 
 export default function Home() {
+  const router = useRouter();
   const { session, profile } = useAuth();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { loading, goal, plan, sessions, reload } = useActivePlanData();
+  const [overdueShoes, setOverdueShoes] = useState<ShoeRow[]>([]);
 
   const today = new Date();
   const [viewedYear, setViewedYear] = useState(today.getUTCFullYear());
   const [viewedMonth, setViewedMonth] = useState(today.getUTCMonth() + 1);
   const [selectedDate, setSelectedDate] = useState(todayIso());
+  // Lets the detail card itself be paged through day by day, not just by
+  // tapping cells in the calendar strip above it.
+  const dayDetailSwipeHandlers = useDaySwipeNavigation(setSelectedDate);
   const [monthActivities, setMonthActivities] = useState<ActivityRow[]>([]);
   const [selectedDayActivities, setSelectedDayActivities] = useState<ActivityRow[]>([]);
   const [weekActivities, setWeekActivities] = useState<ActivityRow[]>([]);
@@ -65,6 +77,19 @@ export default function Home() {
     );
   }, [session?.user?.id]);
 
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    getShoes(session.user.id).then((rows) =>
+      setOverdueShoes(rows.filter((s) => !s.retired && s.cumulative_distance_km >= s.retirement_threshold_km))
+    );
+  }, [session?.user?.id]);
+
+  // Has to sit above the loading/no-plan early returns below (every hook
+  // does - conditionally skipping a hook call between renders is a
+  // Rules-of-Hooks violation); usePlanCalendarDays itself guards for
+  // plan/goal possibly still being null.
+  const allDays = usePlanCalendarDays(sessions, plan, goal);
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -89,7 +114,6 @@ export default function Home() {
   const weekLoggedKm = weekActivities.reduce((sum, a) => sum + a.distance_meters / 1000, 0);
   const weekProgressPct = weekTargetKm > 0 ? Math.min(1, weekLoggedKm / weekTargetKm) * 100 : 0;
   const unit = profile?.distance_unit ?? "km";
-  const allDays = getAllPlanDays(sessions, plan.start_date, goal.goal_date);
   const selectedSession = sessions.find((s) => s.session_date === selectedDate) ?? null;
 
   const daysRemaining = Math.max(
@@ -127,11 +151,24 @@ export default function Home() {
           <CountdownArc daysRemaining={daysRemaining} progress={planProgress} />
         </View>
 
+        {overdueShoes.length > 0 && (
+          <Pressable style={styles.shoeBanner} onPress={() => router.push("/gear")}>
+            <Ionicons name="alert-circle" size={18} color={colors.warningText} />
+            <Text style={styles.shoeBannerText}>
+              {overdueShoes.length === 1
+                ? `${overdueShoes[0].name} is past its recommended distance — time for new shoes?`
+                : `${overdueShoes.length} pairs of shoes are past their recommended distance.`}
+            </Text>
+          </Pressable>
+        )}
+
         <Text style={styles.sectionLabel}>CALENDAR</Text>
         <Card>
           <PlanCalendarScroller days={allDays} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
           <View style={styles.divider} />
-          <DayDetailPanel date={selectedDate} session={selectedSession} activities={selectedDayActivities} />
+          <View {...dayDetailSwipeHandlers} style={noSelectStyle}>
+            <DayDetailPanel date={selectedDate} session={selectedSession} activities={selectedDayActivities} />
+          </View>
         </Card>
 
         <Text style={styles.sectionLabel}>ACTIVITY</Text>
@@ -142,7 +179,6 @@ export default function Home() {
             activitiesByDate={groupActivitiesByDate(monthActivities)}
             onPrevMonth={handlePrevMonth}
             onNextMonth={handleNextMonth}
-            onSelectDate={setSelectedDate}
             selectedDate={selectedDate}
           />
         </Card>
@@ -164,7 +200,8 @@ export default function Home() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.screenBg },
   scroll: { flex: 1 },
   container: { padding: spacing.screenPadding, paddingTop: 0 },
@@ -181,9 +218,22 @@ const styles = StyleSheet.create({
     marginBottom: 7,
   },
   divider: { height: 1, backgroundColor: colors.cardLine, marginVertical: 12 },
+  shoeBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: colors.warningBg,
+    borderWidth: 1,
+    borderColor: colors.warningBorder,
+    borderRadius: spacing.cardRadius,
+    padding: 12,
+    marginBottom: 14,
+  },
+  shoeBannerText: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.warningText },
   cardTitleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 },
   cardTitleMain: { fontFamily: fonts.bodyBold, fontSize: 11.5, color: colors.textPrimary },
   cardTitleValue: { fontFamily: fonts.mono, fontSize: 10, color: colors.textDim },
   progressBarTrack: { height: 7, backgroundColor: colors.cardLine, borderRadius: 4, overflow: "hidden" },
   progressBarFill: { height: "100%", backgroundColor: colors.accent, borderRadius: 4 },
-});
+  });
+}
