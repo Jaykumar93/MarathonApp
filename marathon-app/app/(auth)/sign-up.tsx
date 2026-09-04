@@ -1,12 +1,15 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Link } from "expo-router";
 import { supabase } from "../../lib/supabase";
-import { colors, fonts, spacing } from "../../lib/theme";
+import { fonts, palette, spacing } from "../../lib/theme";
+import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { TextField } from "../../components/ui/TextField";
 
 export default function SignUp() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -80,14 +83,16 @@ export default function SignUp() {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.screenBg },
-  container: { flexGrow: 1, padding: spacing.screenPadding, justifyContent: "center", gap: 22 },
-  title: { fontFamily: fonts.dataBold, fontSize: 28, color: colors.textPrimary },
-  subtitle: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
-  form: { gap: 14 },
-  error: { fontFamily: fonts.body, fontSize: 13, color: "#B3261E" },
-  footerRow: { flexDirection: "row", justifyContent: "center" },
-  footerText: { fontFamily: fonts.body, fontSize: 13.5, color: colors.textDim },
-  footerLink: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.accent },
-});
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.screenBg },
+    container: { flexGrow: 1, padding: spacing.screenPadding, justifyContent: "center", gap: 22 },
+    title: { fontFamily: fonts.dataBold, fontSize: 28, color: colors.textPrimary },
+    subtitle: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
+    form: { gap: 14 },
+    error: { fontFamily: fonts.body, fontSize: 13, color: palette.danger },
+    footerRow: { flexDirection: "row", justifyContent: "center" },
+    footerText: { fontFamily: fonts.body, fontSize: 13.5, color: colors.textDim },
+    footerLink: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.accent },
+  });
+}

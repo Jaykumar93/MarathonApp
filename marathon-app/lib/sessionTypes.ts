@@ -1,4 +1,6 @@
-import { colors } from "./theme";
+import { palette } from "./theme";
+import { formatMeters, formatPace, type DistanceUnit } from "./units";
+import type { IntervalStructure } from "./planEngine/types";
 
 /**
  * Shared by planned sessions (plan_sessions.session_type) and logged
@@ -17,12 +19,17 @@ export const SESSION_TYPE_LABEL: Record<string, string> = {
 };
 
 export const SESSION_TYPE_COLOR: Record<string, string> = {
-  easy: colors.success,
-  tempo: colors.accent,
-  interval: colors.accent,
-  long: colors.contour,
-  race: colors.accent,
+  easy: palette.success,
+  tempo: palette.accent,
+  interval: palette.accent,
+  long: palette.contour,
+  race: palette.accent,
 };
+
+/** Compact one-line summary of a planned interval workout's actual shape, e.g. "6 x 600m @ 4:40/km, 300m jog recovery" - shown wherever a session with a real interval_structure appears (Plan tab, Day Detail). */
+export function formatIntervalStructureSummary(structure: IntervalStructure, unit: DistanceUnit): string {
+  return `${structure.reps} x ${formatMeters(structure.repDistanceMeters)} @ ${formatPace(structure.repPaceSecondsPerKm, unit)}, ${formatMeters(structure.recoveryDistanceMeters)} jog recovery`;
+}
 
 /** Loggable activity types - "rest" isn't something you log a run against. */
 export const ACTIVITY_TYPE_OPTIONS = [

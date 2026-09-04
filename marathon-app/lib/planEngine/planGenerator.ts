@@ -1,4 +1,5 @@
 import { resolvePaceZones } from "./paceCalculator";
+import { buildIntervalStructure, intervalStructureTotals } from "./intervalStructure";
 import {
   computeAvailableWeeks,
   computePhases,
@@ -172,10 +173,15 @@ export function generatePlan(input: GoalInput): GenerateResult {
       dayMetrics.set(d.day, { distanceKm, durationSec: distanceKm * paceZones.tempo });
       usedVolumeKm += distanceKm;
     }
+    const intervalStructures = new Map<string, ReturnType<typeof buildIntervalStructure>>();
     for (const d of placedDays.filter((p) => p.type === "interval")) {
-      const distanceKm = weeklyVolumeKm * INTERVAL_SHARE;
-      dayMetrics.set(d.day, { distanceKm, durationSec: distanceKm * paceZones.interval });
-      usedVolumeKm += distanceKm;
+      const targetDistanceKm = weeklyVolumeKm * INTERVAL_SHARE;
+      const targetDurationSec = targetDistanceKm * paceZones.interval;
+      const structure = buildIntervalStructure(targetDistanceKm, targetDurationSec, phase, paceZones);
+      const totals = intervalStructureTotals(structure);
+      intervalStructures.set(d.day, structure);
+      dayMetrics.set(d.day, { distanceKm: totals.distanceMeters / 1000, durationSec: totals.durationSeconds });
+      usedVolumeKm += totals.distanceMeters / 1000;
     }
 
     const easyDays = placedDays.filter((p) => p.type === "easy");
@@ -215,6 +221,7 @@ export function generatePlan(input: GoalInput): GenerateResult {
           plannedDurationSeconds !== null
             ? getPrepRecovery(placed.type, plannedDurationSeconds, category)
             : null,
+        intervalStructure: placed.type === "interval" ? intervalStructures.get(placed.day) ?? null : null,
         backToBackGroup: longDays.length > 1 ? `week-${week}-b2b` : undefined,
       });
     }

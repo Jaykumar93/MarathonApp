@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { colors, shadows } from "../../lib/theme";
+import { useTheme, type Colors, type ThemeShadows } from "../../lib/theme/ThemeContext";
 
 /**
  * Persistent floating "+ " - bottom-right on Home, Plan and Activity,
@@ -14,6 +14,8 @@ import { colors, shadows } from "../../lib/theme";
  */
 export function LogFab() {
   const router = useRouter();
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => createStyles(colors, shadows), [colors, shadows]);
   return (
     <Pressable
       style={styles.fab}
@@ -27,18 +29,20 @@ export function LogFab() {
   );
 }
 
-const styles = StyleSheet.create({
-  fab: {
-    position: "absolute",
-    right: 18,
-    bottom: 18,
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.card,
-    shadowOpacity: 0.22,
-  },
-});
+function createStyles(colors: Colors, shadows: ThemeShadows) {
+  return StyleSheet.create({
+    fab: {
+      position: "absolute",
+      right: 18,
+      bottom: 18,
+      width: 54,
+      height: 54,
+      borderRadius: 27,
+      backgroundColor: colors.accent,
+      alignItems: "center",
+      justifyContent: "center",
+      ...shadows.card,
+      shadowOpacity: 0.22,
+    },
+  });
+}

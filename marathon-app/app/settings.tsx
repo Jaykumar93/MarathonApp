@@ -1,22 +1,26 @@
-import React, { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { Pressable, ScrollView, Switch, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
 import { useAuth } from "../lib/auth/AuthContext";
 import { supabase } from "../lib/supabase";
 import { deleteGoal } from "../lib/data/goals";
 import { useActivePlanData } from "../lib/data/usePlanData";
-import { colors, fonts, spacing, type } from "../lib/theme";
+import { fonts, palette, spacing, type } from "../lib/theme";
+import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { ChipSelect } from "../components/ui/ChipSelect";
 import { TextField } from "../components/ui/TextField";
 import { formatDistance } from "../lib/units";
+import { healthConnectProvider } from "../lib/health/healthConnectProvider";
 
 const UNIT_OPTIONS = [
   { value: "km" as const, label: "Kilometers" },
   { value: "mi" as const, label: "Miles" },
 ];
+
+const VOICE_INTERVAL_PRESETS = [1, 2, 5, 10];
 
 const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
 
@@ -28,10 +32,20 @@ function formatMemberSince(iso: string | undefined): string {
 export default function Settings() {
   const router = useRouter();
   const { profile, refreshProfile, refreshActiveGoal } = useAuth();
+  const { mode, colors, setMode } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { goal, reload } = useActivePlanData();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [savingUnit, setSavingUnit] = useState(false);
+  // Same capability-driven check as onboarding's health-data step - reports
+  // false today (lib/health/healthConnectProvider.ts is still a stub), but
+  // this row needs no further changes once a real implementation lands.
+  const [healthConnectAvailable, setHealthConnectAvailable] = useState(false);
+
+  useEffect(() => {
+    healthConnectProvider.isAvailable().then(setHealthConnectAvailable);
+  }, []);
 
   const [name, setName] = useState(profile?.full_name ?? "");
   const [savingName, setSavingName] = useState(false);
@@ -39,6 +53,10 @@ export default function Settings() {
   const [username, setUsername] = useState(profile?.username ?? "");
   const [savingUsername, setSavingUsername] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
+
+  const [savingVoiceToggle, setSavingVoiceToggle] = useState(false);
+  const [customInterval, setCustomInterval] = useState("");
+  const [savingInterval, setSavingInterval] = useState(false);
 
   // Keep local edit fields in sync if the profile refreshes from elsewhere.
   useEffect(() => {
@@ -71,6 +89,22 @@ export default function Settings() {
     await supabase.from("profiles").update({ distance_unit: unit }).eq("id", profile.id);
     await refreshProfile();
     setSavingUnit(false);
+  }
+
+  async function handleVoiceToggle(enabled: boolean) {
+    if (!profile) return;
+    setSavingVoiceToggle(true);
+    await supabase.from("profiles").update({ voice_coaching_enabled: enabled }).eq("id", profile.id);
+    await refreshProfile();
+    setSavingVoiceToggle(false);
+  }
+
+  async function handleIntervalChange(km: number) {
+    if (!profile || km <= 0) return;
+    setSavingInterval(true);
+    await supabase.from("profiles").update({ voice_announcement_interval_km: km }).eq("id", profile.id);
+    await refreshProfile();
+    setSavingInterval(false);
   }
 
   async function handleSaveName() {
@@ -160,8 +194,22 @@ export default function Settings() {
             <Text style={styles.label}>Health Connect</Text>
             <Text style={styles.subLabel}>Auto-sync runs from Android</Text>
           </View>
-          <Text style={styles.comingSoon}>Coming soon</Text>
+          {!healthConnectAvailable ? (
+            <Text style={styles.comingSoon}>Coming soon</Text>
+          ) : profile?.health_data_source === "health_connect" ? (
+            <Text style={styles.connectedLabel}>Connected</Text>
+          ) : (
+            <Text style={styles.connectLink}>Connect</Text>
+          )}
         </View>
+      </Card>
+
+      <Text style={styles.sectionLabel}>GEAR</Text>
+      <Card>
+        <Pressable style={styles.row} onPress={() => router.push("/gear")}>
+          <Text style={styles.label}>Shoes</Text>
+          <Text style={styles.connectLink}>Manage ›</Text>
+        </Pressable>
       </Card>
 
       <Text style={styles.sectionLabel}>PREFERENCES</Text>
@@ -175,8 +223,59 @@ export default function Settings() {
 
         <View style={styles.row}>
           <Text style={styles.label}>Dark mode</Text>
-          <Text style={styles.comingSoon}>Coming soon</Text>
+          <Switch
+            value={mode === "dark"}
+            onValueChange={(dark) => setMode(dark ? "dark" : "light")}
+            trackColor={{ false: colors.cardLine, true: colors.accent }}
+            thumbColor="#fff"
+          />
         </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Voice coaching</Text>
+            <Text style={styles.subLabel}>Hear distance, time, and pace called out during a tracked run</Text>
+          </View>
+          <Switch
+            value={profile?.voice_coaching_enabled ?? false}
+            onValueChange={handleVoiceToggle}
+            disabled={savingVoiceToggle}
+            trackColor={{ false: colors.cardLine, true: colors.accent }}
+            thumbColor="#fff"
+          />
+        </View>
+
+        {profile?.voice_coaching_enabled && (
+          <View style={[styles.fieldGap, { opacity: savingInterval ? 0.5 : 1 }]}>
+            <Text style={styles.label}>Announce every</Text>
+            <View style={{ marginTop: 8 }}>
+              <ChipSelect
+                options={VOICE_INTERVAL_PRESETS.map((km) => ({ value: km, label: `${km}km` }))}
+                value={
+                  VOICE_INTERVAL_PRESETS.includes(profile.voice_announcement_interval_km)
+                    ? profile.voice_announcement_interval_km
+                    : undefined
+                }
+                onChange={handleIntervalChange}
+              />
+            </View>
+            <View style={styles.fieldGap}>
+              <TextField
+                label="Or a custom interval (km)"
+                value={customInterval}
+                onChangeText={(t) => {
+                  setCustomInterval(t);
+                  const n = parseFloat(t);
+                  if (!Number.isNaN(n) && n > 0) handleIntervalChange(n);
+                }}
+                keyboardType="decimal-pad"
+                placeholder={`e.g. 3 (currently ${profile.voice_announcement_interval_km}km)`}
+              />
+            </View>
+          </View>
+        )}
       </Card>
 
       {goal && (
@@ -226,7 +325,8 @@ export default function Settings() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.screenBg },
   container: { padding: spacing.screenPadding, paddingTop: 24 },
   topRow: { marginBottom: 10 },
@@ -246,11 +346,19 @@ const styles = StyleSheet.create({
   subLabel: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
   value: { fontFamily: fonts.bodySemiBold, fontSize: type.pDim, color: colors.textPrimary },
   comingSoon: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint },
+  connectedLabel: { fontFamily: fonts.bodySemiBold, fontSize: type.pFaint, color: colors.success },
+  // Not yet a Pressable - unreachable while healthConnectProvider is a
+  // stub (isAvailable() always false), so there's no real connect flow to
+  // wire up yet. Becomes a real tappable action alongside the native
+  // implementation itself.
+  connectLink: { fontFamily: fonts.bodySemiBold, fontSize: type.pFaint, color: colors.accent },
   divider: { height: 1, backgroundColor: colors.cardLine, marginVertical: 12 },
+  fieldGap: { marginTop: 12 },
   inlineSave: { marginTop: 10 },
-  errorText: { fontFamily: fonts.body, fontSize: 12.5, color: "#B3261E", marginTop: 6 },
+  errorText: { fontFamily: fonts.body, fontSize: 12.5, color: palette.danger, marginTop: 6 },
   memberSince: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 12 },
   planLine: { fontFamily: fonts.bodySemiBold, fontSize: type.pDim, color: colors.textPrimary, marginBottom: 8 },
   warningText: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginBottom: 12 },
-  confirmText: { fontFamily: fonts.bodySemiBold, fontSize: type.pDim, color: "#B3261E" },
-});
+  confirmText: { fontFamily: fonts.bodySemiBold, fontSize: type.pDim, color: palette.danger },
+  });
+}

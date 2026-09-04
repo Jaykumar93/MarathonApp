@@ -3,15 +3,18 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "../lib/auth/AuthContext";
 import { createActivity } from "../lib/data/activities";
+import { getShoes, type ShoeRow } from "../lib/data/shoes";
 import { getPlanSessionById, type PlanSessionRow } from "../lib/data/plans";
 import { formatHms, parseHms } from "../lib/timeFormat";
 import { ACTIVITY_TYPE_OPTIONS } from "../lib/sessionTypes";
-import { colors, fonts, spacing, type } from "../lib/theme";
+import { fonts, palette, spacing, type } from "../lib/theme";
+import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { ChipSelect } from "../components/ui/ChipSelect";
 import { TextField } from "../components/ui/TextField";
 import { DateField } from "../components/ui/DateField";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
+import { PhotoPicker } from "../components/ui/PhotoPicker";
 import { todayIso } from "../lib/data/usePlanData";
 
 const RPE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({ value: n, label: String(n) }));
@@ -19,12 +22,15 @@ const RPE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({ value: n, labe
 export default function LogActivity() {
   const router = useRouter();
   const { session } = useAuth();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const params = useLocalSearchParams<{ planSessionId?: string; date?: string }>();
 
   const [linkedSession, setLinkedSession] = useState<PlanSessionRow | null>(null);
   const [prefillDone, setPrefillDone] = useState(!params.planSessionId);
 
   const [date, setDate] = useState(params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : "");
+  const [name, setName] = useState("");
   const [activityType, setActivityType] = useState<string | undefined>();
   const [distanceKm, setDistanceKm] = useState("");
   const [duration, setDuration] = useState("");
@@ -33,9 +39,17 @@ export default function LogActivity() {
   const [notes, setNotes] = useState("");
   const [avgHeartRate, setAvgHeartRate] = useState("");
   const [elevationGain, setElevationGain] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [shoes, setShoes] = useState<ShoeRow[]>([]);
+  const [shoeId, setShoeId] = useState<string | undefined>();
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    getShoes(session.user.id).then((rows) => setShoes(rows.filter((s) => !s.retired)));
+  }, [session?.user?.id]);
 
   // Pre-fill from the planned session this run is meant to fulfill, once -
   // same "seed once, never clobber further typing" pattern edit-plan.tsx
@@ -69,6 +83,7 @@ export default function LogActivity() {
     try {
       const activity = await createActivity(session.user.id, {
         activityType,
+        name: name.trim() || undefined,
         date,
         distanceMeters,
         durationSeconds,
@@ -76,6 +91,8 @@ export default function LogActivity() {
         notes: notes.trim() || undefined,
         avgHeartRate: avgHeartRate ? parseInt(avgHeartRate, 10) : undefined,
         elevationGainMeters: elevationGain ? parseFloat(elevationGain) : undefined,
+        photoUrls: photos,
+        shoeId,
         planId: linkedSession?.plan_id,
         planSessionId: linkedSession?.id,
       });
@@ -104,7 +121,10 @@ export default function LogActivity() {
       )}
 
       <Card>
-        <DateField label="Date" value={date} onChange={setDate} yearsBack={2} yearsAhead={0} defaultOffsetDays={0} />
+        <TextField label="Name (optional)" value={name} onChangeText={setName} placeholder="e.g. Sunday club run" />
+        <View style={styles.fieldGap}>
+          <DateField label="Date" value={date} onChange={setDate} yearsBack={2} yearsAhead={0} defaultOffsetDays={0} />
+        </View>
         {isFutureDate && <Text style={styles.errorText}>Date can't be in the future.</Text>}
 
         <View style={styles.fieldGap}>
@@ -169,6 +189,18 @@ export default function LogActivity() {
               placeholder="e.g. 45"
             />
           </View>
+          {session?.user?.id && (
+            <View style={styles.fieldGap}>
+              <Text style={styles.fieldLabel}>Photos (optional, up to 3)</Text>
+              <PhotoPicker userId={session.user.id} photos={photos} onChange={setPhotos} />
+            </View>
+          )}
+          {shoes.length > 0 && (
+            <View style={styles.fieldGap}>
+              <Text style={styles.fieldLabel}>Shoes (optional)</Text>
+              <ChipSelect options={shoes.map((s) => ({ value: s.id, label: s.name }))} value={shoeId} onChange={setShoeId} />
+            </View>
+          )}
         </Card>
       )}
 
@@ -181,7 +213,8 @@ export default function LogActivity() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.screenBg },
   container: { padding: spacing.screenPadding, paddingTop: 24, gap: 4 },
   topRow: { marginBottom: 10 },
@@ -190,13 +223,14 @@ const styles = StyleSheet.create({
   subtitle: { fontFamily: fonts.body, fontSize: 13, color: colors.textDim, marginBottom: 12 },
   fieldLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textDim, marginBottom: 8 },
   fieldGap: { marginTop: 14 },
-  errorText: { fontFamily: fonts.body, fontSize: 12.5, color: "#B3261E", marginTop: 6 },
+  errorText: { fontFamily: fonts.body, fontSize: 12.5, color: palette.danger, marginTop: 6 },
   moreLink: {
     fontFamily: fonts.bodySemiBold,
     fontSize: 13,
-    color: colors.contour,
+    color: colors.secondaryAccent,
     textDecorationLine: "underline",
     marginBottom: 14,
   },
   saveButton: { marginTop: 8, marginBottom: 12 },
-});
+  });
+}

@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { colors, fonts, spacing } from "./../lib/theme";
+import { fonts, spacing } from "./../lib/theme";
+import { useTheme, type Colors } from "./../lib/theme/ThemeContext";
 import { PrimaryButton } from "./ui/PrimaryButton";
 
 /**
@@ -11,6 +12,8 @@ import { PrimaryButton } from "./ui/PrimaryButton";
  */
 export function NoPlanPrompt() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.center}>
       <Text style={styles.title}>No training plan yet</Text>
@@ -22,16 +25,18 @@ export function NoPlanPrompt() {
   );
 }
 
-const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.screenBg,
-    padding: spacing.screenPadding,
-    gap: 8,
-  },
-  title: { fontFamily: fonts.dataBold, fontSize: 20, color: colors.textPrimary },
-  body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim, textAlign: "center", marginBottom: 8 },
-  button: { width: "100%", maxWidth: 280 },
-});
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    center: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.screenBg,
+      padding: spacing.screenPadding,
+      gap: 8,
+    },
+    title: { fontFamily: fonts.dataBold, fontSize: 20, color: colors.textPrimary },
+    body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim, textAlign: "center", marginBottom: 8 },
+    button: { width: "100%", maxWidth: 280 },
+  });
+}

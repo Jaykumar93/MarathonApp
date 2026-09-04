@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { getActiveGoal, type GoalRow } from "./goals";
 import { getCurrentPlan, getPlanSessions, type PlanRow, type PlanSessionRow } from "./plans";
 import type { CalendarDayInfo } from "../../components/PlanCalendarScroller";
 import { DAY_ORDER } from "../planEngine/types";
+import { useHorizontalSwipe } from "../useHorizontalSwipe";
 
 interface PlanDataState {
   loading: boolean;
@@ -45,6 +46,13 @@ export function useActivePlanData() {
 
 export function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+/** Shifts a plain YYYY-MM-DD date by `delta` calendar days (negative goes backward) - shared by every day-swipe gesture (Home, Plan) so they all shift dates the same way. */
+export function addDaysIso(dateIso: string, delta: number): string {
+  const d = new Date(dateIso + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + delta);
+  return d.toISOString().slice(0, 10);
 }
 
 /**
@@ -205,4 +213,40 @@ export function getAllPlanDays(sessions: PlanSessionRow[], startDate: string, go
       isToday: iso === today,
     };
   });
+}
+
+/**
+ * Memoized wrapper around getAllPlanDays for the two screens (Home, Plan)
+ * that both feed a PlanCalendarScroller from the same goal/plan/sessions
+ * shape. Memoizing here (not just inline per screen) matters for a real
+ * reason, not just style: PlanCalendarScroller resets its own scroll
+ * position whenever this array's reference changes, so recomputing a fresh
+ * array on every render (e.g. every time selectedDate ticks from a day
+ * swipe) was forcing that reset far more often than an actual month
+ * change. `plan`/`goal` may still be null here - both screens call this
+ * above their own loading/no-plan early returns, since a hook can't be
+ * called conditionally.
+ */
+export function usePlanCalendarDays(
+  sessions: PlanSessionRow[],
+  plan: PlanRow | null,
+  goal: GoalRow | null
+): CalendarDayInfo[] {
+  return useMemo(
+    () => (plan && goal ? getAllPlanDays(sessions, plan.start_date, goal.goal_date) : []),
+    [sessions, plan, goal]
+  );
+}
+
+/**
+ * Swipe left = next day, right = previous day - the day-detail card's
+ * gesture on both Home and Plan. A thin, named wrapper around
+ * useHorizontalSwipe so both screens express the same intent ("day
+ * navigation") rather than each re-deriving it from addDaysIso inline.
+ */
+export function useDaySwipeNavigation(setSelectedDate: Dispatch<SetStateAction<string>>) {
+  return useHorizontalSwipe(
+    () => setSelectedDate((d) => addDaysIso(d, 1)),
+    () => setSelectedDate((d) => addDaysIso(d, -1))
+  );
 }

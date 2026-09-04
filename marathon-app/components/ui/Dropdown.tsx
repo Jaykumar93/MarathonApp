@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, ViewStyle } from "react-native";
-import { colors, fonts } from "../../lib/theme";
+import { fonts } from "../../lib/theme";
+import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Badge } from "./Badge";
 
 export interface DropdownOption<T> {
@@ -27,6 +28,8 @@ interface DropdownProps<T> {
  * needed the same "closed field, tap to pick from a list" pattern too.
  */
 export function Dropdown<T extends string | number>({ options, value, onSelect, style, compact, badge }: DropdownProps<T>) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [open, setOpen] = useState(false);
   const selectedLabel = options.find((o) => o.value === value)?.label ?? String(value);
 
@@ -75,35 +78,37 @@ export function Dropdown<T extends string | number>({ options, value, onSelect, 
   );
 }
 
-const styles = StyleSheet.create({
-  box: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: colors.cardLine,
-    borderRadius: 12,
-    backgroundColor: "#fff",
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  boxCompact: { height: 34, paddingHorizontal: 10, borderRadius: 17 },
-  value: { fontFamily: fonts.bodySemiBold, fontSize: 14.5, color: colors.textPrimary, flex: 1 },
-  valueCompact: { fontFamily: fonts.bodyMedium, fontSize: 12.5 },
-  caret: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint },
-  overlayWrap: { flex: 1, justifyContent: "center", alignItems: "center", padding: 32 },
-  backdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(20,22,26,0.45)" },
-  sheet: {
-    width: "100%",
-    maxWidth: 280,
-    maxHeight: 360,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    paddingVertical: 6,
-    overflow: "hidden",
-  },
-  optionRow: { paddingVertical: 13, paddingHorizontal: 20 },
-  optionRowSelected: { backgroundColor: colors.screenBg },
-  optionText: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.textPrimary },
-  optionTextSelected: { fontFamily: fonts.bodySemiBold, color: colors.accent },
-});
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    box: {
+      height: 50,
+      borderWidth: 1,
+      borderColor: colors.cardLine,
+      borderRadius: 12,
+      backgroundColor: colors.cardBg,
+      paddingHorizontal: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    boxCompact: { height: 34, paddingHorizontal: 10, borderRadius: 17 },
+    value: { fontFamily: fonts.bodySemiBold, fontSize: 14.5, color: colors.textPrimary, flex: 1 },
+    valueCompact: { fontFamily: fonts.bodyMedium, fontSize: 12.5 },
+    caret: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint },
+    overlayWrap: { flex: 1, justifyContent: "center", alignItems: "center", padding: 32 },
+    backdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(20,22,26,0.45)" },
+    sheet: {
+      width: "100%",
+      maxWidth: 280,
+      maxHeight: 360,
+      backgroundColor: colors.sheetBg,
+      borderRadius: 16,
+      paddingVertical: 6,
+      overflow: "hidden",
+    },
+    optionRow: { paddingVertical: 13, paddingHorizontal: 20 },
+    optionRowSelected: { backgroundColor: colors.screenBg },
+    optionText: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.textPrimary },
+    optionTextSelected: { fontFamily: fonts.bodySemiBold, color: colors.accent },
+  });
+}

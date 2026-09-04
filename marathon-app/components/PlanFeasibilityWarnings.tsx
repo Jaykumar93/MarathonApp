@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { GenerateResult } from "../lib/planEngine";
 import { formatHms } from "../lib/timeFormat";
-import { fonts } from "../lib/theme";
+import { fonts, palette } from "../lib/theme";
+import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 
 /**
  * Renders whatever generatePlan() has to say about a GoalInput's
@@ -12,6 +13,9 @@ import { fonts } from "../lib/theme";
  * same warnings for the exact same preview result.
  */
 export function PlanFeasibilityWarnings({ preview }: { preview: GenerateResult }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   if (!preview.ok) {
     return (
       <Text style={styles.errorText}>
@@ -50,9 +54,17 @@ export function PlanFeasibilityWarnings({ preview }: { preview: GenerateResult }
   );
 }
 
-const styles = StyleSheet.create({
-  errorText: { fontFamily: fonts.body, fontSize: 13, color: "#B3261E" },
-  banner: { backgroundColor: "#FFF3E0", borderRadius: 10, padding: 12 },
-  bannerTitle: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: "#8A5300" },
-  bannerBody: { fontFamily: fonts.body, fontSize: 12.5, color: "#8A5300", marginTop: 2 },
-});
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    errorText: { fontFamily: fonts.body, fontSize: 13, color: palette.danger },
+    banner: {
+      backgroundColor: colors.warningBg,
+      borderWidth: 1,
+      borderColor: colors.warningBorder,
+      borderRadius: 10,
+      padding: 12,
+    },
+    bannerTitle: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.warningText },
+    bannerBody: { fontFamily: fonts.body, fontSize: 12.5, color: colors.warningText, marginTop: 2 },
+  });
+}

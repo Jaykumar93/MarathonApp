@@ -6,7 +6,8 @@ import { ChipSelect } from "../../components/ui/ChipSelect";
 import { TextField } from "../../components/ui/TextField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
 import { parseHms } from "../../lib/timeFormat";
-import { colors, fonts } from "../../lib/theme";
+import { fonts, palette } from "../../lib/theme";
+import { useTheme } from "../../lib/theme/ThemeContext";
 
 const CALIBRATION_DISTANCE_OPTIONS = [
   { value: 5, label: "5K" },
@@ -17,6 +18,7 @@ const CALIBRATION_DISTANCE_OPTIONS = [
 
 export default function Calibration() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { answers, update } = useOnboarding();
   const [targetTime, setTargetTime] = useState("");
   const [calibrationTime, setCalibrationTime] = useState("");
@@ -98,7 +100,7 @@ export default function Calibration() {
             />
           </View>
           {calibrationIncomplete && (
-            <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: "#B3261E", marginTop: 8 }}>
+            <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: palette.danger, marginTop: 8 }}>
               Pick the distance this time was run over, or clear the duration field to skip this section.
             </Text>
           )}

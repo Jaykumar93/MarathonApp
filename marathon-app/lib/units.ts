@@ -8,6 +8,12 @@ export function formatDistance(km: number, unit: DistanceUnit): string {
   return `${km.toFixed(1)}km`;
 }
 
+/** Sub-km distances (interval reps, recovery jogs) read better in meters than as "0.6km" - e.g. "600m" / "1.2km". Unlike formatDistance, this is unit-preference-independent: track-style reps are conventionally metric regardless of the user's mi/km display setting. */
+export function formatMeters(meters: number): string {
+  if (meters < 1000) return `${Math.round(meters)}m`;
+  return `${(meters / 1000).toFixed(1)}km`;
+}
+
 /** Pace stored as sec/km everywhere - converts for display only. */
 export function formatPace(secondsPerKm: number | null, unit: DistanceUnit): string {
   if (!secondsPerKm) return "";

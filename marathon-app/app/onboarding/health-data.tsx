@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { Text, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { Platform, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
 import { ChipSelect } from "../../components/ui/ChipSelect";
@@ -10,13 +10,8 @@ import { supabase } from "../../lib/supabase";
 import { createGoal, type CreateGoalInput } from "../../lib/data/goals";
 import { createPlanWithSessions } from "../../lib/data/plans";
 import { generatePlan, type GoalInput } from "../../lib/planEngine";
-import { fonts } from "../../lib/theme";
-
-const HEALTH_SOURCE_OPTIONS = [
-  { value: "manual" as const, label: "Log manually" },
-  { value: "health_connect" as const, label: "Health Connect (coming soon)" },
-  { value: "healthkit" as const, label: "HealthKit (coming soon)" },
-];
+import { healthConnectProvider } from "../../lib/health/healthConnectProvider";
+import { fonts, palette } from "../../lib/theme";
 
 export default function HealthData() {
   const router = useRouter();
@@ -24,6 +19,31 @@ export default function HealthData() {
   const { session, refreshActiveGoal } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Driven by the actual HealthDataProvider capability check, not a
+  // hardcoded "(coming soon)" label - reports false today (the provider is
+  // still a stub, see lib/health/healthConnectProvider.ts) but this screen
+  // needs no further changes once a real implementation lands.
+  const [healthConnectAvailable, setHealthConnectAvailable] = useState(false);
+
+  useEffect(() => {
+    healthConnectProvider.isAvailable().then(setHealthConnectAvailable);
+  }, []);
+
+  const healthConnectLabel =
+    Platform.OS !== "android"
+      ? "Health Connect (Android only)"
+      : healthConnectAvailable
+        ? "Health Connect"
+        : "Health Connect (not set up on this build)";
+
+  const healthSourceOptions = useMemo(
+    () => [
+      { value: "manual" as const, label: "Log manually" },
+      { value: "health_connect" as const, label: healthConnectLabel, disabled: !healthConnectAvailable },
+      { value: "healthkit" as const, label: "HealthKit (iOS, coming later)", disabled: true },
+    ],
+    [healthConnectAvailable, healthConnectLabel]
+  );
 
   const goalInput: GoalInput = useMemo(
     () => ({
@@ -93,7 +113,7 @@ export default function HealthData() {
       nextDisabled={submitting || !preview.ok}
     >
       <ChipSelect
-        options={HEALTH_SOURCE_OPTIONS}
+        options={healthSourceOptions}
         value={answers.healthDataSource ?? "manual"}
         onChange={(v) => update({ healthDataSource: v })}
       />
@@ -102,7 +122,7 @@ export default function HealthData() {
 
       {error && (
         <View>
-          <Text style={{ fontFamily: fonts.body, fontSize: 13, color: "#B3261E" }}>{error}</Text>
+          <Text style={{ fontFamily: fonts.body, fontSize: 13, color: palette.danger }}>{error}</Text>
         </View>
       )}
     </OnboardingStepLayout>
