@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../lib/auth/AuthContext";
 import { todayIso, useActivePlanData } from "../lib/data/usePlanData";
@@ -54,6 +55,7 @@ const DAY_OF_WEEK_OPTIONS: { value: DayOfWeek; label: string }[] = [
 
 export default function EditPlan() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { session, refreshActiveGoal } = useAuth();
@@ -188,7 +190,7 @@ export default function EditPlan() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: 24 + insets.top }]}>
       <View style={styles.topRow}>
         <Text style={styles.backLink} onPress={goBack}>
           ‹ Back

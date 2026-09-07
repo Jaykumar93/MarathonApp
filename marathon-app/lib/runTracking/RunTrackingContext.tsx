@@ -11,6 +11,7 @@ import {
   computeSplits,
   computeElevationGainLoss,
   computeRecentPaceSecondsPerKm,
+  isPlausibleMovement,
   type RoutePoint,
   type Split,
 } from "../gpsStats";
@@ -33,6 +34,16 @@ const LOCATION_OPTIONS: Location.LocationOptions = {
 };
 
 export const COUNTDOWN_SECONDS = 5;
+
+// A fix reported worse than this is more likely network/cell-tower-based
+// positioning noise than an actual GPS lock (typical "Balanced"-accuracy
+// outdoor GPS is usually well under this) - accepting it would let a
+// stationary phone's own position estimate "wander" by tens of meters
+// between reads and get summed straight into the run's distance. Rejecting
+// it outright, rather than trying to average/smooth it, means a genuinely
+// poor-signal stretch (deep indoors, an urban canyon) correctly shows no
+// progress instead of a fabricated one.
+const MIN_ACCEPTABLE_ACCURACY_METERS = 30;
 
 /** "7:42" -> "7 minutes 42 seconds" - reads far more naturally out loud than the digits-and-colon display format. */
 function speakableDuration(totalSeconds: number): string {
@@ -141,12 +152,20 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
 
   const onLocationUpdate = useCallback(
     (location: Location.LocationObject) => {
+      const accuracy = location.coords.accuracy;
+      if (accuracy != null && accuracy > MIN_ACCEPTABLE_ACCURACY_METERS) return;
+
       const point: RoutePoint = {
         lat: location.coords.latitude,
         lng: location.coords.longitude,
         timestamp: location.timestamp,
         altitude: location.coords.altitude,
+        accuracy,
+        heading: location.coords.heading,
       };
+      const lastPoint = pointsRef.current[pointsRef.current.length - 1];
+      if (lastPoint && !isPlausibleMovement(lastPoint, point)) return;
+
       const updated = [...pointsRef.current, point];
       pointsRef.current = updated;
       setPoints(updated);

@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { fonts, spacing } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
@@ -29,12 +30,13 @@ export function OnboardingStepLayout({
   onSkip,
 }: OnboardingStepLayoutProps) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={[styles.container, { paddingTop: spacing.screenPadding + insets.top }]}>
         <View style={styles.topRow}>
           {step > 1 ? (
             <Pressable onPress={() => router.back()} hitSlop={10}>

@@ -20,9 +20,8 @@ export default function HealthData() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Driven by the actual HealthDataProvider capability check, not a
-  // hardcoded "(coming soon)" label - reports false today (the provider is
-  // still a stub, see lib/health/healthConnectProvider.ts) but this screen
-  // needs no further changes once a real implementation lands.
+  // hardcoded "(coming soon)" label - true once Health Connect is actually
+  // installed on this device, false on iOS or on an Expo-Go/older build.
   const [healthConnectAvailable, setHealthConnectAvailable] = useState(false);
 
   useEffect(() => {

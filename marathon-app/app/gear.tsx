@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../lib/auth/AuthContext";
@@ -21,6 +22,7 @@ import { TextField } from "../components/ui/TextField";
  */
 export default function Gear() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { session, profile } = useAuth();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -72,7 +74,7 @@ export default function Gear() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: 24 + insets.top }]}>
       <View style={styles.topRow}>
         <Pressable onPress={goBack} hitSlop={10}>
           <Text style={styles.backLink}>‹ Back</Text>

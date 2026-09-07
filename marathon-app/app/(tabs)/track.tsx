@@ -1,18 +1,20 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import { useAuth } from "../../lib/auth/AuthContext";
 import { getTodaySession, useActivePlanData } from "../../lib/data/usePlanData";
 import { flushPendingActivities, getPendingActivityCount } from "../../lib/data/pendingActivities";
 import { useRunTracking } from "../../lib/runTracking/RunTrackingContext";
-import { computeRouteDistanceMeters } from "../../lib/gpsStats";
+import { computeRouteDistanceMeters, type RoutePoint } from "../../lib/gpsStats";
 import { formatDistance } from "../../lib/units";
 import { SESSION_TYPE_COLOR, SESSION_TYPE_LABEL } from "../../lib/sessionTypes";
 import { fonts, palette, spacing } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
+import { RunMap } from "../../components/RunMap";
 
 function formatElapsedShort(totalSeconds: number): string {
   const h = Math.floor(totalSeconds / 3600);
@@ -89,6 +91,44 @@ export default function Track() {
   // screen (see active-run.tsx) - so coming back to Track mid-run should
   // offer to resume that same screen, not start a fresh one on top of it.
   const isTracking = rt.phase !== "idle";
+
+  // Own, lightweight location watch just for showing "here you are" on this
+  // pre-run lobby screen - separate from RunTrackingContext's own watch,
+  // which only exists once a run actually starts. Paused while a real run
+  // is in progress so the two watches never run at once; the map falls
+  // back to the real tracked route (rt.points) at that point instead.
+  const [lobbyPosition, setLobbyPosition] = useState<RoutePoint | null>(null);
+  useEffect(() => {
+    if (isTracking) return;
+    let subscription: Location.LocationSubscription | null = null;
+    let cancelled = false;
+
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted" || cancelled) return;
+      subscription = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.Balanced, timeInterval: 4000, distanceInterval: 5 },
+        (location) => {
+          setLobbyPosition({
+            lat: location.coords.latitude,
+            lng: location.coords.longitude,
+            timestamp: location.timestamp,
+            altitude: location.coords.altitude,
+            accuracy: location.coords.accuracy,
+            heading: location.coords.heading,
+          });
+        }
+      );
+    })();
+
+    return () => {
+      cancelled = true;
+      subscription?.remove();
+    };
+  }, [isTracking]);
+
+  const mapPoints = isTracking ? rt.points : lobbyPosition ? [lobbyPosition] : [];
+
   const trackingLabel = (() => {
     switch (rt.phase) {
       case "requesting-permission":
@@ -110,10 +150,21 @@ export default function Track() {
     }
   })();
 
+  // Track's own bottom banner (Start run / Resume tracking) floats over this
+  // full-bleed map rather than sitting beside it, so the recenter button
+  // needs an explicit offset to clear it - Active Run's own map sits in its
+  // own boxed area above a separate controls row instead, where the
+  // default small offset is already correct. The tracking banner (a status
+  // line plus a Resume button) is taller than the plain Start button, so
+  // this has to switch with it or the button ends up hidden behind
+  // whichever one is actually showing.
+  const bottomBannerHeight = isTracking ? 110 : 52;
+  const recenterBottomOffset = insets.bottom + 24 + bottomBannerHeight + 16;
+
   return (
     <View style={styles.screen}>
       <View style={styles.mapArea}>
-        <Text style={styles.mapPlaceholderText}>Live map coming with the app's first real build</Text>
+        <RunMap points={mapPoints} live recenterBottomOffset={recenterBottomOffset} />
       </View>
 
       <Pressable
@@ -198,13 +249,13 @@ function createStyles(colors: Colors) {
   // screen was built with), so these two stay on the static palette
   // instead of the themed `colors` object.
   screen: { flex: 1, backgroundColor: palette.predawn },
+  // No alignItems/justifyContent, unlike the placeholder text this box used
+  // to center - RunMap needs to stretch to the box's full width (the
+  // default cross-axis behavior), not just its height.
   mapArea: {
     flex: 1,
     backgroundColor: palette.predawn,
-    alignItems: "center",
-    justifyContent: "center",
   },
-  mapPlaceholderText: { fontFamily: fonts.body, fontSize: 13, color: "#5a5d62", textAlign: "center", paddingHorizontal: 40 },
   backButton: {
     position: "absolute",
     left: spacing.screenPadding,

@@ -8,16 +8,23 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jaykumar093.stryde"
     },
     "android": {
+      "package": "com.jaykumar093.stryde",
       "adaptiveIcon": {
         "backgroundColor": "#14161A",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.health.READ_EXERCISE",
+        "android.permission.health.READ_DISTANCE",
+        "android.permission.health.READ_TOTAL_CALORIES_BURNED"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -49,7 +56,25 @@
           "photosPermission": "Stryde uses your photos to attach pictures to a logged run and to build its shareable route card."
         }
       ],
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "expo-dev-client",
+      [
+        "react-native-maps",
+        {
+          "androidGoogleMapsApiKey": "AIzaSyB4jHmtjcJSjy7p5gYvxj_I406liVxpr5Y"
+        }
+      ],
+      "react-native-health-connect",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26,
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36
+          }
+        }
+      ]
     ]
   }
 }

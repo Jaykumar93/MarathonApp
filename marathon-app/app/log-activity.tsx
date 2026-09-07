@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "../lib/auth/AuthContext";
 import { createActivity } from "../lib/data/activities";
@@ -21,6 +22,7 @@ const RPE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({ value: n, labe
 
 export default function LogActivity() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -109,7 +111,7 @@ export default function LogActivity() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: 24 + insets.top }]}>
       <View style={styles.topRow}>
         <Text style={styles.backLink} onPress={goBack}>
           ‹ Back
