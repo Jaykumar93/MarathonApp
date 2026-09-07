@@ -125,7 +125,7 @@ export default function ShareRun() {
   };
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { paddingTop: 20 + insets.top }]}>
       <View style={styles.topRow}>
         <Pressable onPress={goBack} hitSlop={10}>
           <Text style={styles.backLink}>‹ Back</Text>

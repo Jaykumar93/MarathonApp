@@ -10,6 +10,7 @@ import { useAuth } from "../lib/auth/AuthContext";
 import { todayIso } from "../lib/data/usePlanData";
 import { formatDistance, formatPace } from "../lib/units";
 import { SESSION_TYPE_COLOR, SESSION_TYPE_LABEL, formatIntervalStructureSummary } from "../lib/sessionTypes";
+import { ActivityThumbnail } from "./ActivityThumbnail";
 
 function formatDateHeading(iso: string): string {
   const d = new Date(iso + "T00:00:00Z");
@@ -74,10 +75,13 @@ function LoggedActivityRow({ activity, unit }: { activity: ActivityRow; unit: "k
 
   return (
     <Pressable style={styles.loggedRow} onPress={() => router.push(`/run-summary?id=${activity.id}`)} accessibilityRole="button">
-      <Text style={styles.loggedTitle}>
-        {SESSION_TYPE_LABEL[activity.activity_type] ?? activity.activity_type}
-        {activity.rpe ? ` · RPE ${activity.rpe}` : ""}
-      </Text>
+      <View style={styles.loggedHeader}>
+        <ActivityThumbnail activity={activity} />
+        <Text style={[styles.loggedTitle, styles.loggedTitleFlex]}>
+          {SESSION_TYPE_LABEL[activity.activity_type] ?? activity.activity_type}
+          {activity.rpe ? ` · RPE ${activity.rpe}` : ""}
+        </Text>
+      </View>
       <View style={styles.loggedStatsRow}>
         <View style={styles.loggedStat}>
           <Text style={styles.loggedStatLabel}>DISTANCE</Text>
@@ -230,7 +234,14 @@ function createStyles(colors: Colors) {
       alignItems: "center",
       justifyContent: "center",
     },
+    loggedHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
     loggedTitle: { fontFamily: fonts.bodySemiBold, fontSize: type.pDim, color: colors.textPrimary, marginBottom: 8 },
+    // Overrides loggedTitle's own marginBottom - PlannedSessionCard uses
+    // that style standalone and relies on it for spacing above its stats
+    // row, but here the title sits inside loggedHeader (which already has
+    // its own marginBottom) next to a thumbnail, so it would otherwise be
+    // double-spaced.
+    loggedTitleFlex: { flexShrink: 1, marginBottom: 0 },
     loggedStatsRow: { flexDirection: "row" },
     loggedStat: { flex: 1 },
     loggedStatLabel: { fontFamily: fonts.monoMedium, fontSize: type.statLabel, color: colors.textFaint, marginBottom: 2 },

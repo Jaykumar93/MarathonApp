@@ -88,7 +88,10 @@ export default function PlannedSessionDetail() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView style={styles.scrollFlex} contentContainerStyle={[styles.container, { paddingBottom: 96 + insets.bottom }]}>
+      <ScrollView
+        style={styles.scrollFlex}
+        contentContainerStyle={[styles.container, { paddingTop: 20 + insets.top, paddingBottom: 96 + insets.bottom }]}
+      >
         <View style={styles.topRow}>
           <Pressable onPress={goBack} hitSlop={10}>
             <Text style={styles.backLink}>‹ Back</Text>

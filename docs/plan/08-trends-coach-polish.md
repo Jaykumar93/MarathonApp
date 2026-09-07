@@ -25,12 +25,15 @@ See [implementation/08-trends-coach-polish.md](implementation/08-trends-coach-po
 - **Trends**: real content spec came from `design.md`/the mockup - pace-over-time line chart (8wk), weekly mileage bars, a consistency heatmap grid (30 days), personal records list. New pure/tested `lib/trendsStats.ts` (no Supabase import, same pattern as `activityStats.ts`). Charts via `react-native-gifted-charts`; the heatmap grid is a custom `View` grid (gifted-charts has no calendar-heatmap primitive).
 - **Sentry**: `@sentry/react-native`, initialized in `app/_layout.tsx`. Free tier; release/source-map config deferred to Phase F.
 
-## Phase B — Dev build (unlocks native features)
+## Phase B — Dev build (unlocks native features) — live-verified on device, minor open items remain
 
-- `expo-dev-client`, `eas.json` (development/preview/production profiles), built via EAS's cloud build service (no local Android SDK requirement, matching how this whole project has run so far).
+- `expo-dev-client`, `eas.json` (development/preview/production profiles), built via EAS's cloud build service (no local Android SDK requirement, matching how this whole project has run so far). Three real builds shipped this phase - the original, one after a Google Maps key was added, and one bumping `compileSdkVersion`/`targetSdkVersion` to 36 for Health Connect to actually work on Android 16.
 - Native config for all three blocked features added to `app.json` together (one prebuild/dev-build cycle covers all of them): `react-native-maps`, `react-native-health-connect` + `expo-build-properties`, and the background-location plugin config already added in Task 6.
-- **Unblocks Task 6**: live map in Track/Active Run, post-run map in Run Summary, the full mile-marker Pace Band, confirming background location survives a locked screen for real.
-- **Unblocks Task 7**: swap `lib/health/healthConnectProvider.ts`'s stub body for a real implementation - the interface and every call site were built specifically so this is the *only* file that needs to change. New sync logic writing fetched samples into `activities` with `source: "health_connect"`.
+- **Unblocks Task 6**: live map in Track/Active Run via a new `RunMap` component, live-verified and fixed through several real-device-only bugs (native-view clipping, a zero-width layout bug, a zoom race) - see the follow-up entry below for the full account. Post-run map in Run Summary and the full mile-marker Pace Band stay as they were. Background location surviving a locked screen is still unverified for real.
+- **Unblocks Task 7**: `lib/health/healthConnectProvider.ts` swapped for a real implementation, sync logic, Settings connect/sync/disconnect UI, and a header sync button - live-verified through several real-device-only permission/SDK-version bugs, documented in the follow-up entry.
+- Full account of the live-device verification pass, every bug it surfaced, and how each was fixed: [implementation/08-trends-coach-polish.md](implementation/08-trends-coach-polish.md)'s "Phase B follow-up" section.
+- `react-native-maps` and `react-native-health-connect` both crash `react-native-web` at import time - `RunMap.web.tsx`/`healthConnectProvider.web.ts` are Metro platform-extension fallbacks so this project's web-based dev/preview workflow keeps working; Android/iOS get the real implementations untouched.
+- Full account, including what's still unverified pending the user's own `eas build` + device: [implementation/08-trends-coach-polish.md](implementation/08-trends-coach-polish.md)'s Phase B section and Open items.
 
 ## Phase C — AI Coach (RAG)
 

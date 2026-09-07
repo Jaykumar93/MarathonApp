@@ -15,6 +15,8 @@ import {
 } from "../../lib/data/usePlanData";
 import { getActivitiesInRange, groupActivitiesByDate, type ActivityRow } from "../../lib/data/activities";
 import { getShoes, type ShoeRow } from "../../lib/data/shoes";
+import { healthConnectProvider } from "../../lib/health/healthConnectProvider";
+import { syncHealthActivities } from "../../lib/health/syncHealthData";
 import { fonts, noSelectStyle, spacing, type } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Card } from "../../components/ui/Card";
@@ -83,6 +85,22 @@ export default function Home() {
       setOverdueShoes(rows.filter((s) => !s.retired && s.cumulative_distance_km >= s.retirement_threshold_km))
     );
   }, [session?.user?.id]);
+
+  // Opportunistic, silent "auto-sync" for an already-connected account -
+  // once per Home mount (an app open/relaunch, or coming back to this tab
+  // fresh), not on every render. No loading UI/error surfaced here on
+  // purpose - Settings' own Connect flow already reports failures where a
+  // user action caused them; this one is just topping up in the
+  // background. Anything imported shows up next time these activity
+  // queries re-run (a later date change, tab revisit, or app relaunch) -
+  // not forced to redraw mid-mount.
+  useEffect(() => {
+    if (!session?.user?.id || profile?.health_data_source !== "health_connect") return;
+    syncHealthActivities(session.user.id, healthConnectProvider).catch((e) =>
+      console.warn("Health Connect sync-on-open failed:", e)
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id, profile?.health_data_source]);
 
   // Has to sit above the loading/no-plan early returns below (every hook
   // does - conditionally skipping a hook call between renders is a

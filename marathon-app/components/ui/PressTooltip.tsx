@@ -34,7 +34,9 @@ export function PressTooltip({ label, accessibilityLabel, style, children }: Pre
       {pressed && (
         <View style={styles.anchor} pointerEvents="none">
           <View style={[styles.bubble, { backgroundColor: colors.predawn }]}>
-            <Text style={styles.label}>{label}</Text>
+            <Text style={styles.label} numberOfLines={1}>
+              {label}
+            </Text>
           </View>
         </View>
       )}
@@ -44,7 +46,13 @@ export function PressTooltip({ label, accessibilityLabel, style, children }: Pre
 }
 
 const styles = StyleSheet.create({
-  anchor: { position: "absolute", top: -28, left: 0, right: 0, alignItems: "center", zIndex: 10 },
-  bubble: { borderRadius: 7, paddingVertical: 3, paddingHorizontal: 7 },
+  // left/right stretch this to a much wider box than the narrow bar/cell
+  // it's actually anchored to (a day bar or a consistency-grid cell can be
+  // well under 20px wide) - centered on it either way, since the offsets
+  // are symmetric, but no longer forcing the bubble itself to squeeze into
+  // that same width. Without this, the bubble had almost no room and its
+  // text wrapped one character per line instead of showing on one.
+  anchor: { position: "absolute", top: -28, left: -60, right: -60, alignItems: "center", zIndex: 10 },
+  bubble: { borderRadius: 7, paddingVertical: 3, paddingHorizontal: 7, maxWidth: 120 },
   label: { fontFamily: fonts.dataBold, fontSize: 10.5, color: "#fff" },
 });

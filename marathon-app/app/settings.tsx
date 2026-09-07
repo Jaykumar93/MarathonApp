@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Switch, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Switch, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
 import { useAuth } from "../lib/auth/AuthContext";
@@ -14,6 +15,7 @@ import { ChipSelect } from "../components/ui/ChipSelect";
 import { TextField } from "../components/ui/TextField";
 import { formatDistance } from "../lib/units";
 import { healthConnectProvider } from "../lib/health/healthConnectProvider";
+import { syncHealthActivities } from "../lib/health/syncHealthData";
 
 const UNIT_OPTIONS = [
   { value: "km" as const, label: "Kilometers" },
@@ -31,6 +33,7 @@ function formatMemberSince(iso: string | undefined): string {
 
 export default function Settings() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { profile, refreshProfile, refreshActiveGoal } = useAuth();
   const { mode, colors, setMode } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -38,10 +41,11 @@ export default function Settings() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [savingUnit, setSavingUnit] = useState(false);
-  // Same capability-driven check as onboarding's health-data step - reports
-  // false today (lib/health/healthConnectProvider.ts is still a stub), but
-  // this row needs no further changes once a real implementation lands.
+  // Same capability-driven check as onboarding's health-data step.
   const [healthConnectAvailable, setHealthConnectAvailable] = useState(false);
+  const [connectingHealth, setConnectingHealth] = useState(false);
+  const [healthSyncError, setHealthSyncError] = useState<string | null>(null);
+  const [healthSyncStatus, setHealthSyncStatus] = useState<string | null>(null);
 
   useEffect(() => {
     healthConnectProvider.isAvailable().then(setHealthConnectAvailable);
@@ -91,6 +95,71 @@ export default function Settings() {
     setSavingUnit(false);
   }
 
+  /**
+   * Permission grant + initial sync in one tap - Health Connect has no
+   * separate "just connect, sync later" step worth exposing, and this
+   * screen has nowhere else a background sync could be triggered from yet
+   * (no push notifications, no background task). Re-tappable afterward too
+   * (see the Pressable below) to re-run the same check + sync on demand.
+   */
+  async function handleConnectHealthConnect() {
+    if (!profile) return;
+    setConnectingHealth(true);
+    setHealthSyncError(null);
+    setHealthSyncStatus(null);
+    try {
+      const granted = await healthConnectProvider.requestPermissions();
+      if (!granted) {
+        setHealthSyncError("Permission wasn't granted - allow Stryde access from Health Connect's own app settings.");
+        return;
+      }
+      const result = await syncHealthActivities(profile.id, healthConnectProvider);
+      setHealthSyncStatus(
+        result.imported > 0
+          ? `Synced ${result.imported} new run${result.imported === 1 ? "" : "s"}${result.skipped > 0 ? ` (${result.skipped} already up to date)` : ""}.`
+          : "No new running activities found in Health Connect."
+      );
+      await supabase.from("profiles").update({ health_data_source: "health_connect" }).eq("id", profile.id);
+      await refreshProfile();
+    } catch (e) {
+      setHealthSyncError(e instanceof Error ? e.message : "Couldn't connect to Health Connect.");
+    } finally {
+      setConnectingHealth(false);
+    }
+  }
+
+  /**
+   * Only ever flips this app's own "connected" flag back off, so syncing
+   * stops and the row reads "Connect" again - deliberately doesn't call
+   * Health Connect's revokeAllPermissions(). Its own docs advise against
+   * using it as an in-app disconnect toggle in the first place (the
+   * revocation only actually applies after a full app restart, so an
+   * in-app toggle would silently lie about its own effect until then) and
+   * recommend exactly this: track the disconnected state locally, send the
+   * user to Health Connect's own settings if they want to actually revoke
+   * access. openHealthConnectSettings() takes them straight there.
+   */
+  async function handleDisconnectHealthConnect() {
+    if (!profile) return;
+    Alert.alert(
+      "Disconnect Health Connect?",
+      "Stryde will stop auto-syncing runs from Health Connect. Runs already imported stay in your history. To fully revoke Stryde's access to Health Connect itself, use Health Connect's own app settings.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Disconnect",
+          style: "destructive",
+          onPress: async () => {
+            setHealthSyncError(null);
+            setHealthSyncStatus(null);
+            await supabase.from("profiles").update({ health_data_source: "manual" }).eq("id", profile.id);
+            await refreshProfile();
+          },
+        },
+      ]
+    );
+  }
+
   async function handleVoiceToggle(enabled: boolean) {
     if (!profile) return;
     setSavingVoiceToggle(true);
@@ -137,7 +206,7 @@ export default function Settings() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: 24 + insets.top }]}>
       <View style={styles.topRow}>
         <Pressable onPress={() => router.replace("/(tabs)")} hitSlop={10}>
           <Text style={styles.homeLink}>‹ Home</Text>
@@ -197,11 +266,29 @@ export default function Settings() {
           {!healthConnectAvailable ? (
             <Text style={styles.comingSoon}>Coming soon</Text>
           ) : profile?.health_data_source === "health_connect" ? (
-            <Text style={styles.connectedLabel}>Connected</Text>
+            <View style={{ alignItems: "flex-end", gap: 4 }}>
+              {/* Still tappable, not just a static label - re-runs the same
+                  permission check + sync. Needed because "Connected" reflects
+                  what got saved at connect time, which can go stale (a
+                  permission revoked later, or - confirmed on a real device -
+                  Health Connect's own request call reporting success when the
+                  OS hadn't actually granted it) with no other way to retry
+                  once this no longer shows the plain Connect button. */}
+              <Pressable onPress={handleConnectHealthConnect} disabled={connectingHealth} hitSlop={8}>
+                <Text style={styles.connectedLabel}>{connectingHealth ? "Syncing…" : "Connected · Sync now"}</Text>
+              </Pressable>
+              <Pressable onPress={handleDisconnectHealthConnect} hitSlop={8}>
+                <Text style={styles.disconnectLink}>Disconnect</Text>
+              </Pressable>
+            </View>
           ) : (
-            <Text style={styles.connectLink}>Connect</Text>
+            <Pressable onPress={handleConnectHealthConnect} disabled={connectingHealth} hitSlop={8}>
+              <Text style={styles.connectLink}>{connectingHealth ? "Connecting…" : "Connect"}</Text>
+            </Pressable>
           )}
         </View>
+        {!!healthSyncError && <Text style={styles.errorText}>{healthSyncError}</Text>}
+        {!!healthSyncStatus && <Text style={styles.subLabel}>{healthSyncStatus}</Text>}
       </Card>
 
       <Text style={styles.sectionLabel}>GEAR</Text>
@@ -347,11 +434,8 @@ function createStyles(colors: Colors) {
   value: { fontFamily: fonts.bodySemiBold, fontSize: type.pDim, color: colors.textPrimary },
   comingSoon: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint },
   connectedLabel: { fontFamily: fonts.bodySemiBold, fontSize: type.pFaint, color: colors.success },
-  // Not yet a Pressable - unreachable while healthConnectProvider is a
-  // stub (isAvailable() always false), so there's no real connect flow to
-  // wire up yet. Becomes a real tappable action alongside the native
-  // implementation itself.
   connectLink: { fontFamily: fonts.bodySemiBold, fontSize: type.pFaint, color: colors.accent },
+  disconnectLink: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.textFaint },
   divider: { height: 1, backgroundColor: colors.cardLine, marginVertical: 12 },
   fieldGap: { marginTop: 12 },
   inlineSave: { marginTop: 10 },

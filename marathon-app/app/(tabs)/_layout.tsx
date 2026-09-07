@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
-import { ColorValue, Pressable, StyleSheet, Text } from "react-native";
+import { ColorValue, Pressable, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../../lib/auth/AuthContext";
 import { fonts, type } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
+import { HealthSyncButton } from "../../components/HealthSyncButton";
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -64,7 +65,12 @@ export default function TabsLayout() {
         headerTitle: "",
         headerShadowVisible: false,
         headerStyle: { backgroundColor: colors.screenBg },
-        headerRight: () => <ProfileButton />,
+        headerRight: () => (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <HealthSyncButton />
+            <ProfileButton />
+          </View>
+        ),
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textFaint,
         tabBarStyle: { height: 74, paddingTop: 9, backgroundColor: colors.tabBarBg, borderTopColor: colors.cardLine },

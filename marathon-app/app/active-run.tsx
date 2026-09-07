@@ -5,13 +5,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getPlanSessionById, type PlanSessionRow } from "../lib/data/plans";
 import { COUNTDOWN_SECONDS, useRunTracking } from "../lib/runTracking/RunTrackingContext";
-import { computeRouteDistanceMeters, computeRecentPaceSecondsPerKm } from "../lib/gpsStats";
+import { computeRouteDistanceMeters, computeRecentPaceSecondsPerKm, computeAveragePaceSecondsPerKm } from "../lib/gpsStats";
 import { getCurrentLeg, type RunLeg } from "../lib/intervalProgress";
 import { formatDistance, formatMeters, formatPace } from "../lib/units";
 import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
 import { fonts, palette } from "../lib/theme";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PhotoPicker } from "../components/ui/PhotoPicker";
+import { RunMap } from "../components/RunMap";
 import { useAuth } from "../lib/auth/AuthContext";
 
 function formatDateShort(iso: string): string {
@@ -90,14 +91,11 @@ function BackButton({ onPress, top }: { onPress: () => void; top: number }) {
  * never interrupts tracking. Track shows a "resume tracking" affordance
  * back into this same screen whenever a run is in progress.
  *
- * The map/route-visualization half of this screen (PRD's full mile-marker
- * Pace Band, live + post-run route rendering) is deliberately not built
- * yet - react-native-maps needs a custom dev build to run at all (it does
- * nothing in plain Expo Go, unlike expo-location), and none exists for
- * this project yet. Route points are still fully captured and saved
- * (`route`/`splits` on the activity), so the map can be added later purely
- * as a rendering layer with no backfill needed. See
- * docs/plan/06-gps-tracking-active-run.md for the full scope note.
+ * The live map (Task 8 Phase B - needs the custom dev build react-native-maps
+ * depends on, which didn't exist when this screen was first built) now
+ * renders the in-progress route via `RunMap`. The mockup's full
+ * mile-marker Pace Band is still just the current-pace readout above, not
+ * a mile-by-mile breakdown - that stays deferred.
  */
 export default function ActiveRun() {
   const router = useRouter();
@@ -334,6 +332,7 @@ export default function ActiveRun() {
   const distanceMeters = computeRouteDistanceMeters(rt.points);
   const distanceKm = distanceMeters / 1000;
   const currentPace = computeRecentPaceSecondsPerKm(rt.points, 60);
+  const averagePace = computeAveragePaceSecondsPerKm(distanceMeters, rt.elapsedSeconds);
   const targetPaceSecondsPerKm = rt.plannedSession?.planned_pace_seconds_per_km ?? null;
   const paceDeltaSecondsPerKm = currentPace != null && targetPaceSecondsPerKm ? currentPace - targetPaceSecondsPerKm : null;
   const currentLeg = rt.plannedSession?.interval_structure
@@ -382,8 +381,8 @@ export default function ActiveRun() {
           <Text style={styles.statValue}>{formatElapsed(rt.elapsedSeconds)}</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statLabel}>PTS</Text>
-          <Text style={styles.statValue}>{rt.points.length}</Text>
+          <Text style={styles.statLabel}>AVG PACE</Text>
+          <Text style={styles.statValue}>{averagePace != null ? formatPace(averagePace, unit).replace(`/${unit}`, "") : "--:--"}</Text>
         </View>
       </View>
 
@@ -399,7 +398,7 @@ export default function ActiveRun() {
       )}
 
       <View style={styles.mapPlaceholder}>
-        <Text style={styles.mapPlaceholderText}>Live map coming with the app's first real build</Text>
+        <RunMap points={rt.points} live />
       </View>
 
       <View style={styles.controls}>
@@ -510,17 +509,19 @@ const styles = StyleSheet.create({
   },
   intervalKind: { fontFamily: fonts.monoSemiBold, fontSize: 11, letterSpacing: 1, color: "#fff", marginBottom: 4 },
   intervalMessage: { fontFamily: fonts.bodySemiBold, fontSize: 14.5, color: "#fff" },
+  // No overflow:"hidden" here on purpose - see RunMap.tsx's own styles
+  // comment. No alignItems/justifyContent either, unlike the placeholder
+  // text this box used to center - RunMap needs to actually stretch to
+  // fill the box's full width, not just its height, which "center" (the
+  // default cross-axis behavior is "stretch") was silently preventing.
   mapPlaceholder: {
     flex: 1,
     minHeight: 100,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
-    alignItems: "center",
-    justifyContent: "center",
     marginBottom: 16,
   },
-  mapPlaceholderText: { fontFamily: fonts.body, fontSize: 12, color: "#5a5d62", textAlign: "center", paddingHorizontal: 30 },
   controls: { flexDirection: "row", gap: 10 },
   pauseBtn: {
     flex: 1,

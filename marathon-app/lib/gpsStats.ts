@@ -10,6 +10,10 @@ export interface RoutePoint {
   timestamp: number;
   /** Meters above sea level, when the device provides one. */
   altitude?: number | null;
+  /** Horizontal accuracy radius in meters, when the device reports one - kept for debugging/future use; the actual noise filtering happens before a point is ever recorded (see RunTrackingContext's MIN_ACCEPTABLE_ACCURACY_METERS), not here. */
+  accuracy?: number | null;
+  /** Compass heading in degrees (0 = north, clockwise), when the device reports one - drives the live map's direction arrow. Unreliable at low speed, same as any GPS-derived heading, so it's just a display hint, never used in distance/pace math. */
+  heading?: number | null;
 }
 
 export interface Split {
@@ -33,6 +37,28 @@ export function haversineDistanceMeters(a: RoutePoint, b: RoutePoint): number {
 
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
   return 2 * EARTH_RADIUS_METERS * Math.asin(Math.sqrt(h));
+}
+
+// Faster than any realistic sustained running pace (~2:05/km) - a
+// consecutive-fix jump quicker than this is a GPS glitch (a single noisy
+// reading still inside its own accuracy radius, or a stray reflection),
+// not a real move. Deliberately generous rather than tuned to a "typical"
+// pace, so it only ever rejects genuine glitches, never a real fast stretch.
+const MAX_PLAUSIBLE_SPEED_METERS_PER_SECOND = 8;
+
+/**
+ * Whether the movement implied between two consecutive fixes is physically
+ * plausible for a runner. This is what actually catches the case a pure
+ * accuracy-radius check (see RunTrackingContext's MIN_ACCEPTABLE_ACCURACY_METERS)
+ * misses: two fixes that are each individually "accurate enough" on their
+ * own, but whose reported positions still drifted apart by more than a
+ * person could really have covered in that time - a single one of these
+ * can otherwise dominate a short pace window and read as an absurd speed.
+ */
+export function isPlausibleMovement(a: RoutePoint, b: RoutePoint): boolean {
+  const seconds = (b.timestamp - a.timestamp) / 1000;
+  if (seconds <= 0) return false;
+  return haversineDistanceMeters(a, b) / seconds <= MAX_PLAUSIBLE_SPEED_METERS_PER_SECOND;
 }
 
 /** Sum of consecutive-point distances along the whole route, in meters. */
@@ -106,10 +132,19 @@ export function computeElevationGainLoss(points: RoutePoint[]): { gainMeters: nu
   return { gainMeters: gain, lossMeters: loss };
 }
 
+// Slower than any pace worth showing (even a very slow walk is well under
+// this) - a real-but-tiny recorded distance over a real time span (e.g.
+// standing still after GPS-noise filtering leaves a few meters of genuine
+// jitter) divides out to a huge but technically-correct number, not a
+// meaningful pace. Treated the same as "not enough distance yet" rather
+// than displayed or spoken aloud as-is.
+const MAX_MEANINGFUL_PACE_SECONDS_PER_KM = 1800;
+
 /** Average pace in seconds/km over the whole route. Null if there's no meaningful distance yet. */
 export function computeAveragePaceSecondsPerKm(distanceMeters: number, durationSeconds: number): number | null {
   if (distanceMeters <= 0) return null;
-  return durationSeconds / (distanceMeters / 1000);
+  const paceSecondsPerKm = durationSeconds / (distanceMeters / 1000);
+  return paceSecondsPerKm <= MAX_MEANINGFUL_PACE_SECONDS_PER_KM ? paceSecondsPerKm : null;
 }
 
 /**

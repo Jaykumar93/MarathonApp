@@ -5,6 +5,8 @@ export interface ActivityRow {
   id: string;
   user_id: string;
   source: "health_connect" | "healthkit" | "manual";
+  /** The source platform's own record id (Health Connect/HealthKit) - null for manual entries. Enforced unique per (user_id, source) by the DB, which is what actually prevents a re-sync from double-importing the same workout. */
+  external_id: string | null;
   activity_type: string;
   /** User-given title, distinct from activity_type's fixed label (e.g. "Sunday long run with the club" on top of "Long run"). Optional - most rows won't have one. */
   name: string | null;
@@ -12,6 +14,7 @@ export interface ActivityRow {
   distance_meters: number;
   duration_seconds: number;
   avg_heart_rate: number | null;
+  calories: number | null;
   elevation_gain_meters: number | null;
   elevation_loss_meters: number | null;
   splits: unknown;
@@ -239,6 +242,71 @@ export async function deleteActivity(activityId: string): Promise<void> {
   if (!stillFulfilled) {
     await markSessionPending(planSessionId);
   }
+}
+
+/**
+ * The most recent auto-synced activity's own start_time for this source, or
+ * null if nothing's ever been imported from it yet - lets a sync job ask
+ * for "anything after my last import" instead of re-fetching a connected
+ * platform's entire history every time. The DB's unique (user_id, source,
+ * external_id) index is what actually guarantees no duplicate import, not
+ * this - this is only choosing a cheap starting point for the query.
+ */
+export async function getLastSyncedActivityTime(
+  userId: string,
+  source: "health_connect" | "healthkit"
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("activities")
+    .select("start_time")
+    .eq("user_id", userId)
+    .eq("source", source)
+    .order("start_time", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as { start_time: string } | null)?.start_time ?? null;
+}
+
+export interface ImportedActivityInput {
+  source: "health_connect" | "healthkit";
+  externalId: string;
+  activityType: string;
+  startTimeIso: string;
+  distanceMeters: number;
+  durationSeconds: number;
+  avgHeartRate?: number;
+  calories?: number;
+}
+
+/**
+ * Writes one auto-synced activity. Never touches plan_session linkage -
+ * unlike createActivity's manual-logging path, a synced run has no way to
+ * know which planned session (if any) it fulfills, so it always arrives
+ * unlinked, same as a manual entry logged without picking one.
+ *
+ * Returns false instead of throwing when the row already exists (DB error
+ * 23505 on activities_source_external_id_uidx) - a prior sync already
+ * imported this same platform record, which is an expected, routine
+ * outcome of re-running a sync, not a failure.
+ */
+export async function importSyncedActivity(userId: string, input: ImportedActivityInput): Promise<boolean> {
+  const { error } = await supabase.from("activities").insert({
+    user_id: userId,
+    source: input.source,
+    external_id: input.externalId,
+    activity_type: input.activityType,
+    start_time: input.startTimeIso,
+    distance_meters: input.distanceMeters,
+    duration_seconds: input.durationSeconds,
+    avg_heart_rate: input.avgHeartRate ?? null,
+    calories: input.calories ?? null,
+  });
+  if (error) {
+    if (error.code === "23505") return false;
+    throw error;
+  }
+  return true;
 }
 
 /** Groups activities by their UTC calendar date (YYYY-MM-DD). */

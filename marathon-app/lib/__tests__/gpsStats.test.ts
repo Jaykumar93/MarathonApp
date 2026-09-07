@@ -5,6 +5,7 @@ import {
   computeElevationGainLoss,
   computeAveragePaceSecondsPerKm,
   computeRecentPaceSecondsPerKm,
+  isPlausibleMovement,
   type RoutePoint,
 } from "../gpsStats";
 
@@ -131,5 +132,29 @@ describe("computeAveragePaceSecondsPerKm", () => {
 
   it("returns null for zero distance", () => {
     expect(computeAveragePaceSecondsPerKm(0, 100)).toBeNull();
+  });
+});
+
+describe("isPlausibleMovement", () => {
+  it("accepts a normal running pace between two fixes", () => {
+    const a: RoutePoint = { lat: 0, lng: 0, timestamp: 0 };
+    const oneKmLatDeg = (1000 / EARTH_RADIUS_METERS) * (180 / Math.PI);
+    // 10m in 4s = 2.5 m/s, a plausible easy-run pace, well under the cap.
+    const b: RoutePoint = { lat: oneKmLatDeg * (10 / 1000), lng: 0, timestamp: 4000 };
+    expect(isPlausibleMovement(a, b)).toBe(true);
+  });
+
+  it("rejects a jump implying an impossible speed", () => {
+    const a: RoutePoint = { lat: 0, lng: 0, timestamp: 0 };
+    const oneKmLatDeg = (1000 / EARTH_RADIUS_METERS) * (180 / Math.PI);
+    // 100m in 4s = 25 m/s - a GPS glitch, not a real move.
+    const b: RoutePoint = { lat: oneKmLatDeg * (100 / 1000), lng: 0, timestamp: 4000 };
+    expect(isPlausibleMovement(a, b)).toBe(false);
+  });
+
+  it("rejects a non-positive time delta", () => {
+    const p: RoutePoint = { lat: 0, lng: 0, timestamp: 1000 };
+    expect(isPlausibleMovement(p, { ...p, timestamp: 1000 })).toBe(false);
+    expect(isPlausibleMovement(p, { ...p, timestamp: 500 })).toBe(false);
   });
 });
