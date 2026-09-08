@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ViewShot, { type ViewShotRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
+import { File, Paths } from "expo-file-system";
 import { useAuth } from "../lib/auth/AuthContext";
 import { getActivityById, type ActivityRow } from "../lib/data/activities";
 import { formatDistance, formatPace } from "../lib/units";
@@ -13,6 +14,16 @@ import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { ShareRouteCard, SHARE_TEMPLATES, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT, type ShareTemplate } from "../components/ShareRouteCard";
 import type { RoutePoint } from "../lib/gpsStats";
+import { serializeGpx } from "../lib/export/gpx";
+import { serializeTcx } from "../lib/export/tcx";
+import type { ExportActivity } from "../lib/export/types";
+
+type ExportFormat = "gpx" | "tcx";
+
+const EXPORT_MIME: Record<ExportFormat, string> = {
+  gpx: "application/gpx+xml",
+  tcx: "application/vnd.garmin.tcx+xml",
+};
 
 function formatDateShort(iso: string): string {
   const d = new Date(iso + "T00:00:00Z");
@@ -55,6 +66,7 @@ export default function ShareRun() {
   const [usePhotoBackground, setUsePhotoBackground] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [shareAvailable, setShareAvailable] = useState(true);
+  const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const viewShotRef = useRef<ViewShotRef>(null);
 
   useEffect(() => {
@@ -124,6 +136,45 @@ export default function ShareRun() {
     backgroundPhotoUri: usePhotoBackground && photos.length > 0 ? photos[0] : undefined,
   };
 
+  async function handleExport(format: ExportFormat) {
+    if (!activity) return;
+    setExporting(format);
+    try {
+      const exportActivity: ExportActivity = {
+        name: activity.name,
+        activityType: activity.activity_type,
+        startTime: activity.start_time,
+        distanceMeters: activity.distance_meters,
+        durationSeconds: activity.duration_seconds,
+      };
+      const content = format === "gpx" ? serializeGpx(exportActivity, route) : serializeTcx(exportActivity, route);
+      const filename = `${activity.start_time.slice(0, 10)}-run.${format}`;
+
+      if (Platform.OS === "web") {
+        // expo-sharing can't share local file URIs on web (see lib docs) -
+        // a plain Blob + anchor-download is the standard browser fallback,
+        // and also what this project's web-based dev/preview workflow needs
+        // to be testable at all in the Browser tool.
+        const blob = new Blob([content], { type: EXPORT_MIME[format] });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        const file = new File(Paths.cache, filename);
+        if (file.exists) file.delete();
+        file.write(content);
+        await Sharing.shareAsync(file.uri, { mimeType: EXPORT_MIME[format], dialogTitle: `Export ${format.toUpperCase()}` });
+      }
+    } finally {
+      setExporting(null);
+    }
+  }
+
   return (
     <View style={[styles.screen, { paddingTop: 20 + insets.top }]}>
       <View style={styles.topRow}>
@@ -181,6 +232,30 @@ export default function ShareRun() {
           </View>
         )}
 
+        {route.length >= 2 && (
+          <View style={styles.exportBlock}>
+            <Text style={styles.descriptionLabel}>Export run data</Text>
+            <View style={styles.exportRow}>
+              <Pressable
+                style={styles.exportButton}
+                onPress={() => handleExport("gpx")}
+                disabled={exporting !== null}
+                accessibilityRole="button"
+              >
+                <Text style={styles.exportButtonText}>{exporting === "gpx" ? "Exporting…" : "GPX file"}</Text>
+              </Pressable>
+              <Pressable
+                style={styles.exportButton}
+                onPress={() => handleExport("tcx")}
+                disabled={exporting !== null}
+                accessibilityRole="button"
+              >
+                <Text style={styles.exportButtonText}>{exporting === "tcx" ? "Exporting…" : "TCX file"}</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
         {!shareAvailable && <Text style={styles.unavailableNote}>Sharing isn't available in this preview - it'll work on your device.</Text>}
       </ScrollView>
 
@@ -222,6 +297,19 @@ function createStyles(colors: Colors) {
   descriptionBlock: { marginTop: 18 },
   descriptionLabel: { fontFamily: fonts.monoMedium, fontSize: 10, letterSpacing: 1, color: colors.textFaint, marginBottom: 6, textTransform: "uppercase" },
   descriptionText: { fontFamily: fonts.body, fontSize: 13.5, color: colors.textDim, lineHeight: 19 },
+  exportBlock: { marginTop: 18 },
+  exportRow: { flexDirection: "row", gap: 10 },
+  exportButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: spacing.cardRadius,
+    borderWidth: 1,
+    borderColor: colors.cardLine,
+    backgroundColor: colors.cardBg,
+  },
+  exportButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.textPrimary },
   unavailableNote: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, textAlign: "center", marginTop: 16 },
   shareButtonWrap: {
     position: "absolute",
