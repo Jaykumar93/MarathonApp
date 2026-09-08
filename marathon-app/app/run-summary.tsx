@@ -239,6 +239,25 @@ export default function RunSummary() {
           <Text style={styles.trackedNote}>Distance and time come from GPS tracking and can't be edited.</Text>
         )}
 
+        {!editing && (
+          <Pressable
+            style={styles.askCoachRow}
+            onPress={() =>
+              router.push(
+                `/(tabs)/coach?activityId=${activity.id}&prefill=${encodeURIComponent(
+                  planSession && planSession.session_type !== "rest" ? "How did this run compare to plan?" : "What do you think of this run?"
+                )}`
+              )
+            }
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Ask the coach about this run"
+          >
+            <Ionicons name="chatbubble-ellipses-outline" size={17} color={colors.secondaryAccent} />
+            <Text style={styles.askCoachText}>Ask the coach about this run</Text>
+          </Pressable>
+        )}
+
         {projectedRoute.length >= 2 && (
           <Card>
             <View style={styles.routeCardHeader}>
@@ -466,6 +485,8 @@ function createStyles(colors: Colors) {
     minWidth: 50,
   },
   trackedNote: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, textAlign: "center", marginBottom: 10 },
+  askCoachRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, marginBottom: 10 },
+  askCoachText: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.secondaryAccent },
   cardTitle: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: colors.textPrimary, marginBottom: 6 },
   routeCardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
   routeLegend: { flexDirection: "row", gap: 16, marginTop: 8 },
