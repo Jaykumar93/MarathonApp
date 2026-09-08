@@ -27,6 +27,12 @@ interface CoachRequestBody {
   // function then mints one and hands it back, and the client reuses it for
   // every later message in that same thread until the user starts another.
   conversationId?: string;
+  // True for an app-generated call (Race Day Details' fixed-prompt
+  // readiness summary) that must not leave a visible thread in the user's
+  // real Coach History - skips both coach_messages inserts below. The rest
+  // of the pipeline (embedding, KB match, context lookups, prompt, LLM
+  // call) runs identically either way.
+  skipPersistence?: boolean;
 }
 
 // A single fixed similarity cutoff turned out not to work at all - measured
@@ -175,30 +181,34 @@ Deno.serve(async (req) => {
     const sourceActivityIds = contextActivity ? [contextActivity.id as string] : [];
 
     // 4. Persist both messages (this user's own RLS-scoped client, same
-    // auth.uid() = user_id policy every other insert in this app relies on).
-    await supabase.from("coach_messages").insert({
-      user_id: user.id,
-      role: "user",
-      content: message,
-      activity_id: activityId ?? null,
-      plan_session_id: planSessionId ?? null,
-      conversation_id: conversationId,
-    });
-    const { error: insertError } = await supabase.from("coach_messages").insert({
-      user_id: user.id,
-      role: "assistant",
-      content: replyText,
-      activity_id: activityId ?? null,
-      plan_session_id: planSessionId ?? null,
-      source_activity_ids: sourceActivityIds,
-      source_kb_ids: sourceKbIds,
-      // Denormalized alongside the ids so a reloaded conversation can still
-      // show the same citation chip without the app needing a join just to
-      // resolve an id back to a title.
-      source_kb_titles: sourceKbTitles,
-      conversation_id: conversationId,
-    });
-    if (insertError) throw insertError;
+    // auth.uid() = user_id policy every other insert in this app relies on)
+    // - unless the caller explicitly asked to skip it (an app-generated
+    // summary, not a real chat turn the user should see in History).
+    if (!body.skipPersistence) {
+      await supabase.from("coach_messages").insert({
+        user_id: user.id,
+        role: "user",
+        content: message,
+        activity_id: activityId ?? null,
+        plan_session_id: planSessionId ?? null,
+        conversation_id: conversationId,
+      });
+      const { error: insertError } = await supabase.from("coach_messages").insert({
+        user_id: user.id,
+        role: "assistant",
+        content: replyText,
+        activity_id: activityId ?? null,
+        plan_session_id: planSessionId ?? null,
+        source_activity_ids: sourceActivityIds,
+        source_kb_ids: sourceKbIds,
+        // Denormalized alongside the ids so a reloaded conversation can still
+        // show the same citation chip without the app needing a join just to
+        // resolve an id back to a title.
+        source_kb_titles: sourceKbTitles,
+        conversation_id: conversationId,
+      });
+      if (insertError) throw insertError;
+    }
 
     return jsonResponse({
       reply: replyText,

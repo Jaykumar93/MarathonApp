@@ -25,7 +25,7 @@ export default function TrainingDays() {
   const { answers, update } = useOnboarding();
 
   function handleNext() {
-    router.push("/onboarding/health-data");
+    router.push("/onboarding/race-location");
   }
 
   return (

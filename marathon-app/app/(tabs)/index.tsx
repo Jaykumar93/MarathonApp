@@ -165,9 +165,14 @@ export default function Home() {
         contentContainerStyle={styles.container}
         refreshControl={<RefreshControl refreshing={false} onRefresh={reload} />}
       >
-        <View style={styles.countdownBlock}>
+        <Pressable
+          style={styles.countdownBlock}
+          onPress={() => router.push(`/race-day?goalId=${goal.id}`)}
+          accessibilityRole="button"
+          accessibilityLabel="Open Race Day Details"
+        >
           <CountdownArc daysRemaining={daysRemaining} progress={planProgress} />
-        </View>
+        </Pressable>
 
         {overdueShoes.length > 0 && (
           <Pressable style={styles.shoeBanner} onPress={() => router.push("/gear")}>

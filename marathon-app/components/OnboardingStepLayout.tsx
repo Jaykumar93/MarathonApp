@@ -7,7 +7,7 @@ import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { PrimaryButton } from "./ui/PrimaryButton";
 
 interface OnboardingStepLayoutProps {
-  step: number; // 1-5
+  step: number; // 1-6
   title: string;
   subtitle?: string;
   children: React.ReactNode;
@@ -54,7 +54,7 @@ export function OnboardingStepLayout({
           </Pressable>
         </View>
         <View style={styles.progressRow}>
-          {[1, 2, 3, 4, 5].map((i) => (
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <View key={i} style={[styles.progressDot, i <= step && styles.progressDotActive]} />
           ))}
         </View>

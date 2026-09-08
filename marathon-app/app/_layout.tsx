@@ -119,6 +119,7 @@ function AuthGate() {
     const inShareRun = segments[0] === "share-run";
     const inActiveRun = segments[0] === "active-run";
     const inGear = segments[0] === "gear";
+    const inRaceDay = segments[0] === "race-day";
 
     if (!session) {
       if (!inAuthGroup) router.replace("/sign-in");
@@ -141,7 +142,8 @@ function AuthGate() {
       !inPlannedSession &&
       !inShareRun &&
       !inActiveRun &&
-      !inGear
+      !inGear &&
+      !inRaceDay
     ) {
       router.replace("/(tabs)");
     }
@@ -163,6 +165,7 @@ function AuthGate() {
       <Stack.Screen name="share-run" options={{ presentation: "card" }} />
       <Stack.Screen name="active-run" options={{ presentation: "fullScreenModal" }} />
       <Stack.Screen name="gear" options={{ presentation: "card" }} />
+      <Stack.Screen name="race-day" options={{ presentation: "card" }} />
     </Stack>
   );
 }

@@ -7,6 +7,10 @@ export interface AskCoachContext {
   // one and returns it, and the caller should reuse it for every later
   // message in that same thread (see CoachReply.conversationId).
   conversationId?: string;
+  // True for an app-generated call (Race Day Details' fixed-prompt
+  // readiness summary) that shouldn't leave a visible thread in the user's
+  // real Coach History.
+  skipPersistence?: boolean;
 }
 
 export interface CoachReply {
@@ -31,6 +35,7 @@ export async function askCoach(message: string, context?: AskCoachContext): Prom
       activityId: context?.activityId,
       planSessionId: context?.planSessionId,
       conversationId: context?.conversationId,
+      skipPersistence: context?.skipPersistence,
     },
   });
   if (error) throw error;
