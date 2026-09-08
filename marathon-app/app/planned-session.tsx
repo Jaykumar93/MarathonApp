@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../lib/auth/AuthContext";
 import { getPlanSessionById, type PlanSessionRow } from "../lib/data/plans";
 import { todayIso } from "../lib/data/usePlanData";
@@ -121,7 +122,18 @@ export default function PlannedSessionDetail() {
 
         {structure && (
           <Card>
-            <Text style={styles.cardTitle}>Workout breakdown</Text>
+            <View style={styles.cardHeaderRow}>
+              <Text style={styles.cardTitle}>Workout breakdown</Text>
+              <Pressable
+                onPress={() =>
+                  router.push(`/(tabs)/coach?planSessionId=${session.id}&prefill=${encodeURIComponent("Can you walk me through this workout?")}`)
+                }
+                hitSlop={8}
+                accessibilityLabel="Ask the coach about this workout"
+              >
+                <Ionicons name="chatbubble-ellipses-outline" size={19} color={colors.textDim} />
+              </Pressable>
+            </View>
             <Text style={styles.detailLine}>Warmup: {formatMeters(structure.warmupMeters)} easy</Text>
             <Text style={styles.detailLine}>{formatIntervalStructureSummary(structure, unit)}</Text>
             <Text style={styles.detailLine}>Cooldown: {formatMeters(structure.cooldownMeters)} easy</Text>
@@ -169,6 +181,7 @@ function createStyles(colors: Colors) {
   },
   statLabel: { fontFamily: fonts.monoMedium, fontSize: type.statLabel, color: colors.textFaint, marginBottom: 4 },
   statValue: { fontFamily: fonts.dataBold, fontSize: type.statValue, color: colors.textPrimary },
+  cardHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   cardTitle: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: colors.textPrimary, marginBottom: 6 },
   detailLine: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim, marginTop: 2 },
   detailLineSpaced: { marginTop: 8 },

@@ -35,7 +35,7 @@ See [implementation/08-trends-coach-polish.md](implementation/08-trends-coach-po
 - `react-native-maps` and `react-native-health-connect` both crash `react-native-web` at import time - `RunMap.web.tsx`/`healthConnectProvider.web.ts` are Metro platform-extension fallbacks so this project's web-based dev/preview workflow keeps working; Android/iOS get the real implementations untouched.
 - Full account, including what's still unverified pending the user's own `eas build` + device: [implementation/08-trends-coach-polish.md](implementation/08-trends-coach-polish.md)'s Phase B section and Open items.
 
-## Phase C — AI Coach (RAG)
+## Phase C — AI Coach (RAG) — Done, live-verified
 
 - Schema: enable `pgvector`, add `knowledge_base` (global, read-only to all authenticated users) and `coach_messages` (RLS by `user_id`, same as every other table).
 - A Supabase Edge Function (Deno) keeps the Gemini/Groq/HF API keys server-side: embed query → pgvector similarity search over the knowledge base + the user's own activity history → grounded prompt → LLM abstraction (Gemini first, Groq fallback on error/429) → response + reference chips back to source activities.

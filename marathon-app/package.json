@@ -53,7 +53,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "jest",
-    "plan:try": "tsx scripts/tryPlanEngine.ts"
+    "plan:try": "tsx scripts/tryPlanEngine.ts",
+    "coach:seed": "tsx scripts/seedKnowledgeBase.ts"
   },
   "private": true,
   "jest": {
