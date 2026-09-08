@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useMemo, useRef } from "react";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { fonts } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 
@@ -16,26 +16,65 @@ interface ChipSelectProps<T> {
   onChange: (value: T) => void;
 }
 
+// Same transform-only press feedback as PrimaryButton (see its header
+// comment) - a chip tap should feel just as immediate as a button tap.
+const PRESS_IN = { toValue: 0.94, useNativeDriver: true, speed: 50, bounciness: 0 };
+const PRESS_OUT = { toValue: 1, useNativeDriver: true, speed: 24, bounciness: 6 };
+
+function Chip<T extends string | number>({
+  option,
+  selected,
+  onChange,
+  styles,
+}: {
+  option: ChipOption<T>;
+  selected: boolean;
+  onChange: (value: T) => void;
+  styles: ReturnType<typeof createStyles>;
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  function handlePressIn() {
+    if (option.disabled) return;
+    Animated.spring(scale, PRESS_IN).start();
+  }
+
+  function handlePressOut() {
+    if (option.disabled) return;
+    Animated.spring(scale, PRESS_OUT).start();
+  }
+
+  return (
+    <Pressable
+      onPress={() => !option.disabled && onChange(option.value)}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      disabled={option.disabled}
+      accessibilityRole="radio"
+      accessibilityState={{ selected, disabled: option.disabled }}
+    >
+      <Animated.View
+        style={[
+          styles.chip,
+          selected && styles.chipSelected,
+          option.disabled && styles.chipDisabled,
+          { transform: [{ scale }] },
+        ]}
+      >
+        <Text style={[styles.label, selected && styles.labelSelected]}>{option.label}</Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 export function ChipSelect<T extends string | number>({ options, value, onChange }: ChipSelectProps<T>) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.wrap}>
-      {options.map((opt) => {
-        const selected = opt.value === value;
-        return (
-          <Pressable
-            key={String(opt.value)}
-            onPress={() => !opt.disabled && onChange(opt.value)}
-            disabled={opt.disabled}
-            style={[styles.chip, selected && styles.chipSelected, opt.disabled && styles.chipDisabled]}
-            accessibilityRole="radio"
-            accessibilityState={{ selected, disabled: opt.disabled }}
-          >
-            <Text style={[styles.label, selected && styles.labelSelected]}>{opt.label}</Text>
-          </Pressable>
-        );
-      })}
+      {options.map((opt) => (
+        <Chip key={String(opt.value)} option={opt} selected={opt.value === value} onChange={onChange} styles={styles} />
+      ))}
     </View>
   );
 }

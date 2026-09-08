@@ -10,6 +10,7 @@ export interface Profile {
   username: string | null;
   status: "pending" | "approved" | "rejected";
   access_granted: boolean;
+  is_admin: boolean;
   onboarding_completed_at: string | null;
   theme_preference: "light" | "dark";
   distance_unit: "km" | "mi";

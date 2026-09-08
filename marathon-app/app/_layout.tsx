@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { AccessibilityInfo, Animated } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Sentry from "@sentry/react-native";
@@ -103,6 +104,25 @@ function AuthGate() {
   const { session, profile, loading, hasActiveGoal } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const ready = !(loading || hasActiveGoal === null);
+  const fade = useRef(new Animated.Value(0)).current;
+
+  // Splash hides as soon as fonts are ready (see RootLayoutInner above),
+  // but auth/profile/goal state usually resolves a beat later - without
+  // this, that gap reads as a blank white flash before the real screen
+  // pops in. A short opacity fade (skipped instantly under "reduce
+  // motion", per the OS accessibility setting) turns that pop into a
+  // deliberate reveal instead.
+  useEffect(() => {
+    if (!ready) return;
+    AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
+      if (reduceMotion) {
+        fade.setValue(1);
+      } else {
+        Animated.timing(fade, { toValue: 1, duration: 280, useNativeDriver: true }).start();
+      }
+    });
+  }, [ready]);
 
   useEffect(() => {
     if (loading || hasActiveGoal === null) return;
@@ -120,6 +140,7 @@ function AuthGate() {
     const inActiveRun = segments[0] === "active-run";
     const inGear = segments[0] === "gear";
     const inRaceDay = segments[0] === "race-day";
+    const inAdmin = segments[0] === "admin";
 
     if (!session) {
       if (!inAuthGroup) router.replace("/sign-in");
@@ -143,29 +164,33 @@ function AuthGate() {
       !inShareRun &&
       !inActiveRun &&
       !inGear &&
-      !inRaceDay
+      !inRaceDay &&
+      !inAdmin
     ) {
       router.replace("/(tabs)");
     }
   }, [session, profile, hasActiveGoal, segments]);
 
-  if (loading || hasActiveGoal === null) return null;
+  if (!ready) return null;
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="waitlist" />
-      <Stack.Screen name="onboarding" />
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="settings" options={{ presentation: "card" }} />
-      <Stack.Screen name="edit-plan" options={{ presentation: "card" }} />
-      <Stack.Screen name="log-activity" options={{ presentation: "card" }} />
-      <Stack.Screen name="run-summary" options={{ presentation: "card" }} />
-      <Stack.Screen name="planned-session" options={{ presentation: "card" }} />
-      <Stack.Screen name="share-run" options={{ presentation: "card" }} />
-      <Stack.Screen name="active-run" options={{ presentation: "fullScreenModal" }} />
-      <Stack.Screen name="gear" options={{ presentation: "card" }} />
-      <Stack.Screen name="race-day" options={{ presentation: "card" }} />
-    </Stack>
+    <Animated.View style={{ flex: 1, opacity: fade }}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="waitlist" />
+        <Stack.Screen name="onboarding" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="settings" options={{ presentation: "card" }} />
+        <Stack.Screen name="edit-plan" options={{ presentation: "card" }} />
+        <Stack.Screen name="log-activity" options={{ presentation: "card" }} />
+        <Stack.Screen name="run-summary" options={{ presentation: "card" }} />
+        <Stack.Screen name="planned-session" options={{ presentation: "card" }} />
+        <Stack.Screen name="share-run" options={{ presentation: "card" }} />
+        <Stack.Screen name="active-run" options={{ presentation: "fullScreenModal" }} />
+        <Stack.Screen name="gear" options={{ presentation: "card" }} />
+        <Stack.Screen name="race-day" options={{ presentation: "card" }} />
+        <Stack.Screen name="admin" options={{ presentation: "card" }} />
+      </Stack>
+    </Animated.View>
   );
 }

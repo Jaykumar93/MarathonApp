@@ -1,9 +1,10 @@
 import React, { useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { fonts, type } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
+import { useSlideTransition } from "../lib/useSlideTransition";
 import type { PlanSessionRow } from "../lib/data/plans";
 import type { ActivityRow } from "../lib/data/activities";
 import { useAuth } from "../lib/auth/AuthContext";
@@ -166,9 +167,10 @@ export function DayDetailPanel({ date, session, activities }: DayDetailPanelProp
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const unit = profile?.distance_unit ?? "km";
+  const slideStyle = useSlideTransition(date);
 
   return (
-    <View>
+    <Animated.View style={slideStyle}>
       <Text style={styles.heading}>{formatDateHeading(date)}</Text>
 
       {session && session.session_type !== "rest" ? (
@@ -190,7 +192,7 @@ export function DayDetailPanel({ date, session, activities }: DayDetailPanelProp
       ) : (
         <Text style={styles.emptyLine}>No run logged for this day yet.</Text>
       )}
-    </View>
+    </Animated.View>
   );
 }
 

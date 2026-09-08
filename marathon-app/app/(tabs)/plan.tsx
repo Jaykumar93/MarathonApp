@@ -24,7 +24,6 @@ import { DayDetailPanel } from "../../components/DayDetailPanel";
 import { SessionListRow } from "../../components/SessionListRow";
 import { NoPlanPrompt } from "../../components/NoPlanPrompt";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
-import { LogFab } from "../../components/ui/LogFab";
 import { useAuth } from "../../lib/auth/AuthContext";
 import { formatDistance } from "../../lib/units";
 
@@ -92,7 +91,6 @@ export default function Plan() {
     return (
       <View style={styles.screen}>
         <NoPlanPrompt />
-        <LogFab />
       </View>
     );
   }
@@ -216,7 +214,6 @@ export default function Plan() {
           ))}
         </Card>
       </ScrollView>
-      <LogFab />
     </View>
   );
 }
