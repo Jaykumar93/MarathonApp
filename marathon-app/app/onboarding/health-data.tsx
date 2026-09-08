@@ -78,7 +78,12 @@ export default function HealthData() {
 
     setSubmitting(true);
     try {
-      const goal = await createGoal(session.user.id, goalInput as CreateGoalInput);
+      const goal = await createGoal(session.user.id, {
+        ...(goalInput as CreateGoalInput),
+        raceLat: answers.raceLat,
+        raceLon: answers.raceLon,
+        raceLocationName: answers.raceLocationName,
+      });
       await createPlanWithSessions(session.user.id, goal.id, preview.plan);
 
       await supabase
@@ -96,14 +101,30 @@ export default function HealthData() {
       // router to notice and redirect.
       router.replace("/(tabs)");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong creating your plan.");
+      // Postgrest errors are plain objects, not Error instances - same class
+      // of bug as coach-chat's catch-all (see 08-trends-coach-polish.md).
+      // The active-goal constraint specifically is unreachable through the
+      // real UI (Home's "Create your plan" only renders when there's no
+      // active goal - see NoPlanPrompt.tsx), but a stale onboarding tab left
+      // open after finishing setup elsewhere could still hit it.
+      const rawMessage =
+        e instanceof Error
+          ? e.message
+          : e && typeof e === "object" && typeof (e as { message?: unknown }).message === "string"
+            ? (e as { message: string }).message
+            : null;
+      setError(
+        rawMessage?.includes("goals_one_active_per_user")
+          ? "You already have an active training plan. Delete it from Settings before starting a new one."
+          : "Something went wrong creating your plan."
+      );
       setSubmitting(false);
     }
   }
 
   return (
     <OnboardingStepLayout
-      step={5}
+      step={6}
       title="Connect your health data"
       subtitle="Auto-sync isn't wired up yet - log manually for now, connect it later from Settings."
       onNext={handleFinish}

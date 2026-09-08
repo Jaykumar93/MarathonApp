@@ -11,6 +11,9 @@ export interface OnboardingAnswers {
   calibrationRaceDistanceKm?: number;
   trainingDaysPerWeek?: number;
   longRunDay?: DayOfWeek;
+  raceLat?: number;
+  raceLon?: number;
+  raceLocationName?: string;
   healthDataSource?: "health_connect" | "healthkit" | "manual" | "none";
 }
 

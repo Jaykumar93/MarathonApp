@@ -42,7 +42,7 @@ function parseBlocks(content: string): Block[] {
 
 function renderInline(text: string, keyPrefix: string, boldStyle: object): React.ReactNode {
   const parts = text.split(/(\*\*[^*]+\*\*)/g).filter((s) => s.length > 0);
-  if (parts.length <= 1) return text;
+  if (parts.length === 0) return text;
   return parts.map((part, i) => {
     const bold = part.match(/^\*\*([^*]+)\*\*$/);
     return bold ? (

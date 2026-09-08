@@ -4,9 +4,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../lib/auth/AuthContext";
 import { todayIso, useActivePlanData } from "../lib/data/usePlanData";
-import { updateGoal, type CreateGoalInput } from "../lib/data/goals";
+import { updateGoal, updateRaceLocation, type CreateGoalInput } from "../lib/data/goals";
 import { supersedePlan, createPlanWithSessions } from "../lib/data/plans";
 import { generatePlan, type DayOfWeek, type ExperienceLevel, type GoalInput } from "../lib/planEngine";
+import { geocodeCity } from "../lib/weather/openMeteo";
 import { parseHms, formatHms } from "../lib/timeFormat";
 import { fonts, palette, spacing, type } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
@@ -73,9 +74,16 @@ export default function EditPlan() {
   const [customCalibrationDistance, setCustomCalibrationDistance] = useState("");
   const [trainingDaysPerWeek, setTrainingDaysPerWeek] = useState<number | undefined>();
   const [longRunDay, setLongRunDay] = useState<DayOfWeek | undefined>();
+  const [raceLocationCity, setRaceLocationCity] = useState("");
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Own save action, deliberately separate from the plan-regenerating
+  // "Save & regenerate plan" button below - see updateRaceLocation's own
+  // comment for why location can't go through that same path.
+  const [savingLocation, setSavingLocation] = useState(false);
+  const [locationSaved, setLocationSaved] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   // Seed every field from the current goal exactly once - re-running this
   // on every `goal` refresh would clobber whatever the user has typed since.
@@ -90,8 +98,36 @@ export default function EditPlan() {
     setCalibrationDistanceKm(goal.calibration_race_distance_km ?? undefined);
     setTrainingDaysPerWeek(goal.training_days_per_week);
     setLongRunDay(goal.long_run_day);
+    setRaceLocationCity(goal.race_location_name ?? "");
     setInitialized(true);
   }, [goal, initialized]);
+
+  async function handleSaveLocation() {
+    if (!goal) return;
+    const trimmed = raceLocationCity.trim();
+    setSavingLocation(true);
+    setLocationError(null);
+    setLocationSaved(false);
+    try {
+      if (!trimmed) {
+        await updateRaceLocation(goal.id, {});
+      } else {
+        const match = await geocodeCity(trimmed);
+        if (!match) {
+          setLocationError("Couldn't find that city - check the spelling.");
+          return;
+        }
+        await updateRaceLocation(goal.id, { raceLat: match.lat, raceLon: match.lon, raceLocationName: match.displayName });
+        setRaceLocationCity(match.displayName);
+      }
+      await reload();
+      setLocationSaved(true);
+    } catch (e) {
+      setLocationError(e instanceof Error ? e.message : "Couldn't save race location.");
+    } finally {
+      setSavingLocation(false);
+    }
+  }
 
   const isCustomDistance = raceDistanceKm !== undefined && !DISTANCE_OPTIONS.some((o) => o.value === raceDistanceKm);
   const isCustomCalibrationDistance =
@@ -228,6 +264,32 @@ export default function EditPlan() {
         <View style={styles.fieldGap}>
           <DateField label="Race date" value={goalDate} onChange={setGoalDate} />
           {isPastDate && <Text style={styles.errorText}>Race date must be in the future - pick a date after today.</Text>}
+        </View>
+      </Card>
+
+      <Text style={styles.sectionLabel}>RACE LOCATION</Text>
+      <Card>
+        <Text style={styles.fieldLabel}>Only used to show a race-day weather forecast - saved separately, doesn't regenerate your plan.</Text>
+        <View style={styles.fieldGap}>
+          <TextField
+            label="City (optional)"
+            value={raceLocationCity}
+            onChangeText={(t) => {
+              setRaceLocationCity(t);
+              setLocationSaved(false);
+            }}
+            placeholder="e.g. Chicago, IL"
+          />
+        </View>
+        {locationError && <Text style={[styles.errorText, styles.fieldGap]}>{locationError}</Text>}
+        <View style={styles.fieldGap}>
+          <PrimaryButton
+            label={locationSaved ? "Saved" : "Save location"}
+            variant="secondary"
+            onPress={handleSaveLocation}
+            loading={savingLocation}
+            disabled={savingLocation}
+          />
         </View>
       </Card>
 
