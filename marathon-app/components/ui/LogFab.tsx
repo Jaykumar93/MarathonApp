@@ -37,7 +37,7 @@ function createStyles(colors: Colors, shadows: ThemeShadows) {
       bottom: 18,
       width: 54,
       height: 54,
-      borderRadius: 27,
+      borderRadius: 16,
       backgroundColor: colors.accent,
       alignItems: "center",
       justifyContent: "center",

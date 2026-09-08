@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { fonts, noSelectStyle, palette } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { useHorizontalSwipe } from "../lib/useHorizontalSwipe";
+import { useSlideTransition } from "../lib/useSlideTransition";
 import { todayIso } from "../lib/data/usePlanData";
 
 const MONTH_NAMES = [
@@ -163,9 +164,10 @@ export function PlanCalendarScroller({ days, selectedDate, onSelectDate }: PlanC
   // coarser (month) granularity. Lets people flip months without reaching
   // for the small arrow targets specifically.
   const monthSwipeHandlers = useHorizontalSwipe(handleNextMonth, handlePrevMonth);
+  const slideStyle = useSlideTransition(viewedMonthKey);
 
   return (
-    <View>
+    <Animated.View style={slideStyle}>
       <View style={[styles.header, noSelectStyle]} {...monthSwipeHandlers}>
         <Pressable
           onPress={handlePrevMonth}
@@ -252,7 +254,7 @@ export function PlanCalendarScroller({ days, selectedDate, onSelectDate }: PlanC
           );
         }}
       />
-    </View>
+    </Animated.View>
   );
 }
 

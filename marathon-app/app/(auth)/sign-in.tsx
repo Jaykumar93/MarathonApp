@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Link, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
 import { fonts, palette, spacing } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
@@ -13,6 +14,7 @@ export default function SignIn() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,8 +37,25 @@ export default function SignIn() {
         <Text style={styles.subtitle}>Sign in to continue your training block.</Text>
 
         <View style={styles.form}>
-          <TextField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" />
-          <TextField label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" />
+          <TextField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" required />
+          <TextField
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            autoComplete="password"
+            required
+            rightElement={
+              <Pressable
+                onPress={() => setShowPassword((v) => !v)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+              >
+                <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color={colors.textFaint} />
+              </Pressable>
+            }
+          />
           {error && (
             <Text style={styles.error} accessibilityLiveRegion="polite">
               {error}

@@ -25,7 +25,6 @@ import { MonthActivityChart } from "../../components/MonthActivityChart";
 import { PlanCalendarScroller } from "../../components/PlanCalendarScroller";
 import { DayDetailPanel } from "../../components/DayDetailPanel";
 import { NoPlanPrompt } from "../../components/NoPlanPrompt";
-import { LogFab } from "../../components/ui/LogFab";
 import { formatDistance } from "../../lib/units";
 
 function monthRange(year: number, month: number): [string, string] {
@@ -120,7 +119,6 @@ export default function Home() {
     return (
       <View style={styles.screen}>
         <NoPlanPrompt />
-        <LogFab />
       </View>
     );
   }
@@ -218,7 +216,6 @@ export default function Home() {
           </View>
         </Card>
       </ScrollView>
-      <LogFab />
     </View>
   );
 }

@@ -397,6 +397,15 @@ export default function Settings() {
         </>
       )}
 
+      {profile?.is_admin && (
+        <>
+          <Text style={styles.sectionLabel}>ADMIN</Text>
+          <Card>
+            <PrimaryButton label="Manage waitlist" variant="secondary" onPress={() => router.push("/admin")} />
+          </Card>
+        </>
+      )}
+
       <Text style={styles.sectionLabel}>ABOUT</Text>
       <Card>
         <View style={styles.row}>

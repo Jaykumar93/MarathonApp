@@ -1,9 +1,11 @@
 import React, { useMemo } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { fonts } from "../lib/theme";
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { fonts, noSelectStyle } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import type { ActivityRow } from "../lib/data/activities";
 import { todayIso } from "../lib/data/usePlanData";
+import { useHorizontalSwipe } from "../lib/useHorizontalSwipe";
+import { useSlideTransition } from "../lib/useSlideTransition";
 import { PressTooltip } from "./ui/PressTooltip";
 
 interface MonthActivityChartProps {
@@ -42,6 +44,7 @@ export function MonthActivityChart({
   const styles = useMemo(() => createStyles(colors), [colors]);
   const total = daysInMonth(year, month);
   const today = todayIso();
+  const slideStyle = useSlideTransition(`${year}-${String(month).padStart(2, "0")}`);
 
   const values = Array.from({ length: total }, (_, i) => {
     const day = i + 1;
@@ -49,10 +52,14 @@ export function MonthActivityChart({
     return { date, day, km: dailyDistanceKm(activitiesByDate.get(date)) };
   });
   const maxKm = Math.max(...values.map((v) => v.km), 1);
+  // Same swipe-left=next/swipe-right=previous convention PlanCalendarScroller's
+  // own header uses - lets a drag on this chart change months too, not just
+  // the small arrow targets.
+  const monthSwipeHandlers = useHorizontalSwipe(onNextMonth, onPrevMonth);
 
   return (
-    <View>
-      <View style={styles.header}>
+    <Animated.View style={slideStyle}>
+      <View style={[styles.header, noSelectStyle]} {...monthSwipeHandlers}>
         <Pressable
           onPress={onPrevMonth}
           hitSlop={8}
@@ -100,7 +107,7 @@ export function MonthActivityChart({
           );
         })}
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -109,7 +116,10 @@ function createStyles(colors: Colors) {
     header: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 10 },
     navArrow: { fontFamily: fonts.dataBold, fontSize: 20, color: colors.textDim, paddingHorizontal: 6 },
     monthLabel: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.textPrimary },
-    barRow: { alignItems: "flex-end", gap: 4, paddingBottom: 2, paddingTop: 26 },
+    // paddingTop needs to clear PressTooltip's bubble (anchored `top: -38`
+    // above the bar it's attached to, ~21px tall) - 26 wasn't enough
+    // headroom and let the bubble overlap this chart's own month label.
+    barRow: { alignItems: "flex-end", gap: 4, paddingBottom: 2, paddingTop: 46 },
     barCol: { alignItems: "center", width: 16, position: "relative" },
     barTrack: { height: 50, width: 8, justifyContent: "flex-end" },
     bar: { width: 8, borderRadius: 3, minHeight: 2 },
