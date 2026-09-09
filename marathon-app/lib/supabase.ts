@@ -17,5 +17,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    // Required for exchangeCodeForSession() in the Google OAuth flow (see
+    // lib/auth/googleAuth.ts) - the redirect carries a `code` param instead
+    // of tokens in the URL fragment.
+    flowType: "pkce",
   },
 });

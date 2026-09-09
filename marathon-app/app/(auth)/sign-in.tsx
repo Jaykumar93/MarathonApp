@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { Link, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
+import { signInWithGoogle } from "../../lib/auth/googleAuth";
 import { fonts, palette, spacing } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
@@ -16,6 +17,7 @@ export default function SignIn() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSignIn() {
@@ -28,6 +30,18 @@ export default function SignIn() {
       return;
     }
     // AuthGate in the root layout handles routing once the session updates.
+  }
+
+  async function handleGoogleSignIn() {
+    setError(null);
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Google sign-in failed.");
+    } finally {
+      setGoogleLoading(false);
+    }
   }
 
   return (
@@ -71,7 +85,13 @@ export default function SignIn() {
         </View>
 
         <View style={styles.form}>
-          <PrimaryButton label="Continue with Google (coming soon)" onPress={() => {}} variant="secondary" disabled />
+          <PrimaryButton
+            label="Continue with Google"
+            onPress={handleGoogleSignIn}
+            variant="secondary"
+            loading={googleLoading}
+            disabled={loading}
+          />
           <PrimaryButton label="Continue with Apple (coming soon)" onPress={() => {}} variant="secondary" disabled />
         </View>
 
