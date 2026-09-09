@@ -1,14 +1,11 @@
 <svg width="360" height="100" viewBox="0 0 360 100" xmlns="http://www.w3.org/2000/svg">
   <!-- Full horizontal lockup: mark + wordmark, for docs/README/marketing use. -->
   <rect x="0" y="0" width="100" height="100" rx="22" fill="#14161A"/>
-  <path
-    d="M27,76 C27,52 73,50 73,24"
-    fill="none"
-    stroke="#FF5A1F"
-    stroke-width="12"
-    stroke-linecap="round"
-  />
-  <circle cx="73" cy="24" r="8" fill="#3E8E7E"/>
+  <g transform="translate(-3,4)">
+    <polyline points="24,74 40,64 52,70 64,40 72,48 80,24 88,56" fill="none" stroke="#6BA696" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+    <polyline points="18,68 34,58 46,64 58,34 66,42 74,18 82,50" fill="none" stroke="#FF5A1F" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="74" cy="18" r="5" fill="#3E8E7E"/>
+  </g>
   <text
     x="122"
     y="67"
