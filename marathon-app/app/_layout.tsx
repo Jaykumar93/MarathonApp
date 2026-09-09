@@ -156,14 +156,19 @@ function AuthGate() {
     const inRaceDay = segments[0] === "race-day";
     const inAdmin = segments[0] === "admin";
     const inNotifications = segments[0] === "notifications";
+    // Reachable at every auth state, not just once signed in - it's linked
+    // from sign-up itself ("you agree to our Privacy Policy"), before a
+    // session exists at all, so the usual !inAuthGroup redirect below would
+    // otherwise bounce a signed-out visitor straight back to /sign-in.
+    const inPrivacyPolicy = segments[0] === "privacy-policy";
 
     if (!session) {
-      if (!inAuthGroup) router.replace("/sign-in");
+      if (!inAuthGroup && !inPrivacyPolicy) router.replace("/sign-in");
       return;
     }
 
     if (profile && profile.status !== "approved") {
-      if (!inWaitlist) router.replace("/waitlist");
+      if (!inWaitlist && !inPrivacyPolicy) router.replace("/waitlist");
       return;
     }
 
@@ -181,7 +186,8 @@ function AuthGate() {
       !inGear &&
       !inRaceDay &&
       !inAdmin &&
-      !inNotifications
+      !inNotifications &&
+      !inPrivacyPolicy
     ) {
       router.replace("/(tabs)");
     }
@@ -207,6 +213,7 @@ function AuthGate() {
         <Stack.Screen name="race-day" options={{ presentation: "card" }} />
         <Stack.Screen name="admin" options={{ presentation: "card" }} />
         <Stack.Screen name="notifications" options={{ presentation: "card" }} />
+        <Stack.Screen name="privacy-policy" options={{ presentation: "card" }} />
       </Stack>
     </Animated.View>
   );
