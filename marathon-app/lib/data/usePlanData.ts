@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { getActiveGoal, type GoalRow } from "./goals";
-import { getCurrentPlan, getPlanSessions, type PlanRow, type PlanSessionRow } from "./plans";
+import { getCurrentPlan, getPlanSessions, markPastPendingAsMissed, type PlanRow, type PlanSessionRow } from "./plans";
 import type { CalendarDayInfo } from "../../components/PlanCalendarScroller";
 import { DAY_ORDER } from "../planEngine/types";
 import { useHorizontalSwipe } from "../useHorizontalSwipe";
@@ -33,6 +33,10 @@ export function useActivePlanData() {
       setState({ loading: false, goal, plan: null, sessions: [] });
       return;
     }
+    // Sweep before reading sessions, so every screen using this hook sees
+    // up-to-date 'missed' status without each needing to remember to call
+    // this itself - see markPastPendingAsMissed's own comment.
+    await markPastPendingAsMissed(plan.id, todayIso());
     const sessions = await getPlanSessions(plan.id);
     setState({ loading: false, goal, plan, sessions });
   }, [session?.user?.id]);
