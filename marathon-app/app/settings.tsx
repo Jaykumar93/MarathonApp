@@ -13,6 +13,7 @@ import { Card } from "../components/ui/Card";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { ChipSelect } from "../components/ui/ChipSelect";
 import { TextField } from "../components/ui/TextField";
+import { Dropdown } from "../components/ui/Dropdown";
 import { formatDistance } from "../lib/units";
 import { healthConnectProvider } from "../lib/health/healthConnectProvider";
 import { syncHealthActivities } from "../lib/health/syncHealthData";
@@ -23,6 +24,17 @@ const UNIT_OPTIONS = [
 ];
 
 const VOICE_INTERVAL_PRESETS = [1, 2, 5, 10];
+
+function formatHour12(hour: number): string {
+  const period = hour < 12 ? "AM" : "PM";
+  const h = hour % 12 === 0 ? 12 : hour % 12;
+  return `${h}${period}`;
+}
+
+// Every hour, not just a handful of morning presets - a run (and this
+// message about it) isn't only a morning thing.
+const ALL_HOURS = Array.from({ length: 24 }, (_, i) => i);
+const NOTIFICATION_HOUR_OPTIONS = ALL_HOURS.map((hour) => ({ value: hour, label: formatHour12(hour) }));
 
 const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
 
@@ -59,6 +71,8 @@ export default function Settings() {
   const [usernameError, setUsernameError] = useState<string | null>(null);
 
   const [savingVoiceToggle, setSavingVoiceToggle] = useState(false);
+  const [savingNotificationToggle, setSavingNotificationToggle] = useState(false);
+  const [savingNotificationHour, setSavingNotificationHour] = useState(false);
   const [customInterval, setCustomInterval] = useState("");
   const [savingInterval, setSavingInterval] = useState(false);
 
@@ -98,9 +112,11 @@ export default function Settings() {
   /**
    * Permission grant + initial sync in one tap - Health Connect has no
    * separate "just connect, sync later" step worth exposing, and this
-   * screen has nowhere else a background sync could be triggered from yet
-   * (no push notifications, no background task). Re-tappable afterward too
-   * (see the Pressable below) to re-run the same check + sync on demand.
+   * screen has nowhere else a background sync could be triggered from
+   * (push notifications now exist, but only for the daily motivation
+   * message - nothing triggers a Health Connect sync). Re-tappable
+   * afterward too (see the Pressable below) to re-run the same check +
+   * sync on demand.
    */
   async function handleConnectHealthConnect() {
     if (!profile) return;
@@ -174,6 +190,22 @@ export default function Settings() {
     await supabase.from("profiles").update({ voice_announcement_interval_km: km }).eq("id", profile.id);
     await refreshProfile();
     setSavingInterval(false);
+  }
+
+  async function handleDailyNotificationToggle(enabled: boolean) {
+    if (!profile) return;
+    setSavingNotificationToggle(true);
+    await supabase.from("profiles").update({ daily_notification_enabled: enabled }).eq("id", profile.id);
+    await refreshProfile();
+    setSavingNotificationToggle(false);
+  }
+
+  async function handleNotificationHourChange(hour: number) {
+    if (!profile) return;
+    setSavingNotificationHour(true);
+    await supabase.from("profiles").update({ notification_hour_local: hour }).eq("id", profile.id);
+    await refreshProfile();
+    setSavingNotificationHour(false);
   }
 
   async function handleSaveName() {
@@ -359,6 +391,35 @@ export default function Settings() {
                 }}
                 keyboardType="decimal-pad"
                 placeholder={`e.g. 3 (currently ${profile.voice_announcement_interval_km}km)`}
+              />
+            </View>
+          </View>
+        )}
+
+        <View style={styles.divider} />
+
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Daily notification</Text>
+            <Text style={styles.subLabel}>A personalized morning message about today's run (and a nudge if you missed one)</Text>
+          </View>
+          <Switch
+            value={profile?.daily_notification_enabled ?? false}
+            onValueChange={handleDailyNotificationToggle}
+            disabled={savingNotificationToggle}
+            trackColor={{ false: colors.cardLine, true: colors.accent }}
+            thumbColor="#fff"
+          />
+        </View>
+
+        {profile?.daily_notification_enabled && (
+          <View style={[styles.fieldGap, { opacity: savingNotificationHour ? 0.5 : 1 }]}>
+            <Text style={styles.label}>Send at</Text>
+            <View style={{ marginTop: 8 }}>
+              <Dropdown
+                options={NOTIFICATION_HOUR_OPTIONS}
+                value={profile.notification_hour_local}
+                onSelect={handleNotificationHourChange}
               />
             </View>
           </View>

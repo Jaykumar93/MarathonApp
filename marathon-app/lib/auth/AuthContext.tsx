@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../supabase";
 import { getActiveGoal } from "../data/goals";
+import { registerForPushNotifications } from "../notifications/pushToken";
 
 export interface Profile {
   id: string;
@@ -16,6 +17,8 @@ export interface Profile {
   distance_unit: "km" | "mi";
   voice_coaching_enabled: boolean;
   voice_announcement_interval_km: number;
+  daily_notification_enabled: boolean;
+  notification_hour_local: number;
   /** Written by onboarding's health-data step; 'none' means no source was ever chosen. Column already existed in the DB (Task 2) - this type just catches the TS side up to it. */
   health_data_source: "health_connect" | "healthkit" | "manual" | "none" | null;
   created_at: string;
@@ -97,6 +100,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       setHasActiveGoal(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, session?.user?.id, profile?.status]);
+
+  // Fire-and-forget, same gating as the goal check above - no point
+  // registering a push token for someone who's still on the waitlist.
+  useEffect(() => {
+    if (loading || !session?.user?.id || profile?.status !== "approved") return;
+    registerForPushNotifications(session.user.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, session?.user?.id, profile?.status]);
 
