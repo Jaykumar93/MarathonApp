@@ -5,8 +5,6 @@ import { useRouter } from "expo-router";
 import Constants from "expo-constants";
 import { useAuth } from "../lib/auth/AuthContext";
 import { supabase } from "../lib/supabase";
-import { deleteGoal } from "../lib/data/goals";
-import { useActivePlanData } from "../lib/data/usePlanData";
 import { fonts, palette, spacing, type } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
@@ -14,7 +12,6 @@ import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { ChipSelect } from "../components/ui/ChipSelect";
 import { TextField } from "../components/ui/TextField";
 import { Dropdown } from "../components/ui/Dropdown";
-import { formatDistance } from "../lib/units";
 import { healthConnectProvider } from "../lib/health/healthConnectProvider";
 import { syncHealthActivities } from "../lib/health/syncHealthData";
 
@@ -46,12 +43,9 @@ function formatMemberSince(iso: string | undefined): string {
 export default function Settings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { profile, refreshProfile, refreshActiveGoal } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const { mode, colors, setMode } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { goal, reload } = useActivePlanData();
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [savingUnit, setSavingUnit] = useState(false);
   // Same capability-driven check as onboarding's health-data step.
   const [healthConnectAvailable, setHealthConnectAvailable] = useState(false);
@@ -89,16 +83,6 @@ export default function Settings() {
 
   async function handleSignOut() {
     await supabase.auth.signOut();
-  }
-
-  async function handleDeletePlan() {
-    if (!goal) return;
-    setDeleting(true);
-    await deleteGoal(goal.id);
-    await reload();
-    await refreshActiveGoal();
-    setDeleting(false);
-    setConfirmingDelete(false);
   }
 
   async function handleUnitChange(unit: "km" | "mi") {
@@ -426,38 +410,6 @@ export default function Settings() {
         )}
       </Card>
 
-      {goal && (
-        <>
-          <Text style={styles.sectionLabel}>CURRENT PLAN</Text>
-          <Card>
-            <Text style={styles.planLine}>
-              {formatDistance(goal.race_distance_km, profile?.distance_unit ?? "km")} goal · race day{" "}
-              {goal.goal_date}
-            </Text>
-            <Text style={styles.warningText}>
-              Deleting your plan is permanent - it can't be undone, only replaced by setting up a new
-              goal. Your training history stays intact either way.
-            </Text>
-            {!confirmingDelete ? (
-              <View style={{ gap: 10 }}>
-                <PrimaryButton label="Edit plan" onPress={() => router.push("/edit-plan")} />
-                <PrimaryButton
-                  label="Delete current plan"
-                  variant="secondary"
-                  onPress={() => setConfirmingDelete(true)}
-                />
-              </View>
-            ) : (
-              <View style={{ gap: 10 }}>
-                <Text style={styles.confirmText}>Are you sure? This can't be undone.</Text>
-                <PrimaryButton label="Yes, delete it" onPress={handleDeletePlan} loading={deleting} />
-                <PrimaryButton label="Cancel" variant="secondary" onPress={() => setConfirmingDelete(false)} />
-              </View>
-            )}
-          </Card>
-        </>
-      )}
-
       {profile?.is_admin && (
         <>
           <Text style={styles.sectionLabel}>ADMIN</Text>
@@ -511,8 +463,5 @@ function createStyles(colors: Colors) {
   inlineSave: { marginTop: 10 },
   errorText: { fontFamily: fonts.body, fontSize: 12.5, color: palette.danger, marginTop: 6 },
   memberSince: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 12 },
-  planLine: { fontFamily: fonts.bodySemiBold, fontSize: type.pDim, color: colors.textPrimary, marginBottom: 8 },
-  warningText: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginBottom: 12 },
-  confirmText: { fontFamily: fonts.bodySemiBold, fontSize: type.pDim, color: palette.danger },
   });
 }
