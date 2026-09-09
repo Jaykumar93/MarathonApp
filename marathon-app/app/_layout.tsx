@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { AccessibilityInfo, Animated } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import * as Linking from "expo-linking";
 import * as Sentry from "@sentry/react-native";
 import {
   useFonts as useSpaceGrotesk,
@@ -23,6 +24,7 @@ import {
   JetBrainsMono_600SemiBold,
 } from "@expo-google-fonts/jetbrains-mono";
 import { AuthProvider, useAuth } from "../lib/auth/AuthContext";
+import { createSessionFromUrl } from "../lib/auth/googleAuth";
 import { RunTrackingProvider } from "../lib/runTracking/RunTrackingContext";
 import { ThemeProvider } from "../lib/theme/ThemeContext";
 
@@ -63,6 +65,15 @@ function RootLayoutInner() {
   useEffect(() => {
     if (fontsReady) SplashScreen.hideAsync().catch(() => {});
   }, [fontsReady]);
+
+  // Catches the Google OAuth redirect: on native this is a no-op (the
+  // sign-in flow already exchanges its code directly - see
+  // lib/auth/googleAuth.ts), but on web the redirect is a full page
+  // reload, so this is the only place that sees the returned `code`.
+  const linkingUrl = Linking.useLinkingURL();
+  useEffect(() => {
+    if (linkingUrl) createSessionFromUrl(linkingUrl).catch(() => {});
+  }, [linkingUrl]);
 
   if (!fontsReady) return null;
 
