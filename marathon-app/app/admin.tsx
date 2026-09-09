@@ -243,7 +243,19 @@ function createStyles(colors: Colors) {
       justifyContent: "center",
       padding: spacing.screenPadding,
     },
-    confirmCard: { width: "100%", maxWidth: 380, gap: 10 },
+    confirmCard: {
+      width: "100%",
+      maxWidth: 380,
+      gap: 10,
+      // Card's own cardBg is deliberately translucent in dark mode (an
+      // in-flow surface sitting on the already-solid screen behind it) -
+      // wrong for a popup floating over a dimmed backdrop, where that
+      // translucency reads as "barely there". sheetBg is the opaque
+      // surface other floating overlays (Dropdown, track/coach/activity
+      // sheets) already use for exactly this case.
+      backgroundColor: colors.sheetBg,
+      borderWidth: 0,
+    },
     confirmTitle: { fontFamily: fonts.bodyBold, fontSize: 16, color: colors.textPrimary },
     confirmBody: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textDim, marginBottom: 4 },
     confirmButtons: { gap: 8, marginTop: 6 },
