@@ -6,6 +6,7 @@ import { useAuth } from "../../lib/auth/AuthContext";
 import { fonts, type } from "../../lib/theme";
 import { useTheme, type Colors, type ThemeShadows } from "../../lib/theme/ThemeContext";
 import { HealthSyncButton } from "../../components/HealthSyncButton";
+import { NotificationBell } from "../../components/NotificationBell";
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -134,6 +135,7 @@ export default function TabsLayout() {
         headerRight: () => (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             <HealthSyncButton />
+            <NotificationBell />
             <ProfileButton />
           </View>
         ),

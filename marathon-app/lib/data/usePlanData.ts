@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { createMissedRunNotifications } from "./notifications";
+import { useNotifications } from "../notifications/NotificationsContext";
 import { getActiveGoal, type GoalRow } from "./goals";
 import { getCurrentPlan, getPlanSessions, markPastPendingAsMissed, type PlanRow, type PlanSessionRow } from "./plans";
 import type { CalendarDayInfo } from "../../components/PlanCalendarScroller";
@@ -15,6 +17,7 @@ interface PlanDataState {
 
 export function useActivePlanData() {
   const { session } = useAuth();
+  const { refresh: refreshNotifications } = useNotifications();
   const [state, setState] = useState<PlanDataState>({ loading: true, goal: null, plan: null, sessions: [] });
 
   const reload = useCallback(async () => {
@@ -41,8 +44,15 @@ export function useActivePlanData() {
     // shown, and it was previously an extra sequential network round-trip
     // sitting in the middle of every single load. See its own comment for
     // why every screen using this hook still ends up seeing it.
-    markPastPendingAsMissed(plan.id, todayIso()).catch(() => {});
-  }, [session?.user?.id]);
+    //
+    // The rows this actually flips (never a re-query) become the persistent
+    // "missed run" notifications the bell/notifications screen show - see
+    // both functions' own comments for why that keeps this idempotent.
+    markPastPendingAsMissed(plan.id, todayIso())
+      .then((flipped) => createMissedRunNotifications(flipped))
+      .then(() => refreshNotifications())
+      .catch(() => {});
+  }, [session?.user?.id, refreshNotifications]);
 
   useEffect(() => {
     reload();
