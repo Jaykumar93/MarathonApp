@@ -33,12 +33,15 @@ export function useActivePlanData() {
       setState({ loading: false, goal, plan: null, sessions: [] });
       return;
     }
-    // Sweep before reading sessions, so every screen using this hook sees
-    // up-to-date 'missed' status without each needing to remember to call
-    // this itself - see markPastPendingAsMissed's own comment.
-    await markPastPendingAsMissed(plan.id, todayIso());
     const sessions = await getPlanSessions(plan.id);
     setState({ loading: false, goal, plan, sessions });
+    // Fire-and-forget, after the render-blocking state above is already
+    // set - correctness only requires this to have run by the *next*
+    // reload (e.g. next screen focus), not before this one's sessions are
+    // shown, and it was previously an extra sequential network round-trip
+    // sitting in the middle of every single load. See its own comment for
+    // why every screen using this hook still ends up seeing it.
+    markPastPendingAsMissed(plan.id, todayIso()).catch(() => {});
   }, [session?.user?.id]);
 
   useEffect(() => {

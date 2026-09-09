@@ -60,6 +60,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setHasActiveGoal(!!goal);
   }
 
+  /**
+   * Fetches the profile and checks for an active goal together rather than
+   * sequentially. The goal check used to only run once the profile had
+   * resolved AND turned out to be approved (see the reactive effect below,
+   * which still exists for reacting to a LATER status change, e.g. a live
+   * waitlist approval) - that gating never actually needed the profile's
+   * result, it was just skipping a wasted call for a non-approved user.
+   * That user can't have a goal anyway (AuthGate redirects them to
+   * /waitlist before onboarding is ever reachable), so the "wasted" call
+   * here is a cheap, empty, RLS-scoped query - a fair trade for cutting a
+   * full sequential network round-trip off every single app load for the
+   * common case (an approved user).
+   */
+  async function fetchProfileAndGoal(userId: string): Promise<void> {
+    await Promise.all([fetchProfile(userId), getActiveGoal(userId).then((goal) => setHasActiveGoal(!!goal))]);
+  }
+
   useEffect(() => {
     let mounted = true;
 
@@ -67,7 +84,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
       setSession(data.session);
       if (data.session?.user?.id) {
-        await fetchProfile(data.session.user.id);
+        await fetchProfileAndGoal(data.session.user.id);
+      } else {
+        setHasActiveGoal(false);
       }
       setLoading(false);
     });
@@ -75,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       setSession(newSession);
       if (newSession?.user?.id) {
-        await fetchProfile(newSession.user.id);
+        await fetchProfileAndGoal(newSession.user.id);
       } else {
         setProfile(null);
         setHasActiveGoal(null);
@@ -89,10 +108,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Check for an active goal once the profile is known to be approved.
-  // Resolves to false (not null) in every other case - including "no
-  // session at all" - so the gate below isn't stuck waiting on a check
-  // that will never run for a signed-out user.
+  // Re-checks whenever profile.status actually changes after the initial
+  // load (e.g. a live waitlist approval while the app is open) - the
+  // initial check itself now happens in fetchProfileAndGoal, in parallel
+  // with the profile fetch, not gated behind it; this fires one redundant
+  // (harmless, non-blocking) extra time right after mount as a result,
+  // since `loading` flipping false is also one of this effect's own
+  // dependencies. Resolves to false (not null) in every other case -
+  // including "no session at all" - so the gate below isn't stuck waiting
+  // on a check that will never run for a signed-out user.
   useEffect(() => {
     if (loading) return;
     if (session?.user?.id && profile?.status === "approved") {
