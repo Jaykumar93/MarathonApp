@@ -25,6 +25,7 @@ import {
 } from "@expo-google-fonts/jetbrains-mono";
 import { AuthProvider, useAuth } from "../lib/auth/AuthContext";
 import { createSessionFromUrl } from "../lib/auth/googleAuth";
+import { isPasswordRecoveryUrl } from "../lib/auth/passwordReset";
 import { NotificationsProvider } from "../lib/notifications/NotificationsContext";
 import { RunTrackingProvider } from "../lib/runTracking/RunTrackingContext";
 import { ThemeProvider } from "../lib/theme/ThemeContext";
@@ -70,10 +71,21 @@ function RootLayoutInner() {
   // Catches the Google OAuth redirect: on native this is a no-op (the
   // sign-in flow already exchanges its code directly - see
   // lib/auth/googleAuth.ts), but on web the redirect is a full page
-  // reload, so this is the only place that sees the returned `code`.
+  // reload, so this is the only place that sees the returned `code`. Also
+  // catches the password-recovery email link, which exchanges its `code`
+  // the exact same way - the only difference is a `type=recovery` param,
+  // which is what tells this apart from a normal sign-in and sends it to
+  // /reset-password instead of wherever AuthGate would otherwise route an
+  // already-authenticated user.
   const linkingUrl = Linking.useLinkingURL();
+  const rootRouter = useRouter();
   useEffect(() => {
-    if (linkingUrl) createSessionFromUrl(linkingUrl).catch(() => {});
+    if (!linkingUrl) return;
+    createSessionFromUrl(linkingUrl)
+      .then(() => {
+        if (isPasswordRecoveryUrl(linkingUrl)) rootRouter.replace("/reset-password");
+      })
+      .catch(() => {});
   }, [linkingUrl]);
 
   if (!fontsReady) return null;
@@ -161,6 +173,12 @@ function AuthGate() {
     // session exists at all, so the usual !inAuthGroup redirect below would
     // otherwise bounce a signed-out visitor straight back to /sign-in.
     const inPrivacyPolicy = segments[0] === "privacy-policy";
+    // A recovery-code exchange (see the linking-url effect above) always
+    // creates a real session before this screen is ever reached, so it
+    // only ever needs exempting from the two *signed-in* checks below, not
+    // the signed-out one above - unlike /privacy-policy, which is linked
+    // from sign-up before any session exists at all.
+    const inResetPassword = segments[0] === "reset-password";
 
     if (!session) {
       if (!inAuthGroup && !inPrivacyPolicy) router.replace("/sign-in");
@@ -168,7 +186,10 @@ function AuthGate() {
     }
 
     if (profile && profile.status !== "approved") {
-      if (!inWaitlist && !inPrivacyPolicy) router.replace("/waitlist");
+      // A forgotten-password reset shouldn't have to wait on waitlist
+      // approval - someone can be locked out of an account that's still
+      // pending review.
+      if (!inWaitlist && !inPrivacyPolicy && !inResetPassword) router.replace("/waitlist");
       return;
     }
 
@@ -187,7 +208,8 @@ function AuthGate() {
       !inRaceDay &&
       !inAdmin &&
       !inNotifications &&
-      !inPrivacyPolicy
+      !inPrivacyPolicy &&
+      !inResetPassword
     ) {
       router.replace("/(tabs)");
     }
@@ -214,6 +236,7 @@ function AuthGate() {
         <Stack.Screen name="admin" options={{ presentation: "card" }} />
         <Stack.Screen name="notifications" options={{ presentation: "card" }} />
         <Stack.Screen name="privacy-policy" options={{ presentation: "card" }} />
+        <Stack.Screen name="reset-password" options={{ presentation: "card" }} />
       </Stack>
     </Animated.View>
   );

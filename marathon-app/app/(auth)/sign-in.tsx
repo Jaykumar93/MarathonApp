@@ -76,6 +76,9 @@ export default function SignIn() {
               </Pressable>
             }
           />
+          <Link href="/forgot-password" style={styles.forgotLink}>
+            Forgot password?
+          </Link>
           {error && (
             <Text style={styles.error} accessibilityLiveRegion="polite">
               {error}
@@ -122,6 +125,7 @@ function createStyles(colors: Colors) {
     title: { fontFamily: fonts.dataBold, fontSize: 28, color: colors.textPrimary },
     subtitle: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
     form: { gap: 14 },
+    forgotLink: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.accent, textAlign: "right", marginTop: -6 },
     error: { fontFamily: fonts.body, fontSize: 13, color: palette.danger },
     dividerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     dividerLine: { flex: 1, height: 1, backgroundColor: colors.cardLine },
