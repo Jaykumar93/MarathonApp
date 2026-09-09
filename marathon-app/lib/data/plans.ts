@@ -174,12 +174,59 @@ export async function recordAdjustmentDeclined(planId: string): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Moves a session to tomorrow - but every day in a generated plan already
+ * has its own row (plan_sessions_plan_id_session_date_uidx enforces at
+ * most one session per plan per date, even a rest day), so naively
+ * overwriting session_date always collided with whatever was already
+ * scheduled there and threw a 23505 unique-violation - silently, since the
+ * caller (SessionListRow's "Move" button) had no error handling, so it
+ * just looked like nothing happened. Swaps the two sessions' dates instead
+ * (via a temporary holding date, since neither direct update can land
+ * without the other row moving out of the way first). Both sides end up
+ * status "moved" with their own real original_session_date preserved -
+ * the displaced session was just as genuinely rescheduled as the one the
+ * user tapped.
+ */
 export async function moveSessionToTomorrow(session: PlanSessionRow): Promise<void> {
   const next = new Date(session.session_date + "T00:00:00Z");
   next.setUTCDate(next.getUTCDate() + 1);
   const nextDate = next.toISOString().slice(0, 10);
 
-  const { error } = await supabase
+  const { data: conflicting, error: fetchError } = await supabase
+    .from("plan_sessions")
+    .select("*")
+    .eq("plan_id", session.plan_id)
+    .eq("session_date", nextDate)
+    .maybeSingle();
+  if (fetchError) throw fetchError;
+
+  if (!conflicting) {
+    // Tomorrow is past the end of the plan (or otherwise has no row) -
+    // the simple case from before, no swap needed.
+    const { error } = await supabase
+      .from("plan_sessions")
+      .update({
+        session_date: nextDate,
+        original_session_date: session.original_session_date ?? session.session_date,
+        status: "moved",
+      })
+      .eq("id", session.id);
+    if (error) throw error;
+    return;
+  }
+
+  const holdingDate = new Date(next);
+  holdingDate.setUTCDate(holdingDate.getUTCDate() + 3650); // 10 years out - no real plan reaches this far, so it can never collide with a real row.
+  const holdingDateIso = holdingDate.toISOString().slice(0, 10);
+
+  const { error: parkError } = await supabase
+    .from("plan_sessions")
+    .update({ session_date: holdingDateIso })
+    .eq("id", (conflicting as PlanSessionRow).id);
+  if (parkError) throw parkError;
+
+  const { error: moveError } = await supabase
     .from("plan_sessions")
     .update({
       session_date: nextDate,
@@ -187,5 +234,15 @@ export async function moveSessionToTomorrow(session: PlanSessionRow): Promise<vo
       status: "moved",
     })
     .eq("id", session.id);
-  if (error) throw error;
+  if (moveError) throw moveError;
+
+  const { error: swapBackError } = await supabase
+    .from("plan_sessions")
+    .update({
+      session_date: session.session_date,
+      original_session_date: (conflicting as PlanSessionRow).original_session_date ?? (conflicting as PlanSessionRow).session_date,
+      status: "moved",
+    })
+    .eq("id", (conflicting as PlanSessionRow).id);
+  if (swapBackError) throw swapBackError;
 }

@@ -40,6 +40,7 @@ export default function Plan() {
   const dayDetailSwipeHandlers = useDaySwipeNavigation(setSelectedDate);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [sessionActionError, setSessionActionError] = useState<string | null>(null);
   const [selectedDayActivities, setSelectedDayActivities] = useState<ActivityRow[]>([]);
   const [weekActivities, setWeekActivities] = useState<ActivityRow[]>([]);
   const [planActivities, setPlanActivities] = useState<ActivityRow[]>([]);
@@ -125,13 +126,28 @@ export default function Plan() {
   const today = todayIso();
 
   async function handleMove(session: PlanSessionRow) {
-    await moveSessionToTomorrow(session);
-    reload();
+    setSessionActionError(null);
+    try {
+      await moveSessionToTomorrow(session);
+      reload();
+    } catch (e) {
+      // Previously failed silently here (no catch at all) whenever
+      // tomorrow already had its own session, which is always - see
+      // moveSessionToTomorrow's own comment. Surfacing it now that it's
+      // fixed, so any future failure is visible instead of just "nothing
+      // happened".
+      setSessionActionError(e instanceof Error ? e.message : "Couldn't move that session.");
+    }
   }
 
   async function handleMarkDone(session: PlanSessionRow) {
-    await markSessionDone(session.id);
-    reload();
+    setSessionActionError(null);
+    try {
+      await markSessionDone(session.id);
+      reload();
+    } catch (e) {
+      setSessionActionError(e instanceof Error ? e.message : "Couldn't update that session.");
+    }
   }
 
   async function handleAcceptAdjustment() {
@@ -234,6 +250,7 @@ export default function Plan() {
         </Card>
 
         <Text style={styles.sectionLabel}>THIS WEEK'S SESSIONS</Text>
+        {sessionActionError && <Text style={styles.errorText}>{sessionActionError}</Text>}
         <Card style={{ paddingHorizontal: 10 }}>
           {weekSessions.map((s) => (
             <SessionListRow
@@ -279,6 +296,7 @@ function createStyles(colors: Colors) {
     marginTop: 4,
     marginBottom: 7,
   },
+  errorText: { fontFamily: fonts.body, fontSize: 12.5, color: colors.danger, marginBottom: 8 },
   divider: { height: 1, backgroundColor: colors.cardLine, marginVertical: 12 },
   cardTitleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 },
   cardTitleMain: { fontFamily: fonts.bodyBold, fontSize: 11.5, color: colors.textPrimary },
