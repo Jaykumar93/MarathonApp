@@ -10,13 +10,43 @@ import {
   type CoachConversationSummary,
   type CoachMessageRow,
 } from "../../lib/data/coachMessages";
-import { getAllActivities, type ActivityRow } from "../../lib/data/activities";
+import { getActivityById, getAllActivities, type ActivityRow } from "../../lib/data/activities";
+import { getPlanSessionById, type PlanSessionRow } from "../../lib/data/plans";
 import { askCoach } from "../../lib/coach/askCoach";
+import { formatDistance, formatPace } from "../../lib/units";
+import { SESSION_TYPE_LABEL } from "../../lib/sessionTypes";
 import { fonts, spacing } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
+import { Card } from "../../components/ui/Card";
 import { ReferenceChip } from "../../components/ui/ReferenceChip";
 import { CoachChart } from "../../components/ui/CoachChart";
 import { CoachMessageBody } from "../../components/ui/CoachMessageBody";
+
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.round(seconds % 60);
+  return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`;
+}
+
+// plan_sessions.session_date is a plain calendar date with no time
+// component - forcing UTC (same convention as planned-session.tsx's
+// formatDateHeading) is what keeps this from shifting a day backward in a
+// negative-UTC-offset timezone. activities.start_time is a real timestamp,
+// so it renders in the viewer's own local time instead - the two aren't
+// interchangeable, hence two separate formatters.
+function formatSessionDate(dateIso: string): string {
+  return new Date(dateIso + "T00:00:00Z").toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+function formatActivityDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
 
 // Which of the two Trends-style mini-charts (if any) is worth showing under
 // a reply, judged from the runner's own question - not the LLM's, since the
@@ -91,6 +121,17 @@ export default function Coach() {
   // modal-on-top-of-a-modal just to guard one destructive action.
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // The actual workout an "Ask Coach" entry point is about - shown as a
+  // details card above the thread instead of leaving that context
+  // invisible (it was already sent to the backend either way, just never
+  // shown on screen). At most one of these is ever set, matching the two
+  // entry points (Planned Session / Run Summary).
+  const [entryPlanSession, setEntryPlanSession] = useState<PlanSessionRow | null>(null);
+  const [entryActivity, setEntryActivity] = useState<ActivityRow | null>(null);
+  // Set alongside the prefill text below, then consumed by its own effect
+  // (not called directly from the focus-effect closure, which can be a
+  // render behind by the time it fires) - see that effect's comment.
+  const [autoSendPending, setAutoSendPending] = useState(false);
 
   // Context from an "Ask Coach" entry point (Run Summary / Planned Session)
   // stays attached to every message sent during this screen visit, not just
@@ -105,13 +146,24 @@ export default function Coach() {
   // via useState/useRef's initial value would silently keep pointing at
   // whichever run was tapped first, no matter how many different ones are
   // opened after it.
-  const appliedEntryContextRef = useRef({ activityId: params.activityId, planSessionId: params.planSessionId });
+  //
+  // Starts at `null`, deliberately NOT seeded from params like contextRef
+  // above - if it were, and Coach's very first mount in a fresh app
+  // session happened to already be an "Ask Coach" deep link (not a
+  // hypothetical: that's exactly what a cold-started app whose first-ever
+  // screen is a workout, then Coach, looks like), incoming would equal
+  // this ref's own initial value and isNewContext would read false on the
+  // very first real context this screen ever sees - silently skipping the
+  // whole reset-and-show-details flow below. `null` can never equal a
+  // real params pair, so the very first real context always counts as new.
+  const appliedEntryContextRef = useRef<{ activityId?: string; planSessionId?: string } | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       const incoming = { activityId: params.activityId, planSessionId: params.planSessionId };
       const hasIncomingContext = Boolean(incoming.activityId || incoming.planSessionId);
       const isNewContext =
+        !appliedEntryContextRef.current ||
         incoming.activityId !== appliedEntryContextRef.current.activityId ||
         incoming.planSessionId !== appliedEntryContextRef.current.planSessionId;
       if (!hasIncomingContext || !isNewContext) return;
@@ -122,6 +174,21 @@ export default function Coach() {
       setConversationId(undefined);
       setError(null);
       setInput(params.prefill ?? "");
+      setEntryPlanSession(null);
+      setEntryActivity(null);
+      if (incoming.planSessionId) {
+        getPlanSessionById(incoming.planSessionId).then(setEntryPlanSession);
+      } else if (incoming.activityId) {
+        getActivityById(incoming.activityId).then(setEntryActivity);
+      }
+      // Arriving from "Ask Coach" already means "yes, ask this" - the
+      // question is pre-written, not something to double-check before
+      // sending. Consumed by a separate effect below rather than calling
+      // handleSend directly from here, since this callback only updates
+      // its own memoized identity when [activityId, planSessionId,
+      // prefill] change, not on every render - by the time it might fire,
+      // it could be holding a stale handleSend from an earlier render.
+      if (params.prefill) setAutoSendPending(true);
     }, [params.activityId, params.planSessionId, params.prefill])
   );
 
@@ -157,6 +224,8 @@ export default function Coach() {
     setConversationId(undefined);
     setInput("");
     setError(null);
+    setEntryPlanSession(null);
+    setEntryActivity(null);
     contextRef.current = { activityId: undefined, planSessionId: undefined };
   }, []);
 
@@ -214,8 +283,8 @@ export default function Coach() {
     return () => clearInterval(id);
   }, [sending]);
 
-  const handleSend = useCallback(async () => {
-    const text = input.trim();
+  const handleSend = useCallback(async (textOverride?: string) => {
+    const text = (textOverride ?? input).trim();
     if (!text || sending) return;
     setError(null);
     const pendingId = `pending-${Date.now()}`;
@@ -261,6 +330,18 @@ export default function Coach() {
     }
   }, [input, sending, scrollToEnd, conversationId]);
 
+  // Fires the auto-send the focus effect above armed, once this render's
+  // handleSend/input actually reflect the just-set prefill - a plain
+  // useEffect keyed on the flag itself, not called directly from the
+  // focus-effect's own memoized callback, which only gets a fresh identity
+  // when [activityId, planSessionId, prefill] change and could otherwise
+  // be holding a stale handleSend closure from an earlier render.
+  useEffect(() => {
+    if (!autoSendPending) return;
+    setAutoSendPending(false);
+    handleSend(input);
+  }, [autoSendPending, handleSend, input]);
+
   const renderItem = useCallback(
     ({ item, index }: { item: DisplayMessage; index: number }) => {
       const isUser = item.role === "user";
@@ -292,6 +373,32 @@ export default function Coach() {
     [styles, router, messages, activities, unit]
   );
 
+  const entryDetailsCard = entryPlanSession ? (
+    <Card style={styles.entryCard}>
+      <Text style={styles.entryTitle}>
+        {SESSION_TYPE_LABEL[entryPlanSession.session_type] ?? entryPlanSession.session_type} ·{" "}
+        {formatSessionDate(entryPlanSession.session_date)}
+      </Text>
+      <Text style={styles.entryDetail}>
+        {entryPlanSession.planned_distance_meters ? formatDistance(entryPlanSession.planned_distance_meters / 1000, unit) : "—"}
+        {entryPlanSession.planned_pace_seconds_per_km ? ` at ${formatPace(entryPlanSession.planned_pace_seconds_per_km, unit)}` : ""}
+      </Text>
+    </Card>
+  ) : entryActivity ? (
+    <Card style={styles.entryCard}>
+      <Text style={styles.entryTitle}>
+        {SESSION_TYPE_LABEL[entryActivity.activity_type] ?? entryActivity.activity_type} ·{" "}
+        {formatActivityDate(entryActivity.start_time)}
+      </Text>
+      <Text style={styles.entryDetail}>
+        {formatDistance(entryActivity.distance_meters / 1000, unit)} · {formatDuration(entryActivity.duration_seconds)}
+        {entryActivity.distance_meters > 0
+          ? ` · ${formatPace(entryActivity.duration_seconds / (entryActivity.distance_meters / 1000), unit)}`
+          : ""}
+      </Text>
+    </Card>
+  ) : null;
+
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={90}>
       <View style={styles.toolbarRow}>
@@ -309,6 +416,7 @@ export default function Coach() {
         data={messages}
         keyExtractor={(m) => m.id}
         renderItem={renderItem}
+        ListHeaderComponent={entryDetailsCard}
         contentContainerStyle={styles.listContent}
         onContentSizeChange={scrollToEnd}
         ListEmptyComponent={
@@ -347,7 +455,7 @@ export default function Coach() {
         />
         <Pressable
           style={[styles.sendButton, (!input.trim() || sending) && styles.sendButtonDisabled]}
-          onPress={handleSend}
+          onPress={() => handleSend()}
           disabled={!input.trim() || sending}
           accessibilityRole="button"
           accessibilityLabel="Send"
@@ -446,6 +554,9 @@ function createStyles(colors: Colors) {
     thinkingBubble: { flexDirection: "row", alignItems: "center", gap: 8 },
     thinkingText: { fontFamily: fonts.body, fontSize: 13, color: colors.textDim },
     chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, maxWidth: "90%" },
+    entryCard: { marginBottom: 4 },
+    entryTitle: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.textPrimary },
+    entryDetail: { fontFamily: fonts.mono, fontSize: 12, color: colors.textDim, marginTop: 3 },
     errorText: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.danger, paddingHorizontal: spacing.screenPadding, paddingBottom: 4 },
     inputRow: {
       flexDirection: "row",
