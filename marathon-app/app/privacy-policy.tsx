@@ -133,7 +133,7 @@ export default function PrivacyPolicy() {
         <Text style={styles.body}>
           If what the app does changes in a way that affects this policy, this page and its effective date will
           change too. Built and operated by one person - for any question, or to request deletion, email{" "}
-          <Text style={styles.emailLink}>jaykumarpokar9@gmail.com</Text>.
+          <Text style={styles.emailLink}>www.jaykumarpokar@gmail.com</Text>.
         </Text>
       </Card>
     </ScrollView>

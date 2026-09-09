@@ -74,4 +74,4 @@ If what the app actually does changes in a way that affects this policy, this do
 
 ## Contact
 
-This app is built and operated by one person. For any question about this policy, or to request your data be deleted: **jaykumarpokar9@gmail.com**
+This app is built and operated by one person. For any question about this policy, or to request your data be deleted: **www.jaykumarpokar@gmail.com**
