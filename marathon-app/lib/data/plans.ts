@@ -137,6 +137,13 @@ export async function markSessionPending(sessionId: string): Promise<void> {
   if (error) throw error;
 }
 
+export interface FlippedMissedSession {
+  id: string;
+  user_id: string;
+  session_date: string;
+  session_type: string;
+}
+
 /**
  * Persists 'missed' for any session that's past its date but was never
  * completed/moved/cancelled - previously only ever derived at render time
@@ -145,16 +152,25 @@ export async function markSessionPending(sessionId: string): Promise<void> {
  * below. 'rest' and 'race' are excluded - skipping a rest day isn't a
  * missed run, and a race day can't be "missed" the way a training session
  * can. Cheap to call on every plan load: one bulk UPDATE, idempotent.
+ *
+ * Returns exactly the rows this call just flipped (via the UPDATE's own
+ * `.select()`, not a follow-up query) - a session already 'missed' from an
+ * earlier reload no longer matches the WHERE clause, so it's never
+ * returned a second time. That's what lets a caller create one persistent
+ * notification per missed session without a separate "already notified"
+ * check (see createMissedRunNotifications).
  */
-export async function markPastPendingAsMissed(planId: string, today: string): Promise<void> {
-  const { error } = await supabase
+export async function markPastPendingAsMissed(planId: string, today: string): Promise<FlippedMissedSession[]> {
+  const { data, error } = await supabase
     .from("plan_sessions")
     .update({ status: "missed" })
     .eq("plan_id", planId)
     .eq("status", "pending")
     .lt("session_date", today)
-    .not("session_type", "in", "(rest,race)");
+    .not("session_type", "in", "(rest,race)")
+    .select("id, user_id, session_date, session_type");
   if (error) throw error;
+  return data ?? [];
 }
 
 export async function recordAdjustmentPrompted(planId: string): Promise<void> {

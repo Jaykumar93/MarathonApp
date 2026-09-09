@@ -25,6 +25,7 @@ import {
 } from "@expo-google-fonts/jetbrains-mono";
 import { AuthProvider, useAuth } from "../lib/auth/AuthContext";
 import { createSessionFromUrl } from "../lib/auth/googleAuth";
+import { NotificationsProvider } from "../lib/notifications/NotificationsContext";
 import { RunTrackingProvider } from "../lib/runTracking/RunTrackingContext";
 import { ThemeProvider } from "../lib/theme/ThemeContext";
 
@@ -79,11 +80,13 @@ function RootLayoutInner() {
 
   return (
     <AuthProvider>
-      <ThemeProvider>
-        <RunTrackingProvider>
-          <AuthGate />
-        </RunTrackingProvider>
-      </ThemeProvider>
+      <NotificationsProvider>
+        <ThemeProvider>
+          <RunTrackingProvider>
+            <AuthGate />
+          </RunTrackingProvider>
+        </ThemeProvider>
+      </NotificationsProvider>
     </AuthProvider>
   );
 }
@@ -152,6 +155,7 @@ function AuthGate() {
     const inGear = segments[0] === "gear";
     const inRaceDay = segments[0] === "race-day";
     const inAdmin = segments[0] === "admin";
+    const inNotifications = segments[0] === "notifications";
 
     if (!session) {
       if (!inAuthGroup) router.replace("/sign-in");
@@ -176,7 +180,8 @@ function AuthGate() {
       !inActiveRun &&
       !inGear &&
       !inRaceDay &&
-      !inAdmin
+      !inAdmin &&
+      !inNotifications
     ) {
       router.replace("/(tabs)");
     }
@@ -201,6 +206,7 @@ function AuthGate() {
         <Stack.Screen name="gear" options={{ presentation: "card" }} />
         <Stack.Screen name="race-day" options={{ presentation: "card" }} />
         <Stack.Screen name="admin" options={{ presentation: "card" }} />
+        <Stack.Screen name="notifications" options={{ presentation: "card" }} />
       </Stack>
     </Animated.View>
   );
