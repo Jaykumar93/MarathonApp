@@ -1,14 +1,16 @@
-<svg width="512" height="512" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <!-- Stryde app icon mark: an ascending stride/"S" swoosh on the Predawn ground,
-       in Course Marking orange, with a Negative Split dot marking "today" -
-       the same device used for the in-app Block Profile's progress marker. -->
-  <rect width="100" height="100" rx="22" fill="#14161A"/>
-  <path
-    d="M27,76 C27,52 73,50 73,24"
-    fill="none"
-    stroke="#FF5A1F"
-    stroke-width="12"
-    stroke-linecap="round"
-  />
-  <circle cx="73" cy="24" r="8" fill="#3E8E7E"/>
+<svg width="400" height="400" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Stryde mark ("Ridge Echo"): the training-block terrain line
+       (base->build->peak->taper) drawn twice - solid Course Marking orange
+       in front, faint offset echo behind - the same shape the in-app Block
+       Profile chart draws, doing double duty as the icon. The peak dot is
+       Negative Split green, marking "today" the same way it does in-app.
+       Centering offset (-3,4) keeps the shape's own bounding box centered
+       on the 100x100 canvas - recompute this if the path data ever changes,
+       since dropping the echo (see stryde-mark-small.svg) shifts the
+       shape's center and needs a different offset. -->
+  <g transform="translate(-3,4)">
+    <polyline points="24,74 40,64 52,70 64,40 72,48 80,24 88,56" fill="none" stroke="#6BA696" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+    <polyline points="18,68 34,58 46,64 58,34 66,42 74,18 82,50" fill="none" stroke="#FF5A1F" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="74" cy="18" r="5" fill="#3E8E7E"/>
+  </g>
 </svg>

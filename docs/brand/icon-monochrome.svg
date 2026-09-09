@@ -1,6 +1,8 @@
 <svg width="432" height="432" viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg">
   <!-- Android 13+ themed monochrome icon - single-color silhouette, transparent bg;
-       the system applies its own tint, so actual color here is irrelevant beyond alpha. -->
-  <path d="M31,79 C31,58 77,56 77,32" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round"/>
-  <circle cx="77" cy="32" r="7.2" fill="#FFFFFF"/>
+       the system applies its own tint, so actual color here is irrelevant beyond alpha.
+       Echo dropped (same reasoning as stryde-mark-small.svg) since this renders small
+       and tinted - the lead ridge line alone reads more cleanly as a silhouette. -->
+  <polyline points="27.8,70.5 39.8,63 48.8,67.5 57.8,45 63.8,51 69.8,33 75.8,57" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="69.8" cy="33" r="3.8" fill="#FFFFFF"/>
 </svg>

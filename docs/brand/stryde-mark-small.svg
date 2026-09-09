@@ -1,0 +1,10 @@
+<svg width="192" height="192" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Small-size reduction of stryde-mark.svg: echo dropped below ~40px so
+       it doesn't blur into mush (favicon, browser tab, anywhere the icon
+       renders small). Centering offset is (0,7), NOT the full mark's
+       (-3,4) - dropping the echo shifts the remaining shape's own bounding
+       box, so the two versions need different offsets. -->
+  <g transform="translate(0,7)">
+    <polyline points="18,68 34,58 46,64 58,34 66,42 74,18 82,50" fill="none" stroke="#FF5A1F" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
