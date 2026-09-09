@@ -3,7 +3,14 @@ import { useAuth } from "../auth/AuthContext";
 import { createMissedRunNotifications } from "./notifications";
 import { useNotifications } from "../notifications/NotificationsContext";
 import { getActiveGoal, type GoalRow } from "./goals";
-import { getCurrentPlan, getPlanSessions, markPastPendingAsMissed, type PlanRow, type PlanSessionRow } from "./plans";
+import {
+  getHistoricalPlanSessions,
+  getPlansForGoal,
+  getPlanSessions,
+  markPastPendingAsMissed,
+  type PlanRow,
+  type PlanSessionRow,
+} from "./plans";
 import type { CalendarDayInfo } from "../../components/PlanCalendarScroller";
 import { DAY_ORDER } from "../planEngine/types";
 import { useHorizontalSwipe } from "../useHorizontalSwipe";
@@ -12,32 +19,69 @@ interface PlanDataState {
   loading: boolean;
   goal: GoalRow | null;
   plan: PlanRow | null;
+  /** Live plan's own sessions only - what the ramp/volume math (getWeeklyVolumesKm) and mutation actions (mark done, move) operate on. */
   sessions: PlanSessionRow[];
+  /**
+   * sessions plus every past (before today) session from a plan this goal
+   * has since moved on from - "Edit plan" and an accepted adjustment
+   * proposal both regenerate from today forward, so without this, every
+   * day already lived through under the previous plan would simply
+   * disappear from the calendar the moment you edit. Calendar/day-lookup
+   * rendering should read this; anything indexed by week_number
+   * (getWeeklyVolumesKm) must keep reading `sessions` alone - a past
+   * plan's own week numbering doesn't line up with the live plan's.
+   */
+  allSessions: PlanSessionRow[];
 }
 
 export function useActivePlanData() {
   const { session } = useAuth();
   const { refresh: refreshNotifications } = useNotifications();
-  const [state, setState] = useState<PlanDataState>({ loading: true, goal: null, plan: null, sessions: [] });
+  const [state, setState] = useState<PlanDataState>({
+    loading: true,
+    goal: null,
+    plan: null,
+    sessions: [],
+    allSessions: [],
+  });
 
   const reload = useCallback(async () => {
     if (!session?.user?.id) {
-      setState({ loading: false, goal: null, plan: null, sessions: [] });
+      setState({ loading: false, goal: null, plan: null, sessions: [], allSessions: [] });
       return;
     }
     setState((s) => ({ ...s, loading: true }));
     const goal = await getActiveGoal(session.user.id);
     if (!goal) {
-      setState({ loading: false, goal: null, plan: null, sessions: [] });
+      setState({ loading: false, goal: null, plan: null, sessions: [], allSessions: [] });
       return;
     }
-    const plan = await getCurrentPlan(goal.id);
+    // Fetches every plan this goal has ever had (not just the live one) at
+    // the same one-row-per-plan cost getCurrentPlan used to be - the
+    // superseded ones (if any) are what let history survive an edit below.
+    const plans = await getPlansForGoal(goal.id);
+    const plan = plans.find((p) => !p.is_deleted) ?? null;
     if (!plan) {
-      setState({ loading: false, goal, plan: null, sessions: [] });
+      setState({ loading: false, goal, plan: null, sessions: [], allSessions: [] });
       return;
     }
     const sessions = await getPlanSessions(plan.id);
-    setState({ loading: false, goal, plan, sessions });
+    // The live plan's own earliest date (its lead-in start, or start_date
+    // if it has none) - everything from here forward is already fully
+    // covered by `sessions` alone, so this is the cutoff for what actually
+    // counts as "history" a superseded plan needs to fill in.
+    const livePlanEarliestDate = sessions[0]?.session_date ?? plan.start_date;
+    // Zero extra cost for the common case (a goal that's never been edited
+    // has no superseded plans, so this returns immediately with no query at
+    // all) - only a goal with real edit history pays for fetching it.
+    const supersededPlanIds = plans.filter((p) => p.is_deleted).map((p) => p.id);
+    const historicalSessions = await getHistoricalPlanSessions(
+      supersededPlanIds,
+      livePlanEarliestDate,
+      new Map(plans.map((p) => [p.id, p.created_at]))
+    );
+    const allSessions = [...historicalSessions, ...sessions];
+    setState({ loading: false, goal, plan, sessions, allSessions });
     // Fire-and-forget, after the render-blocking state above is already
     // set - correctness only requires this to have run by the *next*
     // reload (e.g. next screen focus), not before this one's sessions are
@@ -48,8 +92,18 @@ export function useActivePlanData() {
     // The rows this actually flips (never a re-query) become the persistent
     // "missed run" notifications the bell/notifications screen show - see
     // both functions' own comments for why that keeps this idempotent.
-    markPastPendingAsMissed(plan.id, todayIso())
-      .then((flipped) => createMissedRunNotifications(flipped))
+    //
+    // Two separate calls, not one combined list - a superseded plan's own
+    // sweep needs the `livePlanEarliestDate` cutoff (matching
+    // getHistoricalPlanSessions above), not `today`. Using `today` for
+    // both would re-sweep a date the live plan already covers and already
+    // swept for itself, producing a second, redundant "missed run"
+    // notification pointing at an orphaned session nothing shows anymore.
+    Promise.all([
+      markPastPendingAsMissed([plan.id], todayIso()),
+      markPastPendingAsMissed(supersededPlanIds, livePlanEarliestDate),
+    ])
+      .then(([flippedLive, flippedHistorical]) => createMissedRunNotifications([...flippedLive, ...flippedHistorical]))
       .then(() => refreshNotifications())
       .catch(() => {});
   }, [session?.user?.id, refreshNotifications]);
