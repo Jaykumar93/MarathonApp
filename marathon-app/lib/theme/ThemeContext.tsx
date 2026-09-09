@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useColorScheme } from "react-native";
 import { palette } from "../theme";
 import { useAuth } from "../auth/AuthContext";
 import { supabase } from "../supabase";
@@ -128,8 +129,14 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 /**
  * Wraps the app above AuthGate (see app/_layout.tsx) so theme is available
- * everywhere, including auth/waitlist screens before a profile exists
- * (defaults to light there, same as a logged-out user would expect).
+ * everywhere, including auth/waitlist screens before a profile exists -
+ * those follow the device's own OS-level appearance setting (light/dark)
+ * rather than a hardcoded default, matching what a logged-out user would
+ * actually expect from their phone. This only works because app.json sets
+ * `userInterfaceStyle: "automatic"` - Expo forces Appearance/useColorScheme
+ * to always report "light" otherwise, regardless of the real device
+ * setting, no matter what this file does.
+ *
  * Active Run is the PRD's one deliberate exception ("stays permanently
  * dark regardless of the app-wide toggle") - it doesn't consume this
  * context at all, importing `palette` directly instead for the handful of
@@ -137,7 +144,8 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { session, profile, refreshProfile } = useAuth();
-  const [mode, setModeState] = useState<ThemeMode>("light");
+  const systemScheme = useColorScheme();
+  const [mode, setModeState] = useState<ThemeMode>(systemScheme === "dark" ? "dark" : "light");
 
   // Seed from the persisted preference once the profile loads - never
   // overwrites a mid-session toggle the user already made (guarded by only
@@ -145,6 +153,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (profile?.theme_preference) setModeState(profile.theme_preference);
   }, [profile?.theme_preference]);
+
+  // Follows the device's own OS-level setting for as long as there's no
+  // signed-in preference to override it with - a live subscription
+  // (useColorScheme), not a one-time read, so toggling the OS setting
+  // while sitting on sign-in/sign-up actually updates immediately. Once a
+  // real profile.theme_preference exists, that's the source of truth and
+  // this stops applying - the effect above already handles that case, and
+  // this one's own guard keeps it from fighting that choice.
+  useEffect(() => {
+    if (!profile?.theme_preference) setModeState(systemScheme === "dark" ? "dark" : "light");
+  }, [systemScheme, profile?.theme_preference]);
 
   // useCallback (keyed on session/refreshProfile) is load-bearing, not just
   // an optimization: this used to be a plain function redefined every
