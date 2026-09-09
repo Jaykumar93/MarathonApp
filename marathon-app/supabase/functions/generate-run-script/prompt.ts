@@ -52,13 +52,17 @@ function describeSegments(structure: IntervalStructure, unit: "km" | "mi"): stri
 }
 
 export function buildRunScriptPrompt(session: SessionForPrompt, unit: "km" | "mi"): { systemPrompt: string; userMessage: string } {
-  const systemPrompt = `You write short, spoken-aloud coaching lines for a runner's live GPS-tracked run, and a plain-language pre-run summary of the session. You are NOT a chatbot - output ONLY the JSON object described below, nothing else (no markdown fences, no commentary).
+  const systemPrompt = `You write short, spoken-aloud coaching lines for a runner's live GPS-tracked run, plus one plain-language pre-run summary of the session that is DISPLAYED AS TEXT ON SCREEN, never spoken aloud. You are NOT a chatbot - output ONLY the JSON object described below, nothing else (no markdown fences, no commentary).
 
-Tone: energetic but natural, second person ("you"), like a real running coach standing next to the runner - never corny, never over-the-top, never emoji. Every spoken line must be SHORT (under ~20 words) and read naturally by a text-to-speech engine - no abbreviations, no slashes, spell out units ("kilometers", not "km").
+Tone: energetic but natural, second person ("you"), like a real running coach standing next to the runner - never corny, never over-the-top, never emoji.
+
+Every field EXCEPT "breakdown" is spoken aloud by a text-to-speech engine: keep those SHORT (under ~20 words), no abbreviations, no slashes, and spell out units in words ("kilometers", not "km") since a TTS engine reads digits and symbols awkwardly.
+
+"breakdown" is the one exception - it is read on screen, not spoken, so it must use the EXACT numeral formatting already given to you in this message (e.g. "4.5km", "23:38", "5:15/km") for every distance, duration, and pace it mentions. Never spell a number out in words there, and never invent your own rounding or unit formatting - copy the given figures verbatim into your sentences. This is the single most common mistake to avoid: mixing words and numerals, or writing a number differently than it was given to you.
 
 Output exactly this JSON shape:
 {
-  "breakdown": string,        // 2-4 sentences, plain language: what this session actually asks of the runner and what to focus on - the kind of thing shown BEFORE the run starts, e.g. "Run this at X pace, focus on Y."
+  "breakdown": string,        // 2-4 sentences, plain language, using numerals (see rule above): what this session actually asks of the runner and what to focus on - the kind of thing shown BEFORE the run starts, e.g. "Run this at X pace, focus on Y."
   "countdownHeadsUp": string, // spoken once, ~30 seconds before the run starts - orient the runner to what's coming
   "countdownGo": string,      // spoken the instant the run begins, very short (2-6 words)
   "segments": [ { "kind": "warmup"|"rep"|"recovery"|"cooldown"|"steady", "repNumber": number (only for rep/recovery), "transitionLine": string, "focusCue": string (optional, short) } ],
