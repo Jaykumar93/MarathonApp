@@ -16,7 +16,7 @@
 | 4 | Navigation + Home/Plan wired to real data | Done | [04-navigation-home-plan.md](04-navigation-home-plan.md) |
 | 5 | Manual activity logging end-to-end | Done | [05-manual-activity-logging.md](05-manual-activity-logging.md) |
 | 6 | GPS tracking, Active Run, maps | Done | [06-gps-tracking-active-run.md](06-gps-tracking-active-run.md) |
-| 7 | Health Connect auto-sync (Android) | In Progress | [07-health-connect-sync.md](07-health-connect-sync.md) |
+| 7 | Health Connect auto-sync (Android) | Done | [07-health-connect-sync.md](07-health-connect-sync.md) |
 | 8 | Trends, AI Coach (RAG), polish + first EAS build | In Progress | [08-trends-coach-polish.md](08-trends-coach-polish.md) |
 
 ---
@@ -102,6 +102,8 @@ Marked Done with three items deliberately left blocked on Task 8's dev build (no
 - Auto-synced activities write to `activities` with `source: health_connect`
 - Onboarding step 5 (health data connect) becomes functional, with "log manually instead" remaining equally available
 
+Marked Done: real `healthConnectProvider.ts` (not a stub) shipped and live-verified on-device during Task 8 Phase B, after a `targetSdkVersion` bump to 36 (Android 16 requirement) — Settings connect/sync/disconnect, a header sync button, onboarding's health-data step correctly reflecting real device availability. Two items remain, tracked on the pre-launch checklist below: a final clean end-to-end re-confirmation after the SDK-36 fix, and the Play Console health-app declaration required before real users get it.
+
 **Depends on:** Task 5 (same `activities` write path, different source).
 **Blocks:** nothing downstream directly.
 
@@ -114,7 +116,10 @@ Final phase before first real build. Sequenced into six phases — see [08-trend
 - **Phase C** — live-verified: AI Coach (RAG) — self-authored knowledge base (5 articles) → Hugging Face embeddings → Supabase pgvector → a Deno Edge Function (Gemini Flash, Groq failover) grounding replies in both the knowledge base and the user's own structured activity/plan data. Real chat UI in `coach.tsx`, plus "Ask Coach" entry points on Run Summary and Planned Session detail that pre-fill context. Full account in [implementation/08-trends-coach-polish.md](implementation/08-trends-coach-polish.md).
 - **Phase D** — live-verified: Race Day Details screen (readiness summary via a `skipPersistence` reuse of the Coach pipeline, weather via Open-Meteo with city-name geocoding, a full mile/km Pace Band, and an editable morning-of checklist). Full account in [implementation/08-trends-coach-polish.md](implementation/08-trends-coach-polish.md).
 - **Phase E** — done, web-verified: GPX/TCX export, wired into the existing `share-run.tsx` screen (shareable activity cards already shipped as a Task 6 follow-up). Full account in [implementation/08-trends-coach-polish.md](implementation/08-trends-coach-polish.md).
-- **Phase F**: production polish — release-grade Sentry config, first real EAS Android build, the waitlist-readiness checklist below.
+- **Phase F** — done: a batch of fixes and one more real feature, done as a follow-on after Phase E rather than as its own numbered task (see this doc's git history note below for why nothing here has an implementation-log entry yet). Google Sign-In (OAuth via Supabase, PKCE flow, native + web); an admin waitlist-management screen (`app/admin.tsx`) with password-reverified approve/revoke, reachable only to the one account with `profiles.is_admin`; mandatory username at signup with a show/hide password toggle; two real dark-mode bugs fixed (the admin confirm popup's translucent background, and a stale-closure bug that silently dropped the very first theme toggle after a fresh app load); a plan-generator fix capping "easy" days relative to that week's long run (previously uncapped, so a low-training-days-per-week plan could put 55-70% of a whole week into one run, often the plan's very first scheduled session); a missed-run plan-adjustment feature (persisted `missed` status, a Plan-tab banner proposing — never auto-applying — a gentler regenerated ramp based on real recent mileage); a voice-guided Active Run upgrade (30s spoken countdown, AI-generated section-transition/motivational voice cues for structured workouts with a fully offline deterministic fallback, a segmented progress bar, a per-run coach-mute toggle independent of km-split announcements); and a fix for the Plan tab's "Move to tomorrow" button, which silently failed every time due to a unique-constraint collision. See the relevant sub-plans (03, 04, 05 all had deferred markers this closes) and `implementation/08-trends-coach-polish.md`'s new section for the full account.
+- **Phase G**: production polish — release-grade Sentry config, first real EAS Android build, the waitlist-readiness checklist below.
+
+**A note on why Phase F predates its own documentation**: six commits' worth of real feature work (Google Sign-In through the Move-button fix) landed with no corresponding doc updates or implementation-log entries at the time - a process gap, caught and fixed in this same pass. If you're reading this after another gap like it, `git log --name-only` against `docs/` is the fastest way to spot it again.
 
 **Depends on:** Task 5 (Trends needs activity data), Task 4 (Coach needs plan context).
 **Blocks:** nothing — final task.
@@ -125,9 +130,16 @@ Final phase before first real build. Sequenced into six phases — see [08-trend
 
 Running checklist of things deliberately deferred along the way — each was a conscious call, not an oversight, but easy to lose track of once we're several tasks further along. Check this before Task 8's "first real build" step, at the latest.
 
-- [ ] **Re-enable "Confirm email"** in Supabase (Authentication → Providers → Email) — turned off during Task 2 RLS testing to avoid the free-tier email rate limit; left off deliberately while still mid-build. See [02-supabase-backend.md](02-supabase-backend.md#what's-left).
+- [ ] **Re-enable "Confirm email"** in Supabase (Authentication → Providers → Email) — turned off during Task 2 RLS testing to avoid the free-tier email rate limit; left off deliberately while still mid-build. See [02-supabase-backend.md](02-supabase-backend.md#what's-left). **This line and `sign-up.tsx`'s own code comment now contradict each other** (the code comment asserts "Confirm email" is already on) — one of the two is stale; check the actual Supabase dashboard setting directly rather than trusting either, and correct whichever is wrong.
 - [x] **Live-verify the waitlist dashboard-approval fix** — done during Task 4 testing: approved a real test profile via `supabase db query --linked` (a privileged, non-PostgREST connection, same code path as the Table Editor) and confirmed `status`/`access_granted` actually persisted as `'approved'`/`true`, not silently reverted. Closes the item left open since Task 2.
 - [ ] **Clean up disposable test accounts** in `auth.users` — two from Task 2's RLS testing, one from Task 4's end-to-end walkthrough (`jaykumarpokar9+stryde-test-1@gmail.com`), and one from Task 8 Phase B's web-bundle-fix re-verification (`jaykumarpokar9+phaseb-test@gmail.com`). Harmless, just clutter; a manual dashboard delete whenever convenient.
+- [ ] **Set a real Sentry DSN** (`EXPO_PUBLIC_SENTRY_DSN`) — wired since Phase A, silently disabled without one. Get it from the Sentry project's Settings → Client Keys.
+- [ ] **Write a privacy policy** — PRD lists this as a hard blocker for early access; nothing exists in the repo yet. The permission-disclosure strings in `app.json` (location/photos) are not a substitute.
+- [x] **Fix `eas.json`'s production build profile** — was set to `"buildType": "app-bundle"` (a Play Store artifact), which can't be installed via the direct-share sideloading this project's Phase 1 distribution plan actually uses (see Task 8's scope note). Changed to `"apk"` + `"distribution": "internal"`, matching the `development`/`preview` profiles.
+- [ ] **Apple Sign-In** — Google OAuth shipped (Phase F); Apple is still the disabled "coming soon" button in `sign-in.tsx`. Not needed for an Android-only Phase 1 build, but a real gap if iOS ever ships.
+- [ ] **Confirm background location survives a locked screen** — the dev-build dependency this was blocked on is resolved (Task 8 Phase B), the code path exists (`lib/runTracking/backgroundLocationTask.ts`), but this specific scenario has never been explicitly tested on a real device.
+- [ ] **GPX/TCX export — verify against a real GPS-recorded run** on a real device, both file types, confirming the file actually imports cleanly into Strava/Garmin Connect. Only ever tested against a synthetic injected route and the web download path.
+- [ ] **Health Connect — final clean end-to-end re-confirmation** after the target-SDK-36 fix (a synced run appearing correctly in Activity History with nothing left to debug), plus the **Play Console health-app declaration** required before real users get this feature.
 
 ## Notes
 

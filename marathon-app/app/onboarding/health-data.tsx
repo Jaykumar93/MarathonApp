@@ -126,7 +126,7 @@ export default function HealthData() {
     <OnboardingStepLayout
       step={6}
       title="Connect your health data"
-      subtitle="Auto-sync isn't wired up yet - log manually for now, connect it later from Settings."
+      subtitle="Log manually, or connect Health Connect if it's available on this build - you can change this anytime from Settings."
       onNext={handleFinish}
       nextLabel="Create my plan"
       nextLoading={submitting}
