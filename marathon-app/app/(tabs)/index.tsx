@@ -39,7 +39,7 @@ export default function Home() {
   const { session, profile } = useAuth();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { loading, goal, plan, sessions, reload } = useActivePlanData();
+  const { loading, goal, plan, sessions, allSessions, reload } = useActivePlanData();
   const [overdueShoes, setOverdueShoes] = useState<ShoeRow[]>([]);
 
   const today = new Date();
@@ -105,7 +105,7 @@ export default function Home() {
   // does - conditionally skipping a hook call between renders is a
   // Rules-of-Hooks violation); usePlanCalendarDays itself guards for
   // plan/goal possibly still being null.
-  const allDays = usePlanCalendarDays(sessions, plan, goal);
+  const allDays = usePlanCalendarDays(allSessions, plan, goal);
 
   if (loading) {
     return (
@@ -130,7 +130,7 @@ export default function Home() {
   const weekLoggedKm = weekActivities.reduce((sum, a) => sum + a.distance_meters / 1000, 0);
   const weekProgressPct = weekTargetKm > 0 ? Math.min(1, weekLoggedKm / weekTargetKm) * 100 : 0;
   const unit = profile?.distance_unit ?? "km";
-  const selectedSession = sessions.find((s) => s.session_date === selectedDate) ?? null;
+  const selectedSession = allSessions.find((s) => s.session_date === selectedDate) ?? null;
 
   const daysRemaining = Math.max(
     0,

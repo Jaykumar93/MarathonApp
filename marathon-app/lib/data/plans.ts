@@ -10,6 +10,7 @@ export interface PlanRow {
   last_adjustment_prompted_at: string | null;
   last_adjustment_declined_at: string | null;
   is_deleted: boolean;
+  created_at: string;
 }
 
 export interface PlanSessionRow {
@@ -105,6 +106,71 @@ export async function getCurrentPlan(goalId: string): Promise<PlanRow | null> {
   return data as PlanRow | null;
 }
 
+/**
+ * Every plan ever created for this goal - the live one plus every
+ * superseded regeneration ("Edit plan", or an accepted adjustment proposal)
+ * - not just the one getCurrentPlan returns. Same one-row-per-plan cost as
+ * getCurrentPlan (this goal only ever has a handful of plans, even after
+ * several edits), used so a caller can recover which plans are now
+ * superseded without a second round-trip just to ask.
+ */
+export async function getPlansForGoal(goalId: string): Promise<PlanRow[]> {
+  const { data, error } = await supabase
+    .from("plans")
+    .select("*")
+    .eq("goal_id", goalId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as PlanRow[];
+}
+
+/**
+ * Sessions from plans that are no longer current, dated strictly before
+ * `beforeDate` - pass the live plan's own earliest session date (its
+ * lead-in start, or start_date if it has none), not `today`. The live
+ * plan's own sessions always cover everything from that date forward with
+ * no gaps, so anything on or after it is already fully represented by the
+ * live plan alone; only genuinely older days - the ones the live plan's
+ * lead-in bridge doesn't reach back far enough to cover - are missing
+ * without this. Without it, editing or adjusting a plan makes every day
+ * already lived through under the old plan simply disappear from the
+ * calendar, even though those rows are never actually deleted.
+ *
+ * Two *different* superseded plans can genuinely both have a row for the
+ * same past date, if this goal was edited more than once. `planCreatedAtById`
+ * breaks that tie in favor of whichever plan was created later - it was the
+ * one actually live closer to when that date passed, so its status
+ * (done/missed) is the one the regular missed-session sweep actually kept
+ * up to date; an earlier-superseded plan's row for the same date can be
+ * stuck at a stale 'pending' it stopped receiving sweeps for once it was
+ * itself superseded.
+ */
+export async function getHistoricalPlanSessions(
+  supersededPlanIds: string[],
+  beforeDate: string,
+  planCreatedAtById: Map<string, string>
+): Promise<PlanSessionRow[]> {
+  if (supersededPlanIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("plan_sessions")
+    .select("*")
+    .in("plan_id", supersededPlanIds)
+    .lt("session_date", beforeDate)
+    .order("session_date", { ascending: true });
+  if (error) throw error;
+
+  const rows = (data ?? []) as PlanSessionRow[];
+  rows.sort((a, b) => {
+    if (a.session_date !== b.session_date) return a.session_date < b.session_date ? -1 : 1;
+    const aCreated = planCreatedAtById.get(a.plan_id) ?? "";
+    const bCreated = planCreatedAtById.get(b.plan_id) ?? "";
+    return aCreated < bCreated ? -1 : aCreated > bCreated ? 1 : 0;
+  });
+  return rows;
+}
+
 /** Looked up by id when a screen (e.g. log-activity) only has a plan_session_id route param to work from, not the row itself. */
 export async function getPlanSessionById(id: string): Promise<PlanSessionRow | null> {
   const { data, error } = await supabase.from("plan_sessions").select("*").eq("id", id).maybeSingle();
@@ -153,6 +219,13 @@ export interface FlippedMissedSession {
  * missed run, and a race day can't be "missed" the way a training session
  * can. Cheap to call on every plan load: one bulk UPDATE, idempotent.
  *
+ * Takes every plan id this goal has (the live one plus any superseded by
+ * an edit/adjustment), not just the live plan - a superseded plan's own
+ * past-pending rows stop getting swept the moment it's no longer current,
+ * so without this they'd sit at a stale 'pending' forever instead of the
+ * 'missed' they actually are, even after getHistoricalPlanSessions makes
+ * them visible again post-edit.
+ *
  * Returns exactly the rows this call just flipped (via the UPDATE's own
  * `.select()`, not a follow-up query) - a session already 'missed' from an
  * earlier reload no longer matches the WHERE clause, so it's never
@@ -160,11 +233,12 @@ export interface FlippedMissedSession {
  * notification per missed session without a separate "already notified"
  * check (see createMissedRunNotifications).
  */
-export async function markPastPendingAsMissed(planId: string, today: string): Promise<FlippedMissedSession[]> {
+export async function markPastPendingAsMissed(planIds: string[], today: string): Promise<FlippedMissedSession[]> {
+  if (planIds.length === 0) return [];
   const { data, error } = await supabase
     .from("plan_sessions")
     .update({ status: "missed" })
-    .eq("plan_id", planId)
+    .in("plan_id", planIds)
     .eq("status", "pending")
     .lt("session_date", today)
     .not("session_type", "in", "(rest,race)")

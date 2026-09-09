@@ -34,7 +34,7 @@ export default function Plan() {
   const { session, profile, refreshActiveGoal } = useAuth();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { loading, goal, plan, sessions, reload } = useActivePlanData();
+  const { loading, goal, plan, sessions, allSessions, reload } = useActivePlanData();
   const [selectedDate, setSelectedDate] = useState(todayIso());
   // Same day-navigation gesture as Home's day detail card.
   const dayDetailSwipeHandlers = useDaySwipeNavigation(setSelectedDate);
@@ -80,7 +80,7 @@ export default function Plan() {
   // does); usePlanCalendarDays itself guards for plan/goal still being
   // null, and memoizes so PlanCalendarScroller doesn't reset its scroll
   // position on every unrelated re-render.
-  const allDays = usePlanCalendarDays(sessions, plan, goal);
+  const allDays = usePlanCalendarDays(allSessions, plan, goal);
 
   const adjustmentProposal = plan ? getAdjustmentProposal(plan, sessions) : null;
 
@@ -116,7 +116,7 @@ export default function Plan() {
   const weekTargetKm = weeklyVolumesKm[currentWeek - 1] ?? 0;
   const weekLoggedKm = weekActivities.reduce((sum, a) => sum + a.distance_meters / 1000, 0);
   const weekProgressPct = weekTargetKm > 0 ? Math.min(1, weekLoggedKm / weekTargetKm) * 100 : 0;
-  const selectedSession = sessions.find((s) => s.session_date === selectedDate) ?? null;
+  const selectedSession = allSessions.find((s) => s.session_date === selectedDate) ?? null;
 
   const [weekStart, weekEnd] = getWeekDateRange(plan.start_date, currentWeek);
   const weekSessions = sessions
