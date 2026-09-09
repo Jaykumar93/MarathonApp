@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
 import { fonts, palette, spacing } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
+import { BrandMark } from "../../components/ui/BrandMark";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { TextField } from "../../components/ui/TextField";
 
@@ -73,6 +74,9 @@ export default function SignUp() {
   if (confirmationNeeded) {
     return (
       <View style={[styles.flex, styles.container]}>
+        <View style={styles.markRow}>
+          <BrandMark size={56} />
+        </View>
         <Text style={styles.title}>Check your email</Text>
         <Text style={styles.subtitle}>
           We sent a confirmation link to {email}. Confirm it, then come back and sign in.
@@ -87,6 +91,9 @@ export default function SignUp() {
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.markRow}>
+          <BrandMark size={56} />
+        </View>
         <Text style={styles.title}>Create your account</Text>
         <Text style={styles.subtitle}>You'll join the waitlist first - access is approved manually.</Text>
 
@@ -147,6 +154,7 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: colors.screenBg },
     container: { flexGrow: 1, padding: spacing.screenPadding, justifyContent: "center", gap: 22 },
+    markRow: { alignItems: "center", marginBottom: -6 },
     title: { fontFamily: fonts.dataBold, fontSize: 28, color: colors.textPrimary },
     subtitle: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
     form: { gap: 14 },

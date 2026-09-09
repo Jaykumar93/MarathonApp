@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase";
 import { signInWithGoogle } from "../../lib/auth/googleAuth";
 import { fonts, palette, spacing } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
+import { BrandMark } from "../../components/ui/BrandMark";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { TextField } from "../../components/ui/TextField";
 
@@ -47,7 +48,10 @@ export default function SignIn() {
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Welcome back</Text>
+        <View style={styles.markRow}>
+          <BrandMark size={56} />
+        </View>
+        <Text style={styles.title}>Sign in</Text>
         <Text style={styles.subtitle}>Sign in to continue your training block.</Text>
 
         <View style={styles.form}>
@@ -110,6 +114,7 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: colors.screenBg },
     container: { flexGrow: 1, padding: spacing.screenPadding, justifyContent: "center", gap: 22 },
+    markRow: { alignItems: "center", marginBottom: -6 },
     title: { fontFamily: fonts.dataBold, fontSize: 28, color: colors.textPrimary },
     subtitle: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
     form: { gap: 14 },
