@@ -15,6 +15,17 @@ import {
   type RoutePoint,
   type Split,
 } from "../gpsStats";
+import { getCurrentLeg } from "../intervalProgress";
+import { buildFallbackVoiceScript, findSegment, type RunVoiceScript } from "./voiceScriptFallback";
+import { getOrGenerateVoiceScript } from "./voiceScript";
+import {
+  hasLegChanged,
+  shouldFireLegMotivation,
+  crossedMotivationFraction,
+  isFinalCountdownTick,
+  MOTIVATION_FRACTION_STEP,
+  type LegKey,
+} from "./voiceEvents";
 
 export type RunTrackingPhase =
   | "idle"
@@ -33,7 +44,10 @@ const LOCATION_OPTIONS: Location.LocationOptions = {
   distanceInterval: 10,
 };
 
-export const COUNTDOWN_SECONDS = 5;
+// 30s: long enough for a spoken heads-up plus an audible final few seconds
+// (see beginCountdown) without the heads-up and the countdown numbers
+// talking over each other.
+export const COUNTDOWN_SECONDS = 30;
 
 // A fix reported worse than this is more likely network/cell-tower-based
 // positioning noise than an actual GPS lock (typical "Balanced"-accuracy
@@ -83,6 +97,11 @@ interface RunTrackingValue {
   plannedSession: PlanSessionRow | null;
   statusMessage: string | null;
   finalStats: FinalRunStats | null;
+  /** The resolved (AI-generated, or deterministic-fallback while the real one is still generating) voice script for this run - null for a free run with no planned session. See lib/runTracking/voiceScript.ts. */
+  voiceScript: RunVoiceScript | null;
+  /** Per-run only (resets on the next run, see resetAll) - mutes section-transition/motivational "coach" lines without touching km-split announcements or the start/pause/resume/finish status lines. */
+  coachMuted: boolean;
+  toggleCoachMute: () => void;
   startRun: (planSessionId?: string) => Promise<void>;
   pause: () => void;
   resume: () => void;
@@ -116,6 +135,8 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
   const [plannedSession, setPlannedSession] = useState<PlanSessionRow | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [finalStats, setFinalStats] = useState<FinalRunStats | null>(null);
+  const [voiceScript, setVoiceScript] = useState<RunVoiceScript | null>(null);
+  const [coachMuted, setCoachMuted] = useState(false);
 
   const watchSubscription = useRef<Location.LocationSubscription | null>(null);
   const startTimeRef = useRef<number | null>(null);
@@ -124,6 +145,14 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const nextAnnouncementKmRef = useRef(intervalKm);
   const pointsRef = useRef<RoutePoint[]>([]);
+  // Imperative mirror of `voiceScript` state - onLocationUpdate/
+  // beginCountdown read this synchronously (refs are always current,
+  // unlike a value captured in a memoized callback's closure).
+  const voiceScriptRef = useRef<RunVoiceScript | null>(null);
+  const lastLegRef = useRef<LegKey | null>(null);
+  const motivationFiredForLegRef = useRef(false);
+  const nextMotivationFractionRef = useRef(MOTIVATION_FRACTION_STEP);
+  const motivationLineIndexRef = useRef(0);
   // Set once per run (in startRun) after actually asking for background
   // permission - checked by startLocationDelivery so pause/resume don't
   // each have to re-request it.
@@ -142,13 +171,37 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
     };
   }, []);
 
-  const speak = useCallback(
+  // Two independent gates over the same expo-speech call, per the explicit
+  // requirement that muting "the coach" must never silence km-splits or
+  // the start/pause/resume/finish status lines. speakStatus is the
+  // original, unconditional-on-mute behavior; speakCoach adds the new,
+  // per-run-only coachMuted check on top of the same master voiceEnabled
+  // toggle.
+  const speakStatus = useCallback(
     (text: string) => {
       if (!voiceEnabled) return;
       Speech.speak(text, { rate: 1.0, pitch: 1.0 });
     },
     [voiceEnabled]
   );
+
+  const speakCoach = useCallback(
+    (text: string) => {
+      if (!voiceEnabled || coachMuted) return;
+      Speech.speak(text, { rate: 1.0, pitch: 1.0 });
+    },
+    [voiceEnabled, coachMuted]
+  );
+
+  const toggleCoachMute = useCallback(() => setCoachMuted((m) => !m), []);
+
+  const nextMotivationLine = useCallback(() => {
+    const lines = voiceScriptRef.current?.motivationalLines;
+    if (!lines || lines.length === 0) return "Keep it up.";
+    const line = lines[motivationLineIndexRef.current % lines.length];
+    motivationLineIndexRef.current += 1;
+    return line;
+  }, []);
 
   const onLocationUpdate = useCallback(
     (location: Location.LocationObject) => {
@@ -170,18 +223,46 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
       pointsRef.current = updated;
       setPoints(updated);
 
-      const distanceKm = computeRouteDistanceMeters(updated) / 1000;
+      const distanceMeters = computeRouteDistanceMeters(updated);
+      const distanceKm = distanceMeters / 1000;
       if (voiceEnabled && distanceKm >= nextAnnouncementKmRef.current) {
         const elapsed =
           pausedAccumulatedRef.current + (runSegmentStartRef.current ? (Date.now() - runSegmentStartRef.current) / 1000 : 0);
         const pace = computeRecentPaceSecondsPerKm(updated, 120);
-        speak(
+        speakStatus(
           `${nextAnnouncementKmRef.current} ${unit === "mi" ? "miles" : "kilometers"}. Time ${speakableDuration(elapsed)}. Pace ${speakablePace(pace, unit)}.`
         );
         nextAnnouncementKmRef.current += intervalKm;
       }
+
+      // Section-transition/motivational voice cues - independent of the
+      // km-split announcement above (separate refs, separate mute gate).
+      const structure = plannedSession?.interval_structure;
+      if (structure) {
+        const leg = getCurrentLeg(structure, distanceMeters);
+        if (hasLegChanged(lastLegRef.current, leg)) {
+          lastLegRef.current = { kind: leg.kind, repNumber: leg.repNumber };
+          motivationFiredForLegRef.current = false;
+          // "complete" has no matching segment to speak - the finish is
+          // already announced separately, by stop()'s own speakStatus,
+          // once the runner actually taps Stop.
+          if (leg.kind !== "complete") {
+            const segment = voiceScriptRef.current ? findSegment(voiceScriptRef.current, leg.kind, leg.repNumber) : null;
+            if (segment) speakCoach(segment.transitionLine);
+          }
+        } else if (shouldFireLegMotivation(leg, motivationFiredForLegRef.current)) {
+          speakCoach(nextMotivationLine());
+          motivationFiredForLegRef.current = true;
+        }
+      } else if (plannedSession?.planned_distance_meters) {
+        const coveredFraction = distanceMeters / plannedSession.planned_distance_meters;
+        if (crossedMotivationFraction(coveredFraction, nextMotivationFractionRef.current)) {
+          speakCoach(nextMotivationLine());
+          nextMotivationFractionRef.current += MOTIVATION_FRACTION_STEP;
+        }
+      }
     },
-    [voiceEnabled, unit, intervalKm, speak]
+    [voiceEnabled, unit, intervalKm, plannedSession, speakStatus, speakCoach, nextMotivationLine]
   );
 
   // Prefers the background task (survives the screen locking or another
@@ -233,7 +314,7 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
     pausedAccumulatedRef.current = 0;
     setElapsedSeconds(0);
     setPhase("running");
-    speak("Run started.");
+    speakStatus(voiceScriptRef.current?.countdownGo ?? "Run started.");
 
     tickRef.current = setInterval(() => {
       if (runSegmentStartRef.current == null) return;
@@ -241,11 +322,12 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
     }, 1000);
 
     await startLocationDelivery();
-  }, [intervalKm, speak, startLocationDelivery]);
+  }, [intervalKm, speakStatus, startLocationDelivery]);
 
   const beginCountdown = useCallback(() => {
     setPhase("countdown");
     setCountdownNumber(COUNTDOWN_SECONDS);
+    speakCoach(voiceScriptRef.current?.countdownHeadsUp ?? "Starting in 30 seconds.");
     let n = COUNTDOWN_SECONDS;
     const countdownTick = setInterval(() => {
       n -= 1;
@@ -254,15 +336,42 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
         beginTracking();
       } else {
         setCountdownNumber(n);
+        // Silence in between the heads-up and this final stretch, per the
+        // Nike Run Club/Peloton-style shape discussed - a full 30-second
+        // spoken count would talk over itself.
+        if (isFinalCountdownTick(n)) speakCoach(String(n));
       }
     }, 1000);
-  }, [beginTracking]);
+  }, [beginTracking, speakCoach]);
 
   const startRun = useCallback(
     async (planSessionId?: string) => {
       setFinalStats(null);
       setStatusMessage(null);
-      setPlannedSession(planSessionId ? await getPlanSessionById(planSessionId) : null);
+      const fetchedSession = planSessionId ? await getPlanSessionById(planSessionId) : null;
+      setPlannedSession(fetchedSession);
+
+      if (fetchedSession) {
+        // A synchronous, zero-network fallback is available immediately
+        // (so the countdown heads-up always has *something* contextual to
+        // say even if this is the very first time this session has ever
+        // been opened) - getOrGenerateVoiceScript then upgrades it to the
+        // real AI-generated script if/when that resolves. In practice
+        // this has almost always already resolved by now, since Track's
+        // lobby and the planned-session detail screen both prefetch it
+        // well before "Start" is tapped.
+        const fallback = buildFallbackVoiceScript(fetchedSession, unit);
+        voiceScriptRef.current = fallback;
+        setVoiceScript(fallback);
+        getOrGenerateVoiceScript(fetchedSession, unit).then((script) => {
+          voiceScriptRef.current = script;
+          setVoiceScript(script);
+        });
+      } else {
+        voiceScriptRef.current = null;
+        setVoiceScript(null);
+      }
+
       setPhase("requesting-permission");
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
@@ -282,7 +391,7 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
       }
       beginCountdown();
     },
-    [beginCountdown]
+    [beginCountdown, unit]
   );
 
   const pause = useCallback(async () => {
@@ -292,15 +401,15 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
     }
     await stopLocationDelivery();
     setPhase("paused");
-    speak("Run paused.");
-  }, [speak, stopLocationDelivery]);
+    speakStatus("Run paused.");
+  }, [speakStatus, stopLocationDelivery]);
 
   const resume = useCallback(async () => {
     runSegmentStartRef.current = Date.now();
     setPhase("running");
-    speak("Run resumed.");
+    speakStatus("Run resumed.");
     await startLocationDelivery();
-  }, [speak, startLocationDelivery]);
+  }, [speakStatus, startLocationDelivery]);
 
   const stop = useCallback(async () => {
     if (tickRef.current) clearInterval(tickRef.current);
@@ -319,8 +428,8 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
 
     setFinalStats({ distanceMeters, durationSeconds: finalDurationSeconds, splits, gainMeters, lossMeters, startIso });
     setPhase("finished");
-    speak("Run finished. Nice work.");
-  }, [speak, stopLocationDelivery]);
+    speakStatus("Run finished. Nice work.");
+  }, [speakStatus, stopLocationDelivery]);
 
   const resetAll = useCallback(() => {
     pointsRef.current = [];
@@ -330,6 +439,15 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
     setPlannedSession(null);
     setStatusMessage(null);
     setPhase("idle");
+    // Coach mute and section/motivation progress are per-run, not
+    // per-device preferences - always start the next run fresh.
+    setCoachMuted(false);
+    voiceScriptRef.current = null;
+    setVoiceScript(null);
+    lastLegRef.current = null;
+    motivationFiredForLegRef.current = false;
+    nextMotivationFractionRef.current = MOTIVATION_FRACTION_STEP;
+    motivationLineIndexRef.current = 0;
   }, []);
 
   const save = useCallback(
@@ -382,6 +500,9 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
         plannedSession,
         statusMessage,
         finalStats,
+        voiceScript,
+        coachMuted,
+        toggleCoachMute,
         startRun,
         pause,
         resume,
