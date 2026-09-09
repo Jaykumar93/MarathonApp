@@ -76,6 +76,7 @@ export default function SignUp() {
       <View style={[styles.flex, styles.container]}>
         <View style={styles.markRow}>
           <BrandMark size={56} />
+          <Text style={styles.brandName}>Stryde</Text>
         </View>
         <Text style={styles.title}>Check your email</Text>
         <Text style={styles.subtitle}>
@@ -93,6 +94,7 @@ export default function SignUp() {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.markRow}>
           <BrandMark size={56} />
+          <Text style={styles.brandName}>Stryde</Text>
         </View>
         <Text style={styles.title}>Create your account</Text>
         <Text style={styles.subtitle}>You'll join the waitlist first - access is approved manually.</Text>
@@ -154,7 +156,8 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: colors.screenBg },
     container: { flexGrow: 1, padding: spacing.screenPadding, justifyContent: "center", gap: 22 },
-    markRow: { alignItems: "center", marginBottom: -6 },
+    markRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 4 },
+    brandName: { fontFamily: fonts.dataBold, fontSize: 24, color: colors.textPrimary, letterSpacing: -0.3 },
     title: { fontFamily: fonts.dataBold, fontSize: 28, color: colors.textPrimary },
     subtitle: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
     form: { gap: 14 },
