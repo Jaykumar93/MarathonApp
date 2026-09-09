@@ -49,8 +49,9 @@ export default function SignIn() {
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.markRow}>
-          <BrandMark size={56} />
+          <BrandMark size={72} />
           <Text style={styles.brandName}>Stryde</Text>
+          <Text style={styles.brandKicker}>PRE-DAWN RUN</Text>
         </View>
         <Text style={styles.title}>Sign in</Text>
         <Text style={styles.subtitle}>Sign in to continue your training block.</Text>
@@ -115,8 +116,9 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: colors.screenBg },
     container: { flexGrow: 1, padding: spacing.screenPadding, justifyContent: "center", gap: 22 },
-    markRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 4 },
-    brandName: { fontFamily: fonts.dataBold, fontSize: 24, color: colors.textPrimary, letterSpacing: -0.3 },
+    markRow: { alignItems: "center", gap: 6, marginBottom: 10 },
+    brandName: { fontFamily: fonts.dataBold, fontSize: 30, color: colors.textPrimary, letterSpacing: -0.6, marginTop: 2 },
+    brandKicker: { fontFamily: fonts.mono, fontSize: 11, color: colors.textFaint, letterSpacing: 2.5, textTransform: "uppercase" },
     title: { fontFamily: fonts.dataBold, fontSize: 28, color: colors.textPrimary },
     subtitle: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
     form: { gap: 14 },
