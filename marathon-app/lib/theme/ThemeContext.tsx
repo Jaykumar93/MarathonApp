@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { palette } from "../theme";
 import { useAuth } from "../auth/AuthContext";
 import { supabase } from "../supabase";
@@ -120,8 +120,8 @@ interface ThemeContextValue {
   mode: ThemeMode;
   colors: Colors;
   shadows: typeof lightShadows;
-  /** Updates local state immediately (instant, per design.md §3) and persists to profiles.theme_preference in the background. */
-  setMode: (mode: ThemeMode) => void;
+  /** Updates local state immediately (instant, per design.md §3) and persists to profiles.theme_preference. */
+  setMode: (mode: ThemeMode) => Promise<void>;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -136,7 +136,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
  * mode-independent colors it needs.
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const { session, profile } = useAuth();
+  const { session, profile, refreshProfile } = useAuth();
   const [mode, setModeState] = useState<ThemeMode>("light");
 
   // Seed from the persisted preference once the profile loads - never
@@ -146,17 +146,42 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (profile?.theme_preference) setModeState(profile.theme_preference);
   }, [profile?.theme_preference]);
 
-  function setMode(next: ThemeMode) {
-    setModeState(next);
-    if (session?.user?.id) {
-      supabase.from("profiles").update({ theme_preference: next }).eq("id", session.user.id).then();
-    }
-  }
+  // useCallback (keyed on session/refreshProfile) is load-bearing, not just
+  // an optimization: this used to be a plain function redefined every
+  // render, referenced only through the `value` memo below keyed on
+  // [mode, colors, shadows]. On a fresh load where the persisted
+  // preference is the same as the initial "light" default, `mode` never
+  // actually changes once `session` arrives (light -> light is a no-op
+  // state update), so `value` never recomputed and setMode stayed bound
+  // to whatever `session` was at the very first render - usually null,
+  // before auth had resolved. Every toggle after that hit the `if
+  // (!session)` guard and silently no-opped before ever reaching the
+  // write, with the local UI still flipping instantly so it looked like
+  // it worked. Keying setMode itself on session (and including it in
+  // value's deps) guarantees it's never stale.
+  const setMode = useCallback(
+    async (next: ThemeMode) => {
+      setModeState(next);
+      if (!session?.user?.id) return;
+      // Also previously fire-and-forget with no error handling, so a
+      // failed write (or the app backgrounding/reloading before it
+      // landed) left the toggle looking set while nothing was actually
+      // persisted. Awaiting it and re-syncing from the DB on failure
+      // matches handleUnitChange right below in settings.tsx, which does
+      // this correctly for distance_unit.
+      const { error } = await supabase.from("profiles").update({ theme_preference: next }).eq("id", session.user.id);
+      if (error) await refreshProfile();
+    },
+    [session, refreshProfile]
+  );
 
   const colors = useMemo<Colors>(() => ({ ...palette, ...(mode === "dark" ? darkColors : lightColors) }), [mode]);
   const shadows = mode === "dark" ? darkShadows : lightShadows;
 
-  const value = useMemo<ThemeContextValue>(() => ({ mode, colors, shadows, setMode }), [mode, colors, shadows]);
+  const value = useMemo<ThemeContextValue>(
+    () => ({ mode, colors, shadows, setMode }),
+    [mode, colors, shadows, setMode]
+  );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
