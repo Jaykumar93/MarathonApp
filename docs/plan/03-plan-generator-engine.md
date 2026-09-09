@@ -30,6 +30,8 @@ The engine accepts an optional `historicalContext` (recent measured weekly volum
 
 Initial plan generation only. Adaptive mid-plan adjustment (comparing actual vs. planned load once a plan is already running) is explicitly deferred to a future task — it needs real activity data from Task 5 to be testable against anything real, so building it now would mean shipping untested logic.
 
+**Update (Task 8 Phase F):** built. `lib/planEngine/adjustment.ts` (missed-run detection thresholds, pure/tested) + `lib/data/planAdjustment.ts` (regenerates the remaining plan at a volume based on real recent mileage) + `components/AdjustPlanBanner.tsx` on the Plan tab. Proposes, never auto-applies, per this doc's original intent.
+
 ## Custom & ultra distances (added mid-implementation)
 
 User asked whether custom distances (15k, 30k) and ultra marathons (50k, 100 miles) should be supported. Rather than adding more enum values, replaced the fixed `race_distance` enum entirely with a numeric `race_distance_km` field (another schema migration — see implementation log). Distance *category* (short/middle/marathon/ultra) is now derived from the number via thresholds, not hardcoded.
@@ -53,6 +55,6 @@ Everything in this task's scope is complete:
 ## What's left
 
 Nothing for this task's scope. Explicitly deferred to later tasks (not gaps, deliberate boundaries):
-- Adaptive mid-plan adjustment (needs real activity data from Task 5)
+- ~~Adaptive mid-plan adjustment (needs real activity data from Task 5)~~ — done, Task 8 Phase F, see above.
 - Actually calling this engine and persisting its output to `plans`/`plan_sessions` via Supabase (Task 4's job — this module has zero network dependency by design)
 - Building the real `historicalContext` object from actual `activities`/`goals` queries (Task 4/5, once that data exists)

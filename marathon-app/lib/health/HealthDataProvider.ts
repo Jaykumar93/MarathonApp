@@ -4,9 +4,9 @@
  * Phase 2 scope, not built here, but this interface's shape doesn't
  * hardcode Health Connect specifics so a HealthKit implementation can
  * conform to it later without a redesign). Callers (onboarding, Settings)
- * only ever depend on this interface, never a concrete SDK - swapping the
- * stub implementation (see healthConnectProvider.ts) for a real
- * native-backed one is a zero-call-site-change swap.
+ * only ever depend on this interface, never a concrete SDK. healthConnectProvider.ts
+ * is a real native-backed implementation (Task 8 Phase B), not a stub -
+ * that's exactly what let it swap in with zero call-site changes.
  */
 export interface HealthActivitySample {
   /** The health platform's own record id - lets a future sync job de-duplicate against activities already imported. */
@@ -22,7 +22,7 @@ export interface HealthActivitySample {
 
 export interface HealthDataProvider {
   readonly source: "health_connect" | "healthkit";
-  /** Whether this platform's SDK is actually usable right now - false in Expo Go for any real provider (native module required), false on the wrong OS, false until the real implementation replaces the current stub. Always safe to call. */
+  /** Whether this platform's SDK is actually usable right now - false in Expo Go for any real provider (native module required - needs a dev/production build), false on the wrong OS. Always safe to call. */
   isAvailable(): Promise<boolean>;
   /** Prompts the platform's own permission/consent UI. Only meaningful when isAvailable() is true. */
   requestPermissions(): Promise<boolean>;

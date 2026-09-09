@@ -36,4 +36,4 @@ No migration needed. `activities` (from the initial schema migration) already ha
 - **Splits, route/GPS data** — GPS-only concepts (Task 6 builds the thing that actually produces them); no sane manual-entry UI for a splits table.
 - **Shoe tagging** — `shoe_id` column exists but there's no shoe CRUD/UI anywhere yet (Task 8 gear tracking); nothing to select from.
 - **Weather** — PRD marks it informational-only and would need an external API call this task has no reason to introduce; deferred with gear tracking in Task 8's scope note.
-- **Adaptive plan-adjustment prompts** off the back of logged volume (PRD §6.3) — that's plan-engine territory, not this task's UI layer; flagged for whoever picks up the adaptive-adjustment half of Task 3/8's remaining scope.
+- ~~**Adaptive plan-adjustment prompts** off the back of logged volume (PRD §6.3) — that's plan-engine territory, not this task's UI layer; flagged for whoever picks up the adaptive-adjustment half of Task 3/8's remaining scope.~~ Built, Task 8 Phase F — see `03-plan-generator-engine.md`.

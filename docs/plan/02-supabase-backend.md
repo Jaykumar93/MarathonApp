@@ -88,10 +88,12 @@ Two real obstacles hit along the way, both resolved:
 
 **Left as a deliberate, acknowledged gap:** "Confirm email" is staying **off** for now (user's choice — re-enable later, closer to inviting real testers, rather than now while still mid-build). The live dashboard-approval check (does an actual Table Editor edit to `status='approved'` persist, not just the predicted fix) was also explicitly skipped by the user ("trust the fix") rather than verified — worth a real check whenever the first genuine waitlist approval happens.
 
+**Update:** `app/(auth)/sign-up.tsx`'s own code comment (written later, Task 8) now asserts "Confirm email" is **on** for this project - directly contradicting the "off" call recorded here. Neither has been re-verified against the actual Supabase dashboard setting since; see `MAIN_PLAN.md`'s pre-launch checklist, which now flags this explicitly. Don't trust either source - check the dashboard.
+
 ## What's left
 
 - Configure Auth providers (Google/Apple/email) in the Supabase dashboard — deliberately deferred to Task 4, when the actual Auth screen UI is built (testing OAuth with no UI is awkward; email/password auth already works and is enough to build against now).
-- Re-enable "Confirm email" before real waitlist testers are invited (currently off for testing convenience — user's explicit call, not forgotten).
+- Re-enable "Confirm email" before real waitlist testers are invited (currently off for testing convenience — user's explicit call, not forgotten). **Now contradicted by a later code comment claiming it's already on - see the Update note above; verify against the actual dashboard setting, don't assume either source is still accurate.**
 - Live-verify the waitlist dashboard-approval fix with a real Table Editor edit whenever convenient (skipped for now per user — the fix is trusted based on the schema reviewer's static analysis, not yet executed against the real dashboard).
 
 ## Open questions / assumptions still standing

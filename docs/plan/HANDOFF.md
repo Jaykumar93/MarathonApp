@@ -1,5 +1,7 @@
 # Handoff — Post-Task-4 feature batch (uncommitted)
 
+> **This is a historical log, not a current-state doc.** It records real decisions as they were made at the time (Rounds 1-13, all pre-dating Task 6). Several calls recorded as "deferred" here - most visibly **dark mode**, mentioned as a placeholder/"Coming soon" at several points below - were later pulled forward and shipped in **Task 8 Phase A**, then had two real bugs found and fixed in **Phase F** (see `MAIN_PLAN.md` and `implementation/08-trends-coach-polish.md`). Don't take anything below as a description of the app's current state; check `MAIN_PLAN.md` for that instead. Left unedited below (other than this notice) so the actual reasoning/timeline isn't lost.
+
 *Written for whichever agent picks this up next. Task 4 itself is Done, committed, and documented normally (see [04-navigation-home-plan.md](04-navigation-home-plan.md) / [implementation/04-navigation-home-plan.md](implementation/04-navigation-home-plan.md)). This doc covers a follow-on batch of feature requests made immediately after Task 4 was marked Done — before that work could be pushed, the user asked for three more rounds of changes in quick succession. None of this batch is committed yet. This is not a formal MAIN_PLAN task; it's a batch of user-requested additions layered onto Task 4's surfaces.*
 
 **Repo:** `C:\MarathonAPP`, app code under `marathon-app/`. App is called **Stryde** (renamed from generic "marathon-app" during Task 4 — see that implementation log's Branding section).

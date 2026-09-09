@@ -18,7 +18,9 @@ Since Task 5 (activity logging UI) and Task 8 (AI coach) haven't happened yet, s
 
 | Shown with real data | Omitted (not stubbed with fake data) |
 |---|---|
-| Countdown, scrollable calendar, day-tap detail (planned session + any logged activity), monthly activity chart, weekly mileage *target*, full Plan session list with missed/move/mark-done actions | Plan-adjustment banner (needs Task 3's deferred adaptive-adjustment logic), avg pace/HR/streak snapshot stats (need aggregate activity history), coach insight card (Task 8) |
+| Countdown, scrollable calendar, day-tap detail (planned session + any logged activity), monthly activity chart, weekly mileage *target*, full Plan session list with missed/move/mark-done actions | ~~Plan-adjustment banner~~ (built, Task 8 Phase F — see `03-plan-generator-engine.md`), avg pace/HR/streak snapshot stats (need aggregate activity history), coach insight card (Task 8) |
+
+**Update (Task 8 Phase F):** the plan-adjustment banner above is built (`components/AdjustPlanBanner.tsx`). The other two remain open — `lib/trendsStats.ts` now has the aggregate activity history the snapshot stats were waiting on, so that one's no longer blocked on missing data, just unbuilt.
 
 ## Architecture
 
@@ -62,4 +64,4 @@ Everything in scope, plus a mid-task redesign of Home/Plan's calendar and activi
 
 ## What's left
 
-Nothing for this task's scope. Two disposable test accounts (Task 2) plus one more (this task, `jaykumarpokar9+stryde-test-1@gmail.com`) remain in `auth.users` — harmless, worth a manual dashboard cleanup sometime alongside the Task 2 one. Explicitly deferred to later tasks: Google/Apple OAuth wiring, Settings/Race Day Details/Activity Detail screens, adaptive-adjustment banner, activity logging UI (Task 5), AI coach (Task 8).
+Nothing for this task's scope. Two disposable test accounts (Task 2) plus one more (this task, `jaykumarpokar9+stryde-test-1@gmail.com`) remain in `auth.users` — harmless, worth a manual dashboard cleanup sometime alongside the Task 2 one. Explicitly deferred to later tasks: ~~Google~~/Apple OAuth wiring (Google done, Task 8 Phase F; Apple still pending), Settings/Race Day Details/Activity Detail screens, ~~adaptive-adjustment banner~~ (done, Task 8 Phase F), activity logging UI (Task 5), AI coach (Task 8).

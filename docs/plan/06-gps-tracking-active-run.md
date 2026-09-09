@@ -1,6 +1,6 @@
 # Task 6 — GPS tracking, Active Run, maps
 
-**Status:** In Progress. Written before implementation, per this repo's 3-tier docs workflow — see [MAIN_PLAN.md](MAIN_PLAN.md).
+**Status:** Done. Written before implementation, per this repo's 3-tier docs workflow — see [MAIN_PLAN.md](MAIN_PLAN.md). The three items originally left blocked on a dev build (see "Explicitly deferred" below) were all closed out during Task 8 Phase B once that build existed.
 
 ## Scope decisions confirmed with the user before writing code
 
@@ -21,9 +21,9 @@ Two real environment constraints came up that don't exist for any prior task, bo
 
 ## Explicitly deferred, not silently dropped
 
-- **Live + post-run map rendering** (`react-native-maps`) — needs a dev build (see above). `route`/`splits` are still captured and stored now, so the map can be added purely as a *rendering* layer later without any backfill or schema change.
-- **The mockup's full mile-marker Pace Band visualization** — depends on the route/map layer.
-- **Background location** (tracking continuing with the screen locked/app backgrounded) — the user asked for this in a later follow-up round. Code is in (`lib/runTracking/backgroundLocationTask.ts` + `RunTrackingContext.tsx`'s `startLocationDelivery`/`stopLocationDelivery`, `app.json`'s `expo-location` plugin config), but **`Location.startLocationUpdatesAsync` doesn't work in Expo Go at all** (confirmed against the SDK 57 docs) — same dev-build dependency as the map. Falls back to the existing foreground-only `watchPositionAsync` whenever the background task isn't available, so nothing regresses in the meantime. Tracked as a Task 8 follow-up (see `MAIN_PLAN.md`) — actually taking effect just needs the dev build to exist, no further app code.
+- ~~**Live + post-run map rendering** (`react-native-maps`) — needs a dev build (see above).~~ **Update (Task 8 Phase B):** built and live-verified on-device — `components/RunMap.tsx`, rendered in both the Track lobby and Active Run (`live` mode). `route`/`splits` were already captured and stored, so this landed as a pure rendering layer with no backfill needed, as planned.
+- ~~**The mockup's full mile-marker Pace Band visualization** — depends on the route/map layer.~~ Still not built on Active Run itself as of this update (the current-pace readout is all that ships there) — Race Day Details got its own separate full Pace Band in Task 8 Phase D, but that's a different screen; don't conflate the two.
+- **Background location** (tracking continuing with the screen locked/app backgrounded) — the dev build this was blocked on now exists (Task 8 Phase B), so the code (`lib/runTracking/backgroundLocationTask.ts`) is no longer untestable in principle, but the specific "survives a locked screen" scenario has still never been explicitly confirmed on a real device. Tracked on `MAIN_PLAN.md`'s pre-launch checklist.
 - **Heart-rate data** — no wearable/sensor pairing exists in this app; `avg_heart_rate` stays null for GPS runs same as manual ones, same as it already does for Task 5.
 - **Race Day Details / "Start race" tagging** — explicitly Task 8 scope per `MAIN_PLAN.md`, not built here.
 - **GPX/TCX export** — Task 8/§6.9, unrelated to this task's own scope. (Shareable route cards, listed here as deferred in the original scope note, were actually built in a later follow-up round — see the implementation log §9.)

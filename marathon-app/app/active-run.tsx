@@ -45,7 +45,9 @@ const LEG_KIND_LABEL: Record<RunLeg["kind"], string> = {
  * The live text version of "continue next few km in xyz pace" - which leg
  * of a structured interval workout (see lib/intervalProgress.ts) the
  * runner is in right now, how much of it is left, and what pace it calls
- * for. Voice cues for this are explicitly deferred (text only for now).
+ * for. Voice cues for section transitions now exist too (RunTrackingContext's
+ * onLocationUpdate, via lib/runTracking/voiceEvents.ts) - this text stays
+ * as the persistent on-screen readout alongside them, not a replacement.
  */
 function legMessage(leg: RunLeg, unit: "km" | "mi"): string {
   switch (leg.kind) {
