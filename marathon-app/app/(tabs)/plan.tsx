@@ -12,7 +12,8 @@ import {
   useDaySwipeNavigation,
   usePlanCalendarDays,
 } from "../../lib/data/usePlanData";
-import { markSessionDone, moveSessionToTomorrow, type PlanSessionRow } from "../../lib/data/plans";
+import { markSessionDone, moveSessionToTomorrow, recordAdjustmentDeclined, type PlanSessionRow } from "../../lib/data/plans";
+import { getAdjustmentProposal, applyMissedRunAdjustment, recordAdjustmentPrompted } from "../../lib/data/planAdjustment";
 import { getActivitiesInRange, type ActivityRow } from "../../lib/data/activities";
 import { deleteGoal } from "../../lib/data/goals";
 import { fonts, noSelectStyle, palette, spacing, type } from "../../lib/theme";
@@ -22,6 +23,7 @@ import { BlockProfile } from "../../components/BlockProfile";
 import { PlanCalendarScroller } from "../../components/PlanCalendarScroller";
 import { DayDetailPanel } from "../../components/DayDetailPanel";
 import { SessionListRow } from "../../components/SessionListRow";
+import { AdjustPlanBanner } from "../../components/AdjustPlanBanner";
 import { NoPlanPrompt } from "../../components/NoPlanPrompt";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { useAuth } from "../../lib/auth/AuthContext";
@@ -79,6 +81,16 @@ export default function Plan() {
   // position on every unrelated re-render.
   const allDays = usePlanCalendarDays(sessions, plan, goal);
 
+  const adjustmentProposal = plan ? getAdjustmentProposal(plan, sessions) : null;
+
+  // Bookkeeping only (see plans.last_adjustment_prompted_at) - doesn't gate
+  // anything itself, safe to re-fire; harmless if it runs more than once
+  // for the same proposal.
+  useEffect(() => {
+    if (plan && adjustmentProposal) recordAdjustmentPrompted(plan.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan?.id, !!adjustmentProposal]);
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -119,6 +131,18 @@ export default function Plan() {
 
   async function handleMarkDone(session: PlanSessionRow) {
     await markSessionDone(session.id);
+    reload();
+  }
+
+  async function handleAcceptAdjustment() {
+    if (!session?.user?.id || !goal || !plan) return;
+    await applyMissedRunAdjustment(session.user.id, goal, plan);
+    await reload();
+  }
+
+  async function handleDeclineAdjustment() {
+    if (!plan) return;
+    await recordAdjustmentDeclined(plan.id);
     reload();
   }
 
@@ -166,6 +190,14 @@ export default function Plan() {
               </View>
             </View>
           </Card>
+        )}
+
+        {adjustmentProposal && (
+          <AdjustPlanBanner
+            proposal={adjustmentProposal}
+            onAccept={handleAcceptAdjustment}
+            onDecline={handleDeclineAdjustment}
+          />
         )}
 
         <Card>

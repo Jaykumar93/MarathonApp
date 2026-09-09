@@ -7,6 +7,8 @@ export interface PlanRow {
   goal_id: string;
   start_date: string;
   plan_original: Omit<GeneratedPlan, "sessions">;
+  last_adjustment_prompted_at: string | null;
+  last_adjustment_declined_at: string | null;
   is_deleted: boolean;
 }
 
@@ -26,6 +28,8 @@ export interface PlanSessionRow {
   interval_structure: IntervalStructure | null;
   status: "pending" | "completed" | "missed" | "moved" | "cancelled";
   original_session_date: string | null;
+  /** Cached AI-generated (or deterministic-fallback) voice script - untyped here to avoid a circular import; see lib/runTracking/voiceScript.ts's RunVoiceScript + isValidScript for the real shape/validation. */
+  voice_script: unknown;
   back_to_back_group: string | null;
 }
 
@@ -130,6 +134,43 @@ export async function markSessionDone(sessionId: string): Promise<void> {
 /** Reverts a session back to pending - used when the activity that completed it is deleted and nothing else covers it (see deleteActivity). */
 export async function markSessionPending(sessionId: string): Promise<void> {
   const { error } = await supabase.from("plan_sessions").update({ status: "pending" }).eq("id", sessionId);
+  if (error) throw error;
+}
+
+/**
+ * Persists 'missed' for any session that's past its date but was never
+ * completed/moved/cancelled - previously only ever derived at render time
+ * (SessionListRow/PlanCalendarScroller), never actually written, so nothing
+ * could query "how many did I miss" for the adaptive-adjustment proposal
+ * below. 'rest' and 'race' are excluded - skipping a rest day isn't a
+ * missed run, and a race day can't be "missed" the way a training session
+ * can. Cheap to call on every plan load: one bulk UPDATE, idempotent.
+ */
+export async function markPastPendingAsMissed(planId: string, today: string): Promise<void> {
+  const { error } = await supabase
+    .from("plan_sessions")
+    .update({ status: "missed" })
+    .eq("plan_id", planId)
+    .eq("status", "pending")
+    .lt("session_date", today)
+    .not("session_type", "in", "(rest,race)");
+  if (error) throw error;
+}
+
+export async function recordAdjustmentPrompted(planId: string): Promise<void> {
+  const { error } = await supabase
+    .from("plans")
+    .update({ last_adjustment_prompted_at: new Date().toISOString() })
+    .eq("id", planId);
+  if (error) throw error;
+}
+
+/** Backs off re-proposing an adjustment for a while - see planEngine/adjustment.ts's shouldProposeAdjustment. */
+export async function recordAdjustmentDeclined(planId: string): Promise<void> {
+  const { error } = await supabase
+    .from("plans")
+    .update({ last_adjustment_declined_at: new Date().toISOString() })
+    .eq("id", planId);
   if (error) throw error;
 }
 

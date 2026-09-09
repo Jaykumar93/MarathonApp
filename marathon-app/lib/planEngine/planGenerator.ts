@@ -36,6 +36,16 @@ const ULTRA_LONG_DURATION_CAP_SECONDS = 5 * 3600;
 const TEMPO_SHARE = 0.15;
 const INTERVAL_SHARE = 0.12;
 const BACK_TO_BACK_SECOND_DAY_RATIO = 0.8;
+// An "easy" day exists to absorb whatever weekly volume the long/tempo/
+// interval sessions didn't use - previously uncapped, so a low
+// trainingDaysPerWeek (few sessions to spread the week's volume across)
+// could dump 55-70% of the entire week into one "easy" run, often bigger
+// than the week's actual long run and frequently the plan's very first
+// scheduled session. Capping each easy run relative to that week's own
+// long run keeps every session doable; any volume beyond the cap is
+// simply dropped rather than force-fit, so the weekly total becomes a
+// soft target instead of a quota that must be exactly consumed.
+const EASY_MAX_SHARE_OF_LONG = 0.65;
 
 interface DayMetric {
   distanceKm: number;
@@ -186,7 +196,10 @@ export function generatePlan(input: GoalInput): GenerateResult {
 
     const easyDays = placedDays.filter((p) => p.type === "easy");
     const remainingForEasy = Math.max(0, weeklyVolumeKm - usedVolumeKm);
-    const perEasyKm = easyDays.length > 0 ? remainingForEasy / easyDays.length : 0;
+    const uncappedPerEasyKm = easyDays.length > 0 ? remainingForEasy / easyDays.length : 0;
+    const longDistanceKm = dayMetrics.get(longDays[0]?.day ?? "")?.distanceKm;
+    const perEasyKm =
+      longDistanceKm !== undefined ? Math.min(uncappedPerEasyKm, longDistanceKm * EASY_MAX_SHARE_OF_LONG) : uncappedPerEasyKm;
     for (const d of easyDays) {
       dayMetrics.set(d.day, { distanceKm: perEasyKm, durationSec: perEasyKm * paceZones.easy });
     }

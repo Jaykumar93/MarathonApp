@@ -52,6 +52,22 @@ function assertPlanInvariants(result: GenerateResult, input: GoalInput) {
     }
   }
 
+  // no "easy" run should ever be close to, let alone exceed, that same
+  // week's long run - it exists to absorb leftover volume, not to become
+  // the week's real effort. Checked per week since the cap is relative to
+  // each week's own long run distance.
+  const weekNumbers = [...new Set(plan.sessions.map((s) => s.weekNumber))];
+  for (const week of weekNumbers) {
+    const weekSessions = plan.sessions.filter((s) => s.weekNumber === week);
+    const longSession = weekSessions.find((s) => s.sessionType === "long");
+    if (!longSession?.plannedDistanceMeters) continue;
+    for (const s of weekSessions) {
+      if (s.sessionType === "easy" && s.plannedDistanceMeters) {
+        expect(s.plannedDistanceMeters).toBeLessThanOrEqual(longSession.plannedDistanceMeters * 0.65 + 1);
+      }
+    }
+  }
+
   // taper length: 2-3 weeks normally, up to 4 for long ultra plans
   const taper = plan.phases.find((p) => p.name === "taper")!;
   const taperWeeks = taper.endWeek - taper.startWeek + 1;
@@ -371,6 +387,36 @@ describe("generatePlan - fake onboarding input scenarios", () => {
 
     expect(result.plan.startDate).toBe(today);
     expect(result.plan.sessions.filter((s) => s.weekNumber === 0)).toHaveLength(0);
+  });
+
+  it("13. beginner marathon, 3 days/week, low weekly mileage -> the plan's first run isn't oversized", () => {
+    // Reproduces the reported bug: with few training days, all leftover
+    // weekly volume used to get dumped into the single "easy" day
+    // uncapped, often landing on the plan's very first scheduled session
+    // and dwarfing the actual long run.
+    const input: GoalInput = {
+      raceDistanceKm: MARATHON_KM,
+      goalDate: "2026-09-09",
+      today: "2026-01-05",
+      experienceLevel: "beginner",
+      currentWeeklyMileageKm: 30,
+      trainingDaysPerWeek: 3,
+      longRunDay: "sat",
+    };
+    const result = generatePlan(input);
+    assertPlanInvariants(result, input);
+    if (!result.ok) return;
+
+    const chronological = [...result.plan.sessions]
+      .filter((s) => s.sessionType !== "rest")
+      .sort((a, b) => a.sessionDate.localeCompare(b.sessionDate));
+    const firstRun = chronological[0];
+    const week1Long = result.plan.sessions.find((s) => s.weekNumber === 1 && s.sessionType === "long");
+    expect(firstRun.plannedDistanceMeters).not.toBeNull();
+    expect(week1Long?.plannedDistanceMeters).not.toBeNull();
+    // The first run of the whole plan should never be bigger than that
+    // week's long run - previously it could be 2-3x bigger.
+    expect(firstRun.plannedDistanceMeters!).toBeLessThanOrEqual(week1Long!.plannedDistanceMeters!);
   });
 
   it("10. ultra (80km) -> back-to-back long runs appear in peak phase, duration-capped long runs", () => {
