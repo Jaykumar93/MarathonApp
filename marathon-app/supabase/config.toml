@@ -411,3 +411,14 @@ enabled = true
 # declarative_schema_path = "./schemas"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# generate-run-script uses the caller's own JWT for its RLS-scoped
+# plan_sessions lookup (see the function's own comment) - it must always
+# verify_jwt. Declared explicitly because `functions deploy` without
+# --no-verify-jwt does NOT revert a function that was ever deployed with
+# that flag back to true on its own; a one-off `--no-verify-jwt` deploy
+# used for a different function (send-daily-notification, correctly - a
+# cron job with no caller JWT to present) accidentally got run against
+# this one too, and only declaring it here got it back to true.
+[functions.generate-run-script]
+verify_jwt = true
