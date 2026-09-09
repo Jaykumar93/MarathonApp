@@ -1,6 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { Platform } from "react-native";
 import * as Location from "expo-location";
 import * as Speech from "expo-speech";
+import * as Notifications from "expo-notifications";
+import { formatDistance, formatPace } from "../units";
 import { useAuth } from "../auth/AuthContext";
 import { getPlanSessionById, type PlanSessionRow } from "../data/plans";
 import { createActivity, type CreateActivityInput } from "../data/activities";
@@ -78,6 +81,59 @@ function speakablePace(secondsPerKm: number | null, unit: "km" | "mi"): string {
   const mins = Math.floor(perUnit / 60);
   const secs = Math.round(perUnit % 60);
   return `${mins} minute${mins === 1 ? "" : "s"} ${secs} second${secs === 1 ? "" : "s"} per ${unit === "mi" ? "mile" : "kilometer"}`;
+}
+
+function formatElapsedCompact(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = Math.floor(totalSeconds % 60);
+  return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`;
+}
+
+// A fixed identifier, re-issued repeatedly with `trigger: null` (shows
+// immediately, replacing any existing notification with the same id) -
+// Android-only (see the platform's own comment on RunTrackingProvider's
+// startLocationDelivery, which already runs its own separate, static
+// foreground-service notification required to keep background location
+// alive - this is a second, richer one shown alongside it, not a
+// replacement for it). iOS Live Activities would be the real equivalent
+// there, but that needs native ActivityKit work outside Expo's managed
+// reach - not attempted here.
+const ACTIVE_RUN_NOTIFICATION_ID = "active-run-status";
+
+async function updateRunStatusNotification(
+  distanceKm: number,
+  elapsedSeconds: number,
+  paceSecondsPerKm: number | null,
+  unit: "km" | "mi",
+  plannedDistanceMeters: number | null
+): Promise<void> {
+  if (Platform.OS !== "android") return;
+  const progressPct = plannedDistanceMeters ? Math.min(100, Math.round(((distanceKm * 1000) / plannedDistanceMeters) * 100)) : null;
+  const body = [
+    formatDistance(distanceKm, unit),
+    formatElapsedCompact(elapsedSeconds),
+    paceSecondsPerKm != null ? formatPace(paceSecondsPerKm, unit) : null,
+    progressPct != null ? `${progressPct}%` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  try {
+    await Notifications.scheduleNotificationAsync({
+      identifier: ACTIVE_RUN_NOTIFICATION_ID,
+      content: { title: "Run in progress", body, sticky: true, sound: false },
+      trigger: null,
+    });
+  } catch {
+    // Best-effort only - a notification failing to update should never
+    // interrupt the actual run being tracked.
+  }
+}
+
+function dismissRunStatusNotification(): void {
+  if (Platform.OS !== "android") return;
+  Notifications.dismissNotificationAsync(ACTIVE_RUN_NOTIFICATION_ID).catch(() => {});
 }
 
 export interface FinalRunStats {
@@ -225,13 +281,20 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
 
       const distanceMeters = computeRouteDistanceMeters(updated);
       const distanceKm = distanceMeters / 1000;
-      if (voiceEnabled && distanceKm >= nextAnnouncementKmRef.current) {
+      // Decoupled from voiceEnabled below on purpose - the live Android
+      // status notification updates on this same km cadence regardless of
+      // whether voice announcements are on, so it can't be nested inside
+      // that gate (a voice-disabled runner should still see live stats).
+      if (distanceKm >= nextAnnouncementKmRef.current) {
         const elapsed =
           pausedAccumulatedRef.current + (runSegmentStartRef.current ? (Date.now() - runSegmentStartRef.current) / 1000 : 0);
         const pace = computeRecentPaceSecondsPerKm(updated, 120);
-        speakStatus(
-          `${nextAnnouncementKmRef.current} ${unit === "mi" ? "miles" : "kilometers"}. Time ${speakableDuration(elapsed)}. Pace ${speakablePace(pace, unit)}.`
-        );
+        if (voiceEnabled) {
+          speakStatus(
+            `${nextAnnouncementKmRef.current} ${unit === "mi" ? "miles" : "kilometers"}. Time ${speakableDuration(elapsed)}. Pace ${speakablePace(pace, unit)}.`
+          );
+        }
+        updateRunStatusNotification(distanceKm, elapsed, pace, unit, plannedSession?.planned_distance_meters ?? null);
         nextAnnouncementKmRef.current += intervalKm;
       }
 
@@ -418,6 +481,7 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
       runSegmentStartRef.current = null;
     }
     await stopLocationDelivery();
+    dismissRunStatusNotification();
 
     const finalDurationSeconds = Math.round(pausedAccumulatedRef.current);
     const routePoints = pointsRef.current;
@@ -432,6 +496,7 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
   }, [speakStatus, stopLocationDelivery]);
 
   const resetAll = useCallback(() => {
+    dismissRunStatusNotification();
     pointsRef.current = [];
     setPoints([]);
     setElapsedSeconds(0);
