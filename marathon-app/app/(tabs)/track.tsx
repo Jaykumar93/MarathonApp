@@ -8,6 +8,7 @@ import { useAuth } from "../../lib/auth/AuthContext";
 import { getTodaySession, useActivePlanData } from "../../lib/data/usePlanData";
 import { flushPendingActivities, getPendingActivityCount } from "../../lib/data/pendingActivities";
 import { useRunTracking } from "../../lib/runTracking/RunTrackingContext";
+import { prefetchVoiceScript } from "../../lib/runTracking/voiceScript";
 import { computeRouteDistanceMeters, type RoutePoint } from "../../lib/gpsStats";
 import { formatDistance } from "../../lib/units";
 import { SESSION_TYPE_COLOR, SESSION_TYPE_LABEL } from "../../lib/sessionTypes";
@@ -60,6 +61,13 @@ export default function Track() {
 
   const todaySession = getTodaySession(sessions);
   const hasPlannedRun = todaySession && todaySession.session_type !== "rest" && todaySession.status !== "completed";
+
+  // Warms the voice-script cache well before "Start run" is ever tapped -
+  // see lib/runTracking/voiceScript.ts. Harmless to call every time this
+  // screen mounts (in-memory + DB caching means a second call is a no-op).
+  useEffect(() => {
+    if (hasPlannedRun && todaySession) prefetchVoiceScript(todaySession, unit);
+  }, [hasPlannedRun, todaySession, unit]);
 
   function handleStartPress() {
     // Only worth asking when there's an actual choice to make - a rest

@@ -7,12 +7,16 @@ import { getPlanSessionById, type PlanSessionRow } from "../lib/data/plans";
 import { COUNTDOWN_SECONDS, useRunTracking } from "../lib/runTracking/RunTrackingContext";
 import { computeRouteDistanceMeters, computeRecentPaceSecondsPerKm, computeAveragePaceSecondsPerKm } from "../lib/gpsStats";
 import { getCurrentLeg, type RunLeg } from "../lib/intervalProgress";
+import { isFinalCountdownTick } from "../lib/runTracking/voiceEvents";
+import { buildFallbackVoiceScript, type RunVoiceScript } from "../lib/runTracking/voiceScriptFallback";
+import { getOrGenerateVoiceScript } from "../lib/runTracking/voiceScript";
 import { formatDistance, formatMeters, formatPace } from "../lib/units";
 import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
 import { fonts, palette } from "../lib/theme";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PhotoPicker } from "../components/ui/PhotoPicker";
 import { RunMap } from "../components/RunMap";
+import { RunProgressBar } from "../components/RunProgressBar";
 import { useAuth } from "../lib/auth/AuthContext";
 
 function formatDateShort(iso: string): string {
@@ -81,6 +85,27 @@ function BackButton({ onPress, top }: { onPress: () => void; top: number }) {
 }
 
 /**
+ * Top-right, mirroring BackButton - mutes only the "coach" voice
+ * (countdown heads-up, section transitions, mid-run motivation), never the
+ * km-split announcements or the start/pause/resume/finish status lines
+ * (see RunTrackingContext's speakStatus/speakCoach split). Per-run only -
+ * resets to unmuted on the next run.
+ */
+function MuteButton({ muted, onPress, top }: { muted: boolean; onPress: () => void; top: number }) {
+  return (
+    <Pressable
+      style={[styles.muteButton, { top }]}
+      onPress={onPress}
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel={muted ? "Unmute coach" : "Mute coach"}
+    >
+      <Ionicons name={muted ? "volume-mute" : "volume-high"} size={20} color="#fff" />
+    </Pressable>
+  );
+}
+
+/**
  * Permanently dark regardless of the app's own light/dark setting (still
  * Task 8), per the PRD's Active Run styling note - matches the reference
  * mockup's "always-dark, high-contrast for outdoor/sunlight use" screen.
@@ -107,6 +132,7 @@ export default function ActiveRun() {
   const voiceEnabled = profile?.voice_coaching_enabled ?? false;
 
   const [previewSession, setPreviewSession] = useState<PlanSessionRow | null>(null);
+  const [previewScript, setPreviewScript] = useState<RunVoiceScript | null>(null);
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   const [runName, setRunName] = useState("");
   const [runDescription, setRunDescription] = useState("");
@@ -114,9 +140,19 @@ export default function ActiveRun() {
 
   useEffect(() => {
     if (params.planSessionId && rt.phase === "idle") {
-      getPlanSessionById(params.planSessionId).then(setPreviewSession);
+      getPlanSessionById(params.planSessionId).then((s) => {
+        setPreviewSession(s);
+        if (s) {
+          // Synchronous fallback first (never an empty "Ready to run?"
+          // screen), upgraded to the real AI breakdown if/when it
+          // resolves - same two-step pattern as RunTrackingContext's own
+          // startRun, just scoped to this screen's own display.
+          setPreviewScript(buildFallbackVoiceScript(s, unit));
+          getOrGenerateVoiceScript(s, unit).then(setPreviewScript);
+        }
+      });
     }
-  }, [params.planSessionId, rt.phase]);
+  }, [params.planSessionId, rt.phase, unit]);
 
   // Default name, once - "Easy run" alone looks identical on every easy
   // day; folding in the date and distance (like Strava's own default
@@ -171,8 +207,13 @@ export default function ActiveRun() {
             {previewSession.planned_distance_meters ? ` · ${formatDistance(previewSession.planned_distance_meters / 1000, unit)}` : ""}
           </Text>
         )}
+        {previewScript && (
+          <View style={styles.breakdownBox}>
+            <Text style={styles.breakdownText}>{previewScript.breakdown}</Text>
+          </View>
+        )}
         <Text style={styles.centerText}>
-          You'll get a {COUNTDOWN_SECONDS}-second countdown before tracking starts{voiceEnabled ? ", with voice cues along the way." : "."}
+          You'll get a {COUNTDOWN_SECONDS}-second heads-up before tracking starts{voiceEnabled ? ", with voice cues along the way." : "."}
         </Text>
         <View style={styles.centerButton}>
           <PrimaryButton label="Start" onPress={() => rt.startRun(params.planSessionId)} />
@@ -216,8 +257,15 @@ export default function ActiveRun() {
     return (
       <View style={styles.center}>
         <BackButton onPress={goBack} top={backTop} />
-        <Text style={styles.countdownNumber}>{rt.countdownNumber}</Text>
-        <Text style={styles.centerText}>Get ready…</Text>
+        <MuteButton muted={rt.coachMuted} onPress={rt.toggleCoachMute} top={backTop} />
+        {isFinalCountdownTick(rt.countdownNumber) ? (
+          <Text style={styles.countdownNumber}>{rt.countdownNumber}</Text>
+        ) : (
+          <>
+            <Text style={styles.centerText}>Starting in {rt.countdownNumber}s…</Text>
+            <Text style={styles.centerTitle}>{rt.voiceScript?.countdownHeadsUp ?? "Get ready…"}</Text>
+          </>
+        )}
       </View>
     );
   }
@@ -342,6 +390,7 @@ export default function ActiveRun() {
   return (
     <View style={styles.screen}>
       <BackButton onPress={goBack} top={backTop} />
+      <MuteButton muted={rt.coachMuted} onPress={rt.toggleCoachMute} top={backTop} />
       <View style={styles.header}>
         <View style={[styles.liveDot, rt.phase === "paused" && styles.liveDotPaused]} />
         <Text style={styles.headerText}>{rt.phase === "paused" ? "PAUSED" : "TRACKING"}</Text>
@@ -363,6 +412,13 @@ export default function ActiveRun() {
           </Text>
         )}
       </View>
+
+      <RunProgressBar
+        structure={rt.plannedSession?.interval_structure ?? null}
+        currentLeg={currentLeg}
+        distanceCoveredMeters={distanceMeters}
+        plannedDistanceMeters={rt.plannedSession?.planned_distance_meters ?? null}
+      />
 
       {currentLeg && (
         <View style={[styles.intervalBox, currentLeg.kind === "recovery" && styles.intervalBoxRecovery]}>
@@ -457,6 +513,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 10,
   },
+  muteButton: {
+    position: "absolute",
+    right: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  breakdownBox: {
+    marginTop: 4,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    width: "100%",
+    maxWidth: 340,
+  },
+  breakdownText: { fontFamily: fonts.body, fontSize: 13.5, color: "#c7c9cb", textAlign: "left", lineHeight: 19 },
   centerTitle: { fontFamily: fonts.dataBold, fontSize: 19, color: "#fff", textAlign: "center" },
   centerText: { fontFamily: fonts.body, fontSize: 14, color: "#c7c9cb", textAlign: "center" },
   centerButton: { marginTop: 12, width: "100%", maxWidth: 280 },

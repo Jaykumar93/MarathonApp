@@ -6,8 +6,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../lib/auth/AuthContext";
 import { getPlanSessionById, type PlanSessionRow } from "../lib/data/plans";
 import { todayIso } from "../lib/data/usePlanData";
-import { formatDistance, formatMeters, formatPace } from "../lib/units";
-import { SESSION_TYPE_LABEL, formatIntervalStructureSummary } from "../lib/sessionTypes";
+import { buildFallbackVoiceScript, type RunVoiceScript } from "../lib/runTracking/voiceScriptFallback";
+import { getOrGenerateVoiceScript } from "../lib/runTracking/voiceScript";
+import { formatDistance, formatPace } from "../lib/units";
+import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
 import { fonts, spacing, type } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
@@ -42,14 +44,23 @@ export default function PlannedSessionDetail() {
 
   const [session, setSession] = useState<PlanSessionRow | null>(null);
   const [loading, setLoading] = useState(true);
+  const [script, setScript] = useState<RunVoiceScript | null>(null);
 
   useEffect(() => {
     if (!id) return;
     getPlanSessionById(id).then((s) => {
       setSession(s);
       setLoading(false);
+      if (s) {
+        // Synchronous fallback first (the card is never empty), upgraded
+        // to the real AI breakdown if/when it resolves - also warms the
+        // cache ahead of "Start" being tapped (see prefetchVoiceScript's
+        // other call site, Track's lobby).
+        setScript(buildFallbackVoiceScript(s, unit));
+        getOrGenerateVoiceScript(s, unit).then(setScript);
+      }
     });
-  }, [id]);
+  }, [id, unit]);
 
   function goBack() {
     if (router.canGoBack()) router.back();
@@ -73,7 +84,6 @@ export default function PlannedSessionDetail() {
   }
 
   const prep = session.prep_recovery as { prep?: string; recovery?: string } | null;
-  const structure = session.interval_structure;
   const isToday = session.session_date === todayIso();
   const isCompleted = session.status === "completed";
   const canStart = isToday && !isCompleted;
@@ -120,7 +130,7 @@ export default function PlannedSessionDetail() {
           </View>
         </View>
 
-        {structure && (
+        {session.session_type !== "rest" && script && (
           <Card>
             <View style={styles.cardHeaderRow}>
               <Text style={styles.cardTitle}>Workout breakdown</Text>
@@ -134,9 +144,7 @@ export default function PlannedSessionDetail() {
                 <Ionicons name="chatbubble-ellipses-outline" size={19} color={colors.textDim} />
               </Pressable>
             </View>
-            <Text style={styles.detailLine}>Warmup: {formatMeters(structure.warmupMeters)} easy</Text>
-            <Text style={styles.detailLine}>{formatIntervalStructureSummary(structure, unit)}</Text>
-            <Text style={styles.detailLine}>Cooldown: {formatMeters(structure.cooldownMeters)} easy</Text>
+            <Text style={styles.detailLine}>{script.breakdown}</Text>
           </Card>
         )}
 
