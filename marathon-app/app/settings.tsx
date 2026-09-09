@@ -425,6 +425,11 @@ export default function Settings() {
           <Text style={styles.label}>Stryde version</Text>
           <Text style={styles.value}>{Constants.expoConfig?.version ?? "1.0.0"}</Text>
         </View>
+        <View style={styles.divider} />
+        <Pressable style={styles.row} onPress={() => router.push("/privacy-policy")}>
+          <Text style={styles.label}>Privacy Policy</Text>
+          <Text style={styles.connectLink}>View ›</Text>
+        </Pressable>
       </Card>
 
       <View style={{ marginTop: 12 }}>

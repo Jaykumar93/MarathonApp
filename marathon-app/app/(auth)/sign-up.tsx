@@ -65,7 +65,12 @@ export default function SignUp() {
       return;
     }
     if (!data.session) {
-      // "Confirm email" is on for this project - the session only appears after confirming.
+      // "Confirm email" is currently OFF in Supabase (verified live via a
+      // real signUp call, not assumed - see MAIN_PLAN.md's pre-launch
+      // checklist), so a session normally comes back immediately and this
+      // branch doesn't fire today. Kept as a real fallback for whenever
+      // that setting gets turned back on before real testers are invited -
+      // !data.session is exactly what that looks like once it is.
       setConfirmationNeeded(true);
     }
     // If a session came back immediately, AuthGate handles routing to /waitlist.
@@ -135,6 +140,13 @@ export default function SignUp() {
               {error}
             </Text>
           )}
+          <Text style={styles.consentText}>
+            By creating an account, you agree to our{" "}
+            <Link href="/privacy-policy" style={styles.consentLink}>
+              Privacy Policy
+            </Link>
+            .
+          </Text>
           <PrimaryButton
             label="Sign up"
             onPress={handleSignUp}
@@ -168,5 +180,7 @@ function createStyles(colors: Colors) {
     footerRow: { flexDirection: "row", justifyContent: "center" },
     footerText: { fontFamily: fonts.body, fontSize: 13.5, color: colors.textDim },
     footerLink: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.accent },
+    consentText: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, lineHeight: 16 },
+    consentLink: { fontFamily: fonts.bodySemiBold, color: colors.accent },
   });
 }
