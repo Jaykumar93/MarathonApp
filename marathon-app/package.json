@@ -59,7 +59,8 @@
     "web": "expo start --web",
     "test": "jest",
     "plan:try": "tsx scripts/tryPlanEngine.ts",
-    "coach:seed": "tsx scripts/seedKnowledgeBase.ts"
+    "coach:seed": "tsx scripts/seedKnowledgeBase.ts",
+    "coach:benchmark": "tsx scripts/benchmarkCoachChat.ts"
   },
   "private": true,
   "jest": {

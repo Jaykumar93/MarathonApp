@@ -5,8 +5,8 @@
  * not part of the app itself).
  *
  * Needs SUPABASE_SERVICE_ROLE_KEY (bypasses RLS - authenticated users can't
- * write this table by design, see the migration) and HF_API_KEY, both from
- * .env - see .env.example for where each comes from.
+ * write this table by design, see the migration) and GEMINI_API_KEY, both
+ * from .env - see .env.example for where each comes from.
  *
  * Clears existing rows first, so re-running after editing an article below
  * replaces it cleanly instead of duplicating it.
@@ -35,36 +35,42 @@ loadEnvFile(new URL("../.env", import.meta.url).pathname.replace(/^\/([A-Za-z]:)
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const HF_API_KEY = process.env.HF_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   throw new Error("Missing EXPO_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.");
 }
-if (!HF_API_KEY) {
-  throw new Error("Missing HF_API_KEY in .env - get a free token from huggingface.co/settings/tokens.");
+if (!GEMINI_API_KEY) {
+  throw new Error("Missing GEMINI_API_KEY in .env - get one from aistudio.google.com/apikey.");
 }
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-// Same endpoint/model the coach-chat Edge Function embeds a live user
-// question with (lib parity matters here - a query embedded with a
-// different model than the corpus would compare meaninglessly).
-const HF_EMBEDDING_URL =
-  "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction";
+// Same model/dimension/task_type convention the coach-chat Edge Function's
+// own embeddings.ts uses for a live query (RETRIEVAL_DOCUMENT here vs.
+// RETRIEVAL_QUERY there - see that file's own comment on why the two sides
+// are deliberately embedded asymmetrically, not because parity doesn't
+// matter but because retrieval-tuned models are trained to expect it).
+const GEMINI_EMBEDDING_MODEL = "gemini-embedding-001";
+const OUTPUT_DIMENSIONALITY = 768;
 
 async function embed(text: string): Promise<number[]> {
-  const res = await fetch(HF_EMBEDDING_URL, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_EMBEDDING_MODEL}:embedContent?key=${GEMINI_API_KEY}`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${HF_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ inputs: text, options: { wait_for_model: true } }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      content: { parts: [{ text }] },
+      task_type: "RETRIEVAL_DOCUMENT",
+      output_dimensionality: OUTPUT_DIMENSIONALITY,
+    }),
   });
-  if (!res.ok) throw new Error(`HF embedding request failed (${res.status}): ${await res.text()}`);
+  if (!res.ok) throw new Error(`Gemini embedding request failed (${res.status}): ${await res.text()}`);
   const data = await res.json();
-  // feature-extraction returns a plain number[] for a single string input.
-  if (!Array.isArray(data) || typeof data[0] !== "number") {
-    throw new Error(`Unexpected HF embedding response shape: ${JSON.stringify(data).slice(0, 200)}`);
+  const values = data?.embedding?.values;
+  if (!Array.isArray(values) || typeof values[0] !== "number") {
+    throw new Error(`Unexpected Gemini embedding response shape: ${JSON.stringify(data).slice(0, 200)}`);
   }
-  return data as number[];
+  return values as number[];
 }
 
 interface Article {
