@@ -8,6 +8,7 @@ import { useAuth } from "../auth/AuthContext";
 import { getPlanSessionById, type PlanSessionRow } from "../data/plans";
 import { createActivity, type CreateActivityInput } from "../data/activities";
 import { savePendingActivity } from "../data/pendingActivities";
+import { saveUnsavedFinishedRun, clearUnsavedFinishedRun, getUnsavedFinishedRunIfFresh } from "../data/pendingFinishedRun";
 import { BACKGROUND_LOCATION_TASK, setBackgroundLocationHandler } from "./backgroundLocationTask";
 import {
   computeRouteDistanceMeters,
@@ -255,6 +256,23 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
       setBackgroundLocationHandler(null);
       Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK).catch(() => {});
     };
+  }, []);
+
+  // Runs once, on a genuine cold start - phase is always "idle" here, so
+  // this can never clobber a run still live in memory (that case never
+  // re-mounts the provider at all). If the OS reclaimed the app's process
+  // while a finished run was still sitting on the review screen (unsaved),
+  // this puts the runner right back where they left off instead of the run
+  // just having vanished - see pendingFinishedRun.ts.
+  useEffect(() => {
+    getUnsavedFinishedRunIfFresh().then((recovered) => {
+      if (!recovered) return;
+      pointsRef.current = recovered.points;
+      setPoints(recovered.points);
+      setFinalStats(recovered.finalStats);
+      setPlannedSession(recovered.plannedSession);
+      setPhase("finished");
+    });
   }, []);
 
   // Two independent gates over the same expo-speech call, per the explicit
@@ -596,10 +614,18 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
     const { gainMeters, lossMeters } = computeElevationGainLoss(routePoints);
     const startIso = new Date(startTimeRef.current ?? Date.now()).toISOString();
 
-    setFinalStats({ distanceMeters, durationSeconds: finalDurationSeconds, splits, gainMeters, lossMeters, startIso });
+    const finishedStats: FinalRunStats = { distanceMeters, durationSeconds: finalDurationSeconds, splits, gainMeters, lossMeters, startIso };
+    setFinalStats(finishedStats);
     setPhase("finished");
     speakStatus("Run finished. Nice work.");
-  }, [speakStatus, stopLocationDelivery]);
+
+    // Mirrored to disk immediately - see pendingFinishedRun.ts's own comment
+    // on why: everything from here until Save actually succeeds otherwise
+    // lives only in memory, and leaving the app to do something as ordinary
+    // as taking a photo for the run can get the process reclaimed by the OS
+    // before Save is ever tapped.
+    saveUnsavedFinishedRun(finishedStats, routePoints, plannedSession).catch(() => {});
+  }, [speakStatus, stopLocationDelivery, plannedSession]);
 
   const resetAll = useCallback(() => {
     dismissRunStatusNotification();
@@ -646,10 +672,17 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
 
       try {
         const activity = await createActivity(session.user.id, input);
+        await clearUnsavedFinishedRun();
         resetAll();
         return activity.id;
       } catch {
         await savePendingActivity(session.user.id, input);
+        // The run's data has now moved to that queue's own durable storage
+        // and retry mechanism - clearing this one avoids the same run
+        // existing in two places at once, which could otherwise resurrect
+        // the review screen on a later cold start and let it be resubmitted
+        // a second time on top of the queued copy.
+        await clearUnsavedFinishedRun();
         setStatusMessage("Couldn't reach the server - this run is saved on your device and will sync automatically.");
         setPhase("save-error");
         return null;
@@ -659,6 +692,7 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
   );
 
   const discard = useCallback(() => {
+    clearUnsavedFinishedRun().catch(() => {});
     resetAll();
   }, [resetAll]);
 
