@@ -32,6 +32,10 @@ interface RunProgressBarProps {
   currentLeg: RunLeg | null;
   distanceCoveredMeters: number;
   plannedDistanceMeters: number | null;
+  /** Thinner track for the Active Run bottom sheet's collapsed state, where
+   * it's a glance-only summary rather than the primary readout. Same
+   * segments/fill logic either way. */
+  compact?: boolean;
 }
 
 /**
@@ -41,8 +45,9 @@ interface RunProgressBarProps {
  * for anything else. Renders nothing for a free run with no target at all
  * - there's nothing meaningful to show progress *toward*.
  */
-export function RunProgressBar({ structure, distanceCoveredMeters, plannedDistanceMeters }: RunProgressBarProps) {
+export function RunProgressBar({ structure, distanceCoveredMeters, plannedDistanceMeters, compact = false }: RunProgressBarProps) {
   const segments = useMemo(() => (structure ? buildSegments(structure) : null), [structure]);
+  const trackStyle = compact ? styles.trackCompact : styles.track;
 
   if (segments) {
     let cumulativeStart = 0;
@@ -57,7 +62,7 @@ export function RunProgressBar({ structure, distanceCoveredMeters, plannedDistan
               ? 0
               : Math.max(0, Math.min(1, (distanceCoveredMeters - start) / segment.distanceMeters));
           return (
-            <View key={i} style={[styles.track, { flexGrow: Math.max(segment.distanceMeters, 1) }]}>
+            <View key={i} style={[trackStyle, { flexGrow: Math.max(segment.distanceMeters, 1) }]}>
               <View
                 style={[
                   styles.fill,
@@ -75,7 +80,7 @@ export function RunProgressBar({ structure, distanceCoveredMeters, plannedDistan
   const overallFraction = Math.max(0, Math.min(1, distanceCoveredMeters / plannedDistanceMeters));
   return (
     <View style={styles.row}>
-      <View style={[styles.track, { flexGrow: 1 }]}>
+      <View style={[trackStyle, { flexGrow: 1 }]}>
         <View style={[styles.fill, { width: `${overallFraction * 100}%`, backgroundColor: palette.accent }]} />
       </View>
     </View>
@@ -87,6 +92,12 @@ const styles = StyleSheet.create({
   track: {
     height: 7,
     borderRadius: 4,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    overflow: "hidden",
+  },
+  trackCompact: {
+    height: 5,
+    borderRadius: 3,
     backgroundColor: "rgba(255,255,255,0.1)",
     overflow: "hidden",
   },

@@ -53,6 +53,11 @@ const LOCATION_OPTIONS: Location.LocationOptions = {
 // longer a long silent lead-in for it to talk over.
 export const COUNTDOWN_SECONDS = 5;
 
+// A real, perceptible gap rather than GPS/pace-window noise - below this a
+// runner's actual pace is close enough to goal that calling it out on every
+// split would just be noise, not useful feedback.
+const PACE_DEVIATION_THRESHOLD_SECONDS = 15;
+
 // A fix reported worse than this is more likely network/cell-tower-based
 // positioning noise than an actual GPS lock (typical "Balanced"-accuracy
 // outdoor GPS is usually well under this) - accepting it would let a
@@ -351,6 +356,14 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
 
       const distanceMeters = computeRouteDistanceMeters(updated);
       const distanceKm = distanceMeters / 1000;
+      // Computed once here rather than separately in each block below - the
+      // km-split announcement needs the current leg's own pace target (for
+      // interval sessions, that's what a runner is actually meant to be
+      // hitting right now, not some flat session-wide number), and the
+      // section-transition block further down needs the same leg anyway.
+      const structure = plannedSession?.interval_structure;
+      const leg = structure ? getCurrentLeg(structure, distanceMeters) : null;
+
       // Decoupled from voiceEnabled below on purpose - the live Android
       // status notification updates on this same km cadence regardless of
       // whether voice announcements are on, so it can't be nested inside
@@ -360,8 +373,21 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
           pausedAccumulatedRef.current + (runSegmentStartRef.current ? (Date.now() - runSegmentStartRef.current) / 1000 : 0);
         const pace = computeRecentPaceSecondsPerKm(updated, 120);
         if (voiceEnabled) {
+          // The one target actually relevant right now - the current
+          // interval leg's own pace if there is one, otherwise the flat
+          // session-wide target. Spoken as its own clause rather than
+          // folded silently into "pace X" so a runner who isn't looking at
+          // the screen still hears when they're meaningfully off - the
+          // same comparison the screen already shows visually
+          // (paceDeltaSecondsPerKm in active-run.tsx) but out loud.
+          const targetPace = leg && leg.kind !== "complete" ? leg.paceSecondsPerKm : (plannedSession?.planned_pace_seconds_per_km ?? null);
+          const deviation = targetPace != null && pace != null ? pace - targetPace : null;
+          const paceDeviationClause =
+            deviation != null && Math.abs(deviation) >= PACE_DEVIATION_THRESHOLD_SECONDS
+              ? ` That's ${Math.round(Math.abs(deviation))} seconds ${deviation > 0 ? "slower" : "faster"} than your goal pace.`
+              : "";
           speakStatus(
-            `${nextAnnouncementKmRef.current} ${unit === "mi" ? "miles" : "kilometers"}. Time ${speakableDuration(elapsed)}. Pace ${speakablePace(pace, unit)}.`
+            `${nextAnnouncementKmRef.current} ${unit === "mi" ? "miles" : "kilometers"}. Time ${speakableDuration(elapsed)}. Pace ${speakablePace(pace, unit)}.${paceDeviationClause}`
           );
         }
         updateRunStatusNotification(distanceKm, elapsed, pace, unit, plannedSession?.planned_distance_meters ?? null);
@@ -370,9 +396,7 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
 
       // Section-transition/motivational voice cues - independent of the
       // km-split announcement above (separate refs, separate mute gate).
-      const structure = plannedSession?.interval_structure;
-      if (structure) {
-        const leg = getCurrentLeg(structure, distanceMeters);
+      if (structure && leg) {
         if (hasLegChanged(lastLegRef.current, leg)) {
           lastLegRef.current = { kind: leg.kind, repNumber: leg.repNumber };
           motivationFiredForLegRef.current = false;
