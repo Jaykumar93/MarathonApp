@@ -1,7 +1,7 @@
 // Deno-side mirror of lib/trendsStats.ts's Monday-start weekly bucketing -
-// duplicated rather than imported (same "two genuinely separate runtimes"
-// reasoning as embeddings.ts) so the coach's own text answers and the
-// client-rendered CoachChart bucket weeks identically. Before this, the LLM
+// duplicated rather than imported (this Edge Function and the React Native
+// client are two genuinely separate runtimes) so the coach's own text
+// answers and the client-rendered CoachChart bucket weeks identically. Before this, the LLM
 // was handed a flat list of raw runs and asked to reason out "this week"
 // itself - it used a rolling 7-day window, which silently disagreed with
 // the chart's calendar-week (Monday-start) buckets, producing a reply and a
@@ -55,4 +55,21 @@ export function buildWeeklySummaryText(activities: ActivityForSummary[], todayIs
     lines.push(`${label}: ${km.toFixed(1)} km over ${count} run${count === 1 ? "" : "s"}`);
   }
   return lines.join("\n");
+}
+
+/**
+ * Just the current week's total, in the exact same "km.toFixed(1)" shape as
+ * the line above - used to build the value a {{THIS_WEEK_KM}} placeholder
+ * gets substituted with after the model generates its reply (see
+ * prompt.ts), rather than trusting the model to copy the number correctly
+ * out of the table text. Shares mondayOf() with buildWeeklySummaryText so
+ * the two can never disagree on which activities count as "this week."
+ */
+export function getThisWeekKmLabel(activities: ActivityForSummary[], todayIso: string): string {
+  const currentWeekStart = mondayOf(todayIso);
+  let km = 0;
+  for (const a of activities) {
+    if (mondayOf(a.start_time.slice(0, 10)) === currentWeekStart) km += a.distance_meters / 1000;
+  }
+  return `${km.toFixed(1)} km`;
 }
