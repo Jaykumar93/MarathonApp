@@ -26,7 +26,7 @@ The full technical writeup — architecture diagrams, the plan-generation engine
 
 **[Stryde Engineering Docs — full technical documentation](https://claude.ai/artifact/BZbCuWQmVajxkXLJZD49yV)**
 
-The source is also version-controlled in this repo at [`docs/stryde-docs-updated.html`](docs/stryde-docs-updated.html) — open it directly in a browser to view it offline.
+Also available on [Google Drive](https://drive.google.com/file/d/1mANIBJJ4d9t07hWs5aB0TC-iLuK3jJwE/view?usp=sharing), and the source is version-controlled in this repo at [`docs/stryde-docs-updated.html`](docs/stryde-docs-updated.html) — open it directly in a browser to view it offline.
 
 ## Project structure
 
