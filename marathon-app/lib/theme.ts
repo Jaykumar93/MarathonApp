@@ -36,14 +36,21 @@ export const fonts = {
   monoSemiBold: "JetBrainsMono_600SemiBold",
 } as const;
 
+// Bumped up across the board (see the "components look small" real-device
+// feedback that also flagged Active Run's own local stat sizing) - a
+// moderate, proportional increase rather than Active Run's much larger
+// jump, since these are read sitting still browsing a screen, not glanced
+// at mid-run. Used by 19+ files (see `type.` usages) - a shared-token fix
+// here is what actually gives every screen consistent, readable sizing at
+// once, instead of patching each screen's own local styles one at a time.
 export const type = {
-  hLg: 23,
-  hMd: 17,
-  pDim: 11.5,
-  pFaint: 10.5,
-  sectionLabel: 10,
-  statValue: 15,
-  statLabel: 9,
+  hLg: 25,
+  hMd: 19,
+  pDim: 13,
+  pFaint: 12,
+  sectionLabel: 11,
+  statValue: 20,
+  statLabel: 10.5,
 } as const;
 
 export const spacing = {
