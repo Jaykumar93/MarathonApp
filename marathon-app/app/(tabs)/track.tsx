@@ -98,22 +98,54 @@ export default function Track() {
   // A run tracked in RunTrackingContext keeps going even after leaving this
   // screen (see active-run.tsx) - so coming back to Track mid-run should
   // offer to resume that same screen, not start a fresh one on top of it.
+  // Deliberately broad (any non-idle phase, including "finished"/"saving"/
+  // "save-error") - there's real unsaved run data to go back to in all of
+  // those, not just while a GPS watch is actually open.
   const isTracking = rt.phase !== "idle";
 
   // Own, lightweight location watch just for showing "here you are" on this
   // pre-run lobby screen - separate from RunTrackingContext's own watch,
-  // which only exists once a run actually starts. Paused while a real run
-  // is in progress so the two watches never run at once; the map falls
-  // back to the real tracked route (rt.points) at that point instead.
+  // which only exists once a run actually starts. Gated on rt.isLocationActive
+  // (the context's own source of truth for "a GPS subscription is open
+  // right now"), not `isTracking` - that stays true through "finished"/
+  // "saving"/"save-error" too, well after stop() already tore the real
+  // subscription down, which used to leave this lobby watcher paused
+  // indefinitely once a run ended, until the user explicitly saved or
+  // discarded it, even though nothing was actually competing with it for
+  // the GPS by then.
   const [lobbyPosition, setLobbyPosition] = useState<RoutePoint | null>(null);
   useEffect(() => {
-    if (isTracking) return;
+    if (rt.isLocationActive) return;
     let subscription: Location.LocationSubscription | null = null;
     let cancelled = false;
 
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted" || cancelled) return;
+
+      // Seeds instantly with whatever's cached (may be a little stale),
+      // rather than leaving the map with nothing to show at all for
+      // however long the live watch below takes to get its own first
+      // fix - genuinely a few seconds is normal for a cold GPS lock, and
+      // that gap otherwise reads as "the recenter button doesn't work"
+      // when what's actually happening is there's simply no position yet
+      // for it to center on. Best-effort - a cache miss (null) just means
+      // this screen waits for the live watch's first fix, same as before.
+      Location.getLastKnownPositionAsync({ maxAge: 30000 })
+        .then((last) => {
+          if (cancelled || !last) return;
+          setLobbyPosition({
+            lat: last.coords.latitude,
+            lng: last.coords.longitude,
+            timestamp: last.timestamp,
+            altitude: last.coords.altitude,
+            accuracy: last.coords.accuracy,
+            heading: last.coords.heading,
+          });
+        })
+        .catch(() => {});
+
+      if (cancelled) return;
       subscription = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.Balanced, timeInterval: 4000, distanceInterval: 5 },
         (location) => {
@@ -133,9 +165,9 @@ export default function Track() {
       cancelled = true;
       subscription?.remove();
     };
-  }, [isTracking]);
+  }, [rt.isLocationActive]);
 
-  const mapPoints = isTracking ? rt.points : lobbyPosition ? [lobbyPosition] : [];
+  const mapPoints = rt.isLocationActive ? rt.points : lobbyPosition ? [lobbyPosition] : [];
 
   const trackingLabel = (() => {
     switch (rt.phase) {

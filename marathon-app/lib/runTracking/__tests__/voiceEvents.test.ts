@@ -1,12 +1,4 @@
-import {
-  hasLegChanged,
-  shouldFireLegMotivation,
-  crossedMotivationFraction,
-  isFinalCountdownTick,
-  MOTIVATION_FRACTION_STEP,
-  FINAL_COUNTDOWN_WINDOW_SECONDS,
-  type LegKey,
-} from "../voiceEvents";
+import { hasLegChanged, shouldFireLegMotivation, crossedMotivationFraction, MOTIVATION_FRACTION_STEP, type LegKey } from "../voiceEvents";
 import type { RunLeg } from "../../intervalProgress";
 
 function leg(overrides: Partial<RunLeg>): RunLeg {
@@ -80,17 +72,5 @@ describe("crossedMotivationFraction", () => {
 
   it("stops after the 75% milestone (100% is left to the finish announcement)", () => {
     expect(crossedMotivationFraction(1.0, 1.0)).toBe(false);
-  });
-});
-
-describe("isFinalCountdownTick", () => {
-  it("is true within the final window", () => {
-    expect(isFinalCountdownTick(FINAL_COUNTDOWN_WINDOW_SECONDS)).toBe(true);
-    expect(isFinalCountdownTick(1)).toBe(true);
-  });
-
-  it("is false outside the final window", () => {
-    expect(isFinalCountdownTick(FINAL_COUNTDOWN_WINDOW_SECONDS + 1)).toBe(false);
-    expect(isFinalCountdownTick(0)).toBe(false);
   });
 });
