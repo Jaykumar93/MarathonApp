@@ -400,7 +400,7 @@ export default function Coach() {
   ) : null;
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={90}>
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={90}>
       <View style={styles.toolbarRow}>
         <Pressable style={styles.toolbarButton} onPress={startNewChat} hitSlop={8} accessibilityRole="button" accessibilityLabel="Start a new chat">
           <Ionicons name="add-circle-outline" size={14} color={colors.textDim} />
