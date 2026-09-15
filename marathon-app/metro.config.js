@@ -1,3 +1,11 @@
+// TEMPORARILY REVERTED from getSentryExpoConfig - the production Android
+// build that shipped with it installed to a blank screen on a real device,
+// and this swap (changing how the bundle itself is built/debug-id-tagged)
+// is the one change in that build never verified against an actual native
+// bundle, only the web preview. Reverting to isolate whether this is the
+// cause before debugging the Sentry/Metro integration further - source-map
+// upload is back to non-functional until this is re-enabled and confirmed
+// safe.
 const { getDefaultConfig } = require("expo/metro-config");
 
 const config = getDefaultConfig(__dirname);

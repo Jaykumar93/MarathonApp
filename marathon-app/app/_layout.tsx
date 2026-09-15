@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { AccessibilityInfo, Animated } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { AccessibilityInfo, Animated, Text, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Linking from "expo-linking";
@@ -62,7 +62,20 @@ function RootLayoutInner() {
     JetBrainsMono_600SemiBold,
   });
 
-  const fontsReady = spaceGroteskLoaded && plusJakartaLoaded && jetBrainsMonoLoaded;
+  // A hung (not failed - useFonts has no error path that surfaces here)
+  // font load previously left the entire app permanently blank: fontsReady
+  // never became true, RootLayoutInner returned null forever below, and
+  // SplashScreen.hideAsync() never ran - no crash, no console output,
+  // nothing to explain why. This timeout guarantees the app still renders
+  // (with system-font fallback) even if custom fonts never finish, instead
+  // of a hang in a precondition blocking the entire app indefinitely.
+  const [fontsTimedOut, setFontsTimedOut] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setFontsTimedOut(true), 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const fontsReady = (spaceGroteskLoaded && plusJakartaLoaded && jetBrainsMonoLoaded) || fontsTimedOut;
 
   useEffect(() => {
     if (fontsReady) SplashScreen.hideAsync().catch(() => {});
@@ -132,6 +145,44 @@ function AuthGate() {
   const router = useRouter();
   const ready = !(loading || hasActiveGoal === null);
   const fade = useRef(new Animated.Value(0)).current;
+
+  // TEMPORARY DIAGNOSTIC (re-added) - native dev-client specifically stayed
+  // blank even after the .finally() hardening, while web renders fine on
+  // the same JS - pointing at something native-only (AsyncStorage is the
+  // leading suspect, since that's the one thing that differs between the
+  // two platforms in this exact code path). Remove once confirmed fixed.
+  const [debugSteps, setDebugSteps] = useState<string[]>(["mounted"]);
+  useEffect(() => {
+    const log = (s: string) => setDebugSteps((prev) => [...prev, `${s} @ ${new Date().toISOString().slice(11, 19)}`]);
+    (async () => {
+      log("before AsyncStorage import");
+      let AsyncStorage;
+      try {
+        AsyncStorage = require("@react-native-async-storage/async-storage").default;
+        log("AsyncStorage imported ok");
+      } catch (e) {
+        log(`AsyncStorage import FAILED: ${e}`);
+        return;
+      }
+      try {
+        log("before AsyncStorage.setItem");
+        await AsyncStorage.setItem("__debug_test__", "1");
+        log("before AsyncStorage.getItem");
+        const v = await AsyncStorage.getItem("__debug_test__");
+        log(`AsyncStorage roundtrip ok: ${v}`);
+      } catch (e) {
+        log(`AsyncStorage roundtrip FAILED: ${e}`);
+      }
+      try {
+        log("before supabase.auth.getSession()");
+        const { supabase } = require("../lib/supabase");
+        const result = await supabase.auth.getSession();
+        log(`getSession ok: session=${!!result.data.session}`);
+      } catch (e) {
+        log(`getSession FAILED: ${e}`);
+      }
+    })();
+  }, []);
 
   // Splash hides as soon as fonts are ready (see RootLayoutInner above),
   // but auth/profile/goal state usually resolves a beat later - without
@@ -215,7 +266,22 @@ function AuthGate() {
     }
   }, [session, profile, hasActiveGoal, segments]);
 
-  if (!ready) return null;
+  if (!ready) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#14161A", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <Text style={{ color: "#FF5A1F", fontSize: 16, fontWeight: "600", marginBottom: 12 }}>DEBUG: waiting on auth</Text>
+        <Text style={{ color: "#EEEFEA", fontSize: 13 }}>loading: {String(loading)}</Text>
+        <Text style={{ color: "#EEEFEA", fontSize: 13 }}>hasActiveGoal: {String(hasActiveGoal)}</Text>
+        <View style={{ marginTop: 16, alignItems: "flex-start" }}>
+          {debugSteps.map((s, i) => (
+            <Text key={i} style={{ color: "#9EA19A", fontSize: 11 }}>
+              {i}. {s}
+            </Text>
+          ))}
+        </View>
+      </View>
+    );
+  }
 
   return (
     <Animated.View style={{ flex: 1, opacity: fade }}>

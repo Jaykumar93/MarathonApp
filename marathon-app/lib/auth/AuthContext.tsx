@@ -80,26 +80,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!mounted) return;
-      setSession(data.session);
-      if (data.session?.user?.id) {
-        await fetchProfileAndGoal(data.session.user.id);
-      } else {
-        setHasActiveGoal(false);
-      }
-      setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        if (!mounted) return;
+        setSession(data.session);
+        if (data.session?.user?.id) {
+          await fetchProfileAndGoal(data.session.user.id);
+        } else {
+          setHasActiveGoal(false);
+        }
+      })
+      .catch((e) => {
+        // A rejection anywhere in this chain (network error, a thrown
+        // Postgrest error inside fetchProfileAndGoal, anything) previously
+        // left `loading` stuck true forever with no visible error at all -
+        // AuthGate's fade-in never starts, so the app renders nothing,
+        // permanently, with no crash and no console output to explain why.
+        // Fixing `loading` alone wasn't enough, though: AuthGate's `ready`
+        // gate also requires `hasActiveGoal !== null`, and a failure here
+        // (fetchProfileAndGoal throwing) left it stuck at its initial
+        // `null` forever too, even after `loading` correctly recovered -
+        // still permanently blank, just for a different one of the two
+        // reasons. `false` ("assume no active goal") is the same safe
+        // fallback the "no session" branch above already uses.
+        console.error("AuthProvider: initial session load failed:", e);
+        if (mounted) setHasActiveGoal(false);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       setSession(newSession);
-      if (newSession?.user?.id) {
-        await fetchProfileAndGoal(newSession.user.id);
-      } else {
-        setProfile(null);
-        setHasActiveGoal(null);
+      try {
+        if (newSession?.user?.id) {
+          await fetchProfileAndGoal(newSession.user.id);
+        } else {
+          setProfile(null);
+          setHasActiveGoal(false);
+        }
+      } catch (e) {
+        // Same failure mode, and same fix, as the initial-load chain above.
+        console.error("AuthProvider: auth state change handling failed:", e);
+        setHasActiveGoal(false);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => {
