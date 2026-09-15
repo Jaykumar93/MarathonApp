@@ -7,10 +7,12 @@ import type { RoutePoint } from "../lib/gpsStats";
 import { palette } from "../lib/theme";
 
 interface RunMapProps {
-  /** Recorded so far (live tracking) or the full saved route (a finished run). */
+  /** Recorded so far (live tracking) or the full saved route (a finished run) - accuracy-filtered, so this can legitimately be empty for a stretch in poor GPS conditions even while the device's position is known (see currentCoordinate). */
   points: RoutePoint[];
   /** True while a run is actively being tracked - the camera follows the device's live location instead of fitting a fixed route, and no start/end pins are drawn since the route is still growing. */
   live?: boolean;
+  /** Live mode only - the device's most recent raw position, unfiltered by the accuracy threshold that gates `points`. Falls back to the last accepted route point when omitted (e.g. Track's own map, which derives its own pre-run lobby position separately). Without this, the puck/camera has nothing to show until the first accurate-enough fix lands, which can be a long wait indoors or in poor signal. */
+  currentCoordinate?: RoutePoint | null;
   /** How far above the map's own bottom edge to float the recenter button - the default suits Active Run, where the map sits in its own boxed area above a separate controls row. Track's map is full-bleed behind an absolutely-positioned "Start run" button instead, so it needs a much larger offset to clear it. */
   recenterBottomOffset?: number;
 }
@@ -61,11 +63,16 @@ function HeadingPuck({ headingDegrees }: { headingDegrees: number | null | undef
 // resetting whatever zoom level you've manually chosen since.
 const INITIAL_ZOOM_LEVEL = 17;
 
-export function RunMap({ points, live = false, recenterBottomOffset = 12 }: RunMapProps) {
+export function RunMap({ points, live = false, currentCoordinate, recenterBottomOffset = 12 }: RunMapProps) {
   const mapRef = useRef<MapView>(null);
   const coordinates = points.map((p) => ({ latitude: p.lat, longitude: p.lng }));
   const lastPoint = points[points.length - 1];
   const lastCoordinate = coordinates[coordinates.length - 1];
+  // The puck/camera prefer the live, unfiltered fix over the last accepted
+  // route point, so they track the device immediately - the route line
+  // (drawn from `coordinates` above) stays on the filtered points regardless.
+  const displayPoint = currentCoordinate ?? lastPoint;
+  const displayCoordinate = currentCoordinate ? { latitude: currentCoordinate.lat, longitude: currentCoordinate.lng } : lastCoordinate;
   const hasZoomedInRef = useRef(false);
 
   // Live mode still auto-centers on your position by default, but a manual
@@ -80,15 +87,28 @@ export function RunMap({ points, live = false, recenterBottomOffset = 12 }: RunM
   // that first call gets dropped but hasZoomedInRef still flips to true,
   // permanently skipping the zoom-in for the rest of this screen's life.
   const [mapReady, setMapReady] = useState(false);
+  // Bumped by the recenter button (see recenter() below) - the single
+  // signal that tells the effect below "this specific run was an explicit
+  // tap," not just an incidental GPS update while already following. This
+  // effect is the ONLY place that ever calls animateCamera in live mode -
+  // recenter() previously also called it directly, and that second call
+  // raced against this effect's own re-run (triggered by the same
+  // `following` state change), fighting over zoom level and frequently
+  // losing, since this effect's call landed a moment later with a longer
+  // duration and no zoom override - "the recenter button doesn't work."
+  const [recenterNonce, setRecenterNonce] = useState(0);
+  const lastHandledNonceRef = useRef(0);
 
   useEffect(() => {
-    if (live && following && mapReady && lastCoordinate) {
-      const zoom = hasZoomedInRef.current ? undefined : INITIAL_ZOOM_LEVEL;
-      mapRef.current?.animateCamera({ center: lastCoordinate, zoom }, { duration: 500 });
+    if (live && following && mapReady && displayCoordinate) {
+      const isExplicitRecenter = recenterNonce !== lastHandledNonceRef.current;
+      lastHandledNonceRef.current = recenterNonce;
+      const zoom = !hasZoomedInRef.current || isExplicitRecenter ? INITIAL_ZOOM_LEVEL : undefined;
+      mapRef.current?.animateCamera({ center: displayCoordinate, zoom }, { duration: isExplicitRecenter ? 300 : 500 });
       hasZoomedInRef.current = true;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, following, mapReady, lastCoordinate?.latitude, lastCoordinate?.longitude]);
+  }, [live, following, mapReady, displayCoordinate?.latitude, displayCoordinate?.longitude, recenterNonce]);
 
   useEffect(() => {
     if (!live && mapReady && coordinates.length >= 2) {
@@ -102,12 +122,12 @@ export function RunMap({ points, live = false, recenterBottomOffset = 12 }: RunM
 
   // Always resets back to street-level zoom, not just wherever you'd
   // pinched to - "take me back to my location" reads as a full reset, not
-  // just a re-pan at whatever zoom happened to be left over.
+  // just a re-pan at whatever zoom happened to be left over. Doesn't call
+  // animateCamera itself - see the effect above for why that used to race
+  // against this same tap's own following-state change.
   function recenter() {
     setFollowing(true);
-    if (lastCoordinate) {
-      mapRef.current?.animateCamera({ center: lastCoordinate, zoom: INITIAL_ZOOM_LEVEL }, { duration: 300 });
-    }
+    setRecenterNonce((n) => n + 1);
   }
 
   return (
@@ -125,9 +145,9 @@ export function RunMap({ points, live = false, recenterBottomOffset = 12 }: RunM
         onPanDrag={() => live && setFollowing(false)}
       >
         {coordinates.length >= 2 && <Polyline coordinates={coordinates} strokeColor={palette.accent} strokeWidth={4} />}
-        {live && lastCoordinate && (
-          <Marker coordinate={lastCoordinate} anchor={{ x: 0.5, y: 0.5 }} flat>
-            <HeadingPuck headingDegrees={lastPoint?.heading} />
+        {live && displayCoordinate && (
+          <Marker coordinate={displayCoordinate} anchor={{ x: 0.5, y: 0.5 }} flat>
+            <HeadingPuck headingDegrees={displayPoint?.heading} />
           </Marker>
         )}
         {!live && coordinates.length > 0 && (

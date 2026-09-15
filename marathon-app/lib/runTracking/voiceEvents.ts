@@ -34,10 +34,3 @@ const MOTIVATION_MAX_FRACTION = 0.75;
 export function crossedMotivationFraction(coveredFraction: number, nextPendingFraction: number): boolean {
   return nextPendingFraction <= MOTIVATION_MAX_FRACTION && coveredFraction >= nextPendingFraction;
 }
-
-export const FINAL_COUNTDOWN_WINDOW_SECONDS = 5;
-
-/** Whether `secondsRemaining` falls in the final audible countdown window (e.g. "5, 4, 3, 2, 1") - shared by the tick logic that speaks each number and the UI that decides when to show the big numeral vs. the heads-up text. */
-export function isFinalCountdownTick(secondsRemaining: number): boolean {
-  return secondsRemaining >= 1 && secondsRemaining <= FINAL_COUNTDOWN_WINDOW_SECONDS;
-}

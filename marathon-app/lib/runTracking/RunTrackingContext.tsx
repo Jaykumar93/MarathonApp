@@ -21,14 +21,7 @@ import {
 import { getCurrentLeg } from "../intervalProgress";
 import { buildFallbackVoiceScript, findSegment, type RunVoiceScript } from "./voiceScriptFallback";
 import { getOrGenerateVoiceScript } from "./voiceScript";
-import {
-  hasLegChanged,
-  shouldFireLegMotivation,
-  crossedMotivationFraction,
-  isFinalCountdownTick,
-  MOTIVATION_FRACTION_STEP,
-  type LegKey,
-} from "./voiceEvents";
+import { hasLegChanged, shouldFireLegMotivation, crossedMotivationFraction, MOTIVATION_FRACTION_STEP, type LegKey } from "./voiceEvents";
 
 export type RunTrackingPhase =
   | "idle"
@@ -44,13 +37,20 @@ export type RunTrackingPhase =
 const LOCATION_OPTIONS: Location.LocationOptions = {
   accuracy: Location.Accuracy.Balanced,
   timeInterval: 4000,
-  distanceInterval: 10,
+  // 5m rather than 10m - a route is only ever a straight chord between
+  // consecutive points (no road-snapping, see RunMap's Polyline/gpsStats'
+  // haversine distance), so a tighter distance gate captures turns more
+  // faithfully instead of cutting the corner across a longer gap. Tradeoff
+  // is more points per run (more battery draw, more storage) - 5m is a
+  // reasonable middle ground, not the tightest possible setting.
+  distanceInterval: 5,
 };
 
-// 30s: long enough for a spoken heads-up plus an audible final few seconds
-// (see beginCountdown) without the heads-up and the countdown numbers
-// talking over each other.
-export const COUNTDOWN_SECONDS = 30;
+// Short, per explicit user feedback - the prior 30s (a long silent gap
+// before only the final 5 seconds were spoken) felt unnecessary; this is
+// just that final stretch on its own, spoken in full since there's no
+// longer a long silent lead-in for it to talk over.
+export const COUNTDOWN_SECONDS = 5;
 
 // A fix reported worse than this is more likely network/cell-tower-based
 // positioning noise than an actual GPS lock (typical "Balanced"-accuracy
@@ -148,6 +148,20 @@ export interface FinalRunStats {
 interface RunTrackingValue {
   phase: RunTrackingPhase;
   countdownNumber: number;
+  /** Whether a GPS subscription is actually open right now - narrower than `phase !== "idle"`, which stays true through "finished"/"saving"/"save-error" too, well after the subscription itself has already stopped. The one thing another screen needing its own separate location watch (Track's pre-run lobby) should check before deciding whether it's safe to open one, rather than reverse-engineering it from `phase`. */
+  isLocationActive: boolean;
+  /**
+   * The single most recent raw fix, unfiltered by MIN_ACCEPTABLE_ACCURACY_METERS -
+   * purely "where is the device right now" for the map's live puck/camera to
+   * follow. Deliberately separate from `points`: `points` is the measured
+   * route (accuracy-filtered, since a noisy fix summed into distance would
+   * make a stationary phone's run appear to wander), so it can legitimately
+   * stay empty for a while in poor-GPS conditions. The map shouldn't stay
+   * blank for that same stretch - showing an approximate live position
+   * doesn't carry the same risk that recording one as measured distance
+   * does. Null until the first fix of the run arrives.
+   */
+  liveCoordinate: RoutePoint | null;
   points: RoutePoint[];
   elapsedSeconds: number;
   plannedSession: PlanSessionRow | null;
@@ -193,6 +207,14 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
   const [finalStats, setFinalStats] = useState<FinalRunStats | null>(null);
   const [voiceScript, setVoiceScript] = useState<RunVoiceScript | null>(null);
   const [coachMuted, setCoachMuted] = useState(false);
+  // See startLocationDelivery/stopLocationDelivery further down - the
+  // single source of truth for whether a GPS subscription is open right
+  // now, set exactly where that subscription actually starts/stops.
+  const [isLocationActive, setIsLocationActive] = useState(false);
+  // See liveCoordinate's own doc comment on RunTrackingValue - every raw fix,
+  // unfiltered, for the map to show live position even before/without a
+  // point accurate enough to count toward the measured route.
+  const [liveCoordinate, setLiveCoordinate] = useState<RoutePoint | null>(null);
 
   const watchSubscription = useRef<Location.LocationSubscription | null>(null);
   const startTimeRef = useRef<number | null>(null);
@@ -213,6 +235,14 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
   // permission - checked by startLocationDelivery so pause/resume don't
   // each have to re-request it.
   const backgroundAvailableRef = useRef(false);
+  // Imperative mirror of `phase`, same reason as voiceScriptRef above -
+  // onLocationUpdate needs the current phase synchronously, without being
+  // recreated (and re-handed to the long-lived GPS subscription callback)
+  // on every phase change.
+  const phaseRef = useRef<RunTrackingPhase>("idle");
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   // Only fires on the provider itself unmounting (app teardown), not on
   // navigating away from any one screen - that's the whole point of this
@@ -241,10 +271,18 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
     [voiceEnabled]
   );
 
+  // onDone lets a caller sequence something to happen exactly when this
+  // specific utterance finishes (see beginCountdown) instead of guessing
+  // at a delay or racing/interrupting it - fires immediately, synchronously
+  // skipped, if voice is off/muted, so a caller relying on it to continue
+  // never gets stuck waiting on speech that was never going to happen.
   const speakCoach = useCallback(
-    (text: string) => {
-      if (!voiceEnabled || coachMuted) return;
-      Speech.speak(text, { rate: 1.0, pitch: 1.0 });
+    (text: string, onDone?: () => void) => {
+      if (!voiceEnabled || coachMuted) {
+        onDone?.();
+        return;
+      }
+      Speech.speak(text, { rate: 1.0, pitch: 1.0, onDone, onError: onDone, onStopped: onDone });
     },
     [voiceEnabled, coachMuted]
   );
@@ -262,8 +300,6 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
   const onLocationUpdate = useCallback(
     (location: Location.LocationObject) => {
       const accuracy = location.coords.accuracy;
-      if (accuracy != null && accuracy > MIN_ACCEPTABLE_ACCURACY_METERS) return;
-
       const point: RoutePoint = {
         lat: location.coords.latitude,
         lng: location.coords.longitude,
@@ -272,6 +308,22 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
         accuracy,
         heading: location.coords.heading,
       };
+      // Unfiltered - see liveCoordinate's doc comment. Every fix updates the
+      // map's live position, even during "requesting-permission"/"countdown"
+      // (before the run is officially tracking) and even ones too poor to
+      // count as measured progress below - the countdown's few seconds
+      // become free GPS warm-up time this way, instead of a second, visible
+      // cold-start gap right after the subscription that was already
+      // warming up in Track's pre-run lobby gets handed off here.
+      setLiveCoordinate(point);
+
+      // Everything below is the actual measured route - only counts once
+      // the run has really started, so standing still through the
+      // permission prompt/countdown can never get recorded as distance.
+      if (phaseRef.current !== "running") return;
+
+      if (accuracy != null && accuracy > MIN_ACCEPTABLE_ACCURACY_METERS) return;
+
       const lastPoint = pointsRef.current[pointsRef.current.length - 1];
       if (lastPoint && !isPlausibleMovement(lastPoint, point)) return;
 
@@ -333,7 +385,39 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
   // falls back to a plain foreground watch otherwise - which is always,
   // in Expo Go, since background location needs a custom dev build there.
   // Either way the caller doesn't need to know which one is active.
+  //
+  // isLocationActive (set here, not derived elsewhere) is the single
+  // source of truth for "is a subscription actually open right now" -
+  // exposed on the context so any other screen needing to know (Track's
+  // own separate pre-run lobby watch, so it can avoid running two GPS
+  // subscriptions at once) reads this directly instead of re-deriving it
+  // from `phase`. That reverse-engineering used to live in Track itself
+  // (checking phase against a hand-maintained list of "active" values) -
+  // fragile by construction, since it's a second copy of a fact this
+  // context already knows firsthand, one hop further from where location
+  // delivery is actually started and stopped and easy to leave out of sync
+  // as phases change.
   const startLocationDelivery = useCallback(async () => {
+    setIsLocationActive(true);
+    // Best-effort instant seed - a fresh GPS fix can genuinely take 10-30s+
+    // indoors (real satellite-acquisition time, not something this app
+    // controls), so show the device's last-known cached position right away
+    // rather than leaving the map blank for that whole stretch. Overwritten
+    // the moment onLocationUpdate's first real fix arrives below. Same
+    // pattern Track's own pre-run lobby already uses for the same reason.
+    Location.getLastKnownPositionAsync({ maxAge: 30000 })
+      .then((cached) => {
+        if (!cached) return;
+        setLiveCoordinate({
+          lat: cached.coords.latitude,
+          lng: cached.coords.longitude,
+          timestamp: cached.timestamp,
+          altitude: cached.coords.altitude,
+          accuracy: cached.coords.accuracy,
+          heading: cached.coords.heading,
+        });
+      })
+      .catch(() => {});
     if (backgroundAvailableRef.current) {
       setBackgroundLocationHandler((locations) => locations.forEach(onLocationUpdate));
       try {
@@ -355,6 +439,7 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
   }, [onLocationUpdate]);
 
   const stopLocationDelivery = useCallback(async () => {
+    setIsLocationActive(false);
     setBackgroundLocationHandler(null);
     watchSubscription.current?.remove();
     watchSubscription.current = null;
@@ -368,7 +453,13 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
     }
   }, []);
 
-  const beginTracking = useCallback(async () => {
+  // Deliberately doesn't (re)start location delivery - startRun already
+  // opened that subscription right after permission was granted, and it's
+  // stayed open continuously through "requesting-permission"/"countdown" so
+  // there's no second cold-start right here. This just flips the phase
+  // (which onLocationUpdate checks via phaseRef) so fixes already flowing
+  // in start counting toward the measured route from this exact moment.
+  const beginTracking = useCallback(() => {
     pointsRef.current = [];
     setPoints([]);
     nextAnnouncementKmRef.current = intervalKm;
@@ -383,28 +474,35 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
       if (runSegmentStartRef.current == null) return;
       setElapsedSeconds(pausedAccumulatedRef.current + (Date.now() - runSegmentStartRef.current) / 1000);
     }, 1000);
+  }, [intervalKm, speakStatus]);
 
-    await startLocationDelivery();
-  }, [intervalKm, speakStatus, startLocationDelivery]);
-
+  // Short by design (COUNTDOWN_SECONDS = 5, see its own comment). Two
+  // clean phases, not a race: the heads-up line plays out in full first
+  // (countdownNumber just sits at its starting value while that happens -
+  // no ticking yet), and only once it actually finishes (via speakCoach's
+  // onDone) does the real countdown start, voice and UI together, one
+  // number per second. Trying to run both at once earlier meant either the
+  // numbers waited behind a long-still-playing heads-up line (visibly
+  // lagging the UI) or had to forcibly interrupt it mid-sentence (a jarring
+  // cut-off) - sequencing them removes the conflict entirely instead of
+  // patching around it.
   const beginCountdown = useCallback(() => {
     setPhase("countdown");
     setCountdownNumber(COUNTDOWN_SECONDS);
-    speakCoach(voiceScriptRef.current?.countdownHeadsUp ?? "Starting in 30 seconds.");
-    let n = COUNTDOWN_SECONDS;
-    const countdownTick = setInterval(() => {
-      n -= 1;
-      if (n <= 0) {
-        clearInterval(countdownTick);
-        beginTracking();
-      } else {
-        setCountdownNumber(n);
-        // Silence in between the heads-up and this final stretch, per the
-        // Nike Run Club/Peloton-style shape discussed - a full 30-second
-        // spoken count would talk over itself.
-        if (isFinalCountdownTick(n)) speakCoach(String(n));
-      }
-    }, 1000);
+    speakCoach(voiceScriptRef.current?.countdownHeadsUp ?? "Get ready.", () => {
+      let n = COUNTDOWN_SECONDS;
+      speakCoach(String(n));
+      const countdownTick = setInterval(() => {
+        n -= 1;
+        if (n <= 0) {
+          clearInterval(countdownTick);
+          beginTracking();
+        } else {
+          setCountdownNumber(n);
+          speakCoach(String(n));
+        }
+      }, 1000);
+    });
   }, [beginTracking, speakCoach]);
 
   const startRun = useCallback(
@@ -416,13 +514,13 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
 
       if (fetchedSession) {
         // A synchronous, zero-network fallback is available immediately
-        // (so the countdown heads-up always has *something* contextual to
-        // say even if this is the very first time this session has ever
-        // been opened) - getOrGenerateVoiceScript then upgrades it to the
-        // real AI-generated script if/when that resolves. In practice
-        // this has almost always already resolved by now, since Track's
-        // lobby and the planned-session detail screen both prefetch it
-        // well before "Start" is tapped.
+        // (so the run-started announcement always has *something*
+        // contextual to say even if this is the very first time this
+        // session has ever been opened) - getOrGenerateVoiceScript then
+        // upgrades it to the real AI-generated script if/when that
+        // resolves. In practice this has almost always already resolved by
+        // now, since Track's lobby and the planned-session detail screen
+        // both prefetch it well before "Start" is tapped.
         const fallback = buildFallbackVoiceScript(fetchedSession, unit);
         voiceScriptRef.current = fallback;
         setVoiceScript(fallback);
@@ -452,9 +550,17 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
       } catch {
         backgroundAvailableRef.current = false;
       }
+      // Opened here, right when Start is tapped, rather than after the
+      // countdown finishes - Track's pre-run lobby watch hands off to this
+      // same continuous subscription immediately (see isLocationActive),
+      // so the countdown's few seconds become free GPS warm-up time
+      // instead of a second visible cold-start gap once tracking actually
+      // begins. onLocationUpdate itself (via phaseRef) is what decides
+      // when a fix starts counting as measured progress, not this call.
+      await startLocationDelivery();
       beginCountdown();
     },
-    [beginCountdown, unit]
+    [beginCountdown, startLocationDelivery, unit]
   );
 
   const pause = useCallback(async () => {
@@ -499,6 +605,7 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
     dismissRunStatusNotification();
     pointsRef.current = [];
     setPoints([]);
+    setLiveCoordinate(null);
     setElapsedSeconds(0);
     setFinalStats(null);
     setPlannedSession(null);
@@ -560,6 +667,8 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
       value={{
         phase,
         countdownNumber,
+        isLocationActive,
+        liveCoordinate,
         points,
         elapsedSeconds,
         plannedSession,

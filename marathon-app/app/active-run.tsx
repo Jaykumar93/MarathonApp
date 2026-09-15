@@ -7,7 +7,6 @@ import { getPlanSessionById, type PlanSessionRow } from "../lib/data/plans";
 import { COUNTDOWN_SECONDS, useRunTracking } from "../lib/runTracking/RunTrackingContext";
 import { computeRouteDistanceMeters, computeRecentPaceSecondsPerKm, computeAveragePaceSecondsPerKm } from "../lib/gpsStats";
 import { getCurrentLeg, type RunLeg } from "../lib/intervalProgress";
-import { isFinalCountdownTick } from "../lib/runTracking/voiceEvents";
 import { buildFallbackVoiceScript, type RunVoiceScript } from "../lib/runTracking/voiceScriptFallback";
 import { getOrGenerateVoiceScript } from "../lib/runTracking/voiceScript";
 import { formatDistance, formatMeters, formatPace } from "../lib/units";
@@ -260,14 +259,8 @@ export default function ActiveRun() {
       <View style={styles.center}>
         <BackButton onPress={goBack} top={backTop} />
         <MuteButton muted={rt.coachMuted} onPress={rt.toggleCoachMute} top={backTop} />
-        {isFinalCountdownTick(rt.countdownNumber) ? (
-          <Text style={styles.countdownNumber}>{rt.countdownNumber}</Text>
-        ) : (
-          <>
-            <Text style={styles.centerText}>Starting in {rt.countdownNumber}s…</Text>
-            <Text style={styles.centerTitle}>{rt.voiceScript?.countdownHeadsUp ?? "Get ready…"}</Text>
-          </>
-        )}
+        <Text style={styles.centerTitle}>{rt.voiceScript?.countdownHeadsUp ?? "Get ready…"}</Text>
+        <Text style={styles.countdownNumber}>{rt.countdownNumber}</Text>
       </View>
     );
   }
@@ -456,7 +449,24 @@ export default function ActiveRun() {
       )}
 
       <View style={styles.mapPlaceholder}>
-        <RunMap points={rt.points} live />
+        <RunMap points={rt.points} currentCoordinate={rt.liveCoordinate} live />
+        {/*
+          TEMPORARY DIAGNOSTIC - remove once real-run testing is done.
+          Floats over the map's own top-left corner (pointerEvents="none" so
+          it never steals a pan/tap from the map underneath) rather than
+          sitting inline in the layout - this screen has no ScrollView, so
+          an inline block growing as more debug lines get added here would
+          risk pushing Pause/Stop off the bottom of the screen on a smaller
+          device. Add further lines to the same Text block below; the box
+          just grows downward over the map, nothing else on screen shifts.
+        */}
+        <View style={styles.debugOverlay} pointerEvents="none">
+          <Text style={styles.debugText}>
+            phase: {rt.phase} | isLocationActive: {String(rt.isLocationActive)}{"\n"}
+            points.length: {rt.points.length} | liveCoordinate:{" "}
+            {rt.liveCoordinate ? `${rt.liveCoordinate.accuracy?.toFixed(1) ?? "?"}m` : "none yet"}
+          </Text>
+        </View>
       </View>
 
       <View style={styles.controls}>
@@ -538,7 +548,7 @@ const styles = StyleSheet.create({
   centerTitle: { fontFamily: fonts.dataBold, fontSize: 19, color: "#fff", textAlign: "center" },
   centerText: { fontFamily: fonts.body, fontSize: 14, color: "#c7c9cb", textAlign: "center" },
   centerButton: { marginTop: 12, width: "100%", maxWidth: 280 },
-  countdownNumber: { fontFamily: fonts.dataBold, fontSize: 96, color: "#fff", lineHeight: 104 },
+  countdownNumber: { fontFamily: fonts.dataBold, fontSize: 96, color: "#fff", lineHeight: 104, marginTop: 16 },
   confirmBox: { alignItems: "center", marginTop: 20, width: "100%" },
   confirmText: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: palette.danger, textAlign: "center", marginBottom: 4 },
   finishedStatRow: { flexDirection: "row", gap: 8, marginVertical: 20, width: "100%", maxWidth: 340 },
@@ -600,6 +610,20 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.1)",
     marginBottom: 16,
   },
+  // TEMPORARY DIAGNOSTIC styles - remove alongside the overlay above once
+  // real-run testing is done. Anchored to the map's top-left corner, clear
+  // of the recenter button (bottom-right) and every other on-screen control.
+  debugOverlay: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    maxWidth: "70%",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    padding: 8,
+    borderRadius: 8,
+    zIndex: 5,
+  },
+  debugText: { color: "#0f0", fontSize: 11, fontFamily: fonts.mono },
   controls: { flexDirection: "row", gap: 10 },
   pauseBtn: {
     flex: 1,
