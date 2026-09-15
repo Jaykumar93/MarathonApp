@@ -1,0 +1,209 @@
+{
+  "label": "fts-baseline-groq-only",
+  "timestamp": "2026-09-15T06:42:03.485Z",
+  "results": [
+    {
+      "category": "kb:pacing",
+      "message": "What's the best way to pace a marathon so I don't blow up in the second half?",
+      "run": 1,
+      "ms": 4696,
+      "status": 200,
+      "ok": true,
+      "replyLength": 522
+    },
+    {
+      "category": "kb:pacing",
+      "message": "What's the best way to pace a marathon so I don't blow up in the second half?",
+      "run": 2,
+      "ms": 3735,
+      "status": 200,
+      "ok": true,
+      "replyLength": 385
+    },
+    {
+      "category": "kb:fueling",
+      "message": "How much should I be eating and drinking during a long run?",
+      "run": 1,
+      "ms": 1689,
+      "status": 200,
+      "ok": true,
+      "replyLength": 431
+    },
+    {
+      "category": "kb:fueling",
+      "message": "How much should I be eating and drinking during a long run?",
+      "run": 2,
+      "ms": 2957,
+      "status": 200,
+      "ok": true,
+      "replyLength": 566
+    },
+    {
+      "category": "kb:injury",
+      "message": "My knee feels a little sore after runs, should I be worried?",
+      "run": 1,
+      "ms": 2318,
+      "status": 200,
+      "ok": true,
+      "replyLength": 426
+    },
+    {
+      "category": "kb:injury",
+      "message": "My knee feels a little sore after runs, should I be worried?",
+      "run": 2,
+      "ms": 1873,
+      "status": 200,
+      "ok": true,
+      "replyLength": 435
+    },
+    {
+      "category": "kb:tapering",
+      "message": "How should I taper in the two weeks before my race?",
+      "run": 1,
+      "ms": 3015,
+      "status": 200,
+      "ok": true,
+      "replyLength": 977
+    },
+    {
+      "category": "kb:tapering",
+      "message": "How should I taper in the two weeks before my race?",
+      "run": 2,
+      "ms": 2202,
+      "status": 200,
+      "ok": true,
+      "replyLength": 893
+    },
+    {
+      "category": "kb:recovery",
+      "message": "How important is sleep for recovering from hard training?",
+      "run": 1,
+      "ms": 2703,
+      "status": 200,
+      "ok": true,
+      "replyLength": 409
+    },
+    {
+      "category": "kb:recovery",
+      "message": "How important is sleep for recovering from hard training?",
+      "run": 2,
+      "ms": 2097,
+      "status": 200,
+      "ok": true,
+      "replyLength": 359
+    },
+    {
+      "category": "personal-data",
+      "message": "How's my training going this week?",
+      "run": 1,
+      "ms": 2114,
+      "status": 200,
+      "ok": true,
+      "replyLength": 90
+    },
+    {
+      "category": "personal-data",
+      "message": "How's my training going this week?",
+      "run": 2,
+      "ms": 1954,
+      "status": 200,
+      "ok": true,
+      "replyLength": 179
+    },
+    {
+      "category": "live-fact",
+      "message": "When is the next Berlin Marathon and when does registration open?",
+      "run": 1,
+      "ms": 6531,
+      "status": 200,
+      "ok": true,
+      "replyLength": 459
+    },
+    {
+      "category": "live-fact",
+      "message": "When is the next Berlin Marathon and when does registration open?",
+      "run": 2,
+      "ms": 3839,
+      "status": 200,
+      "ok": true,
+      "replyLength": 555
+    },
+    {
+      "category": "no-match",
+      "message": "What's a good recipe for pasta carbonara?",
+      "run": 1,
+      "ms": 2289,
+      "status": 200,
+      "ok": true,
+      "replyLength": 1105
+    },
+    {
+      "category": "no-match",
+      "message": "What's a good recipe for pasta carbonara?",
+      "run": 2,
+      "ms": 2165,
+      "status": 200,
+      "ok": true,
+      "replyLength": 187
+    }
+  ],
+  "rows": [
+    {
+      "category": "kb:pacing",
+      "min": 3735,
+      "avg": 4216,
+      "max": 4696,
+      "runs": 2
+    },
+    {
+      "category": "kb:fueling",
+      "min": 1689,
+      "avg": 2323,
+      "max": 2957,
+      "runs": 2
+    },
+    {
+      "category": "kb:injury",
+      "min": 1873,
+      "avg": 2096,
+      "max": 2318,
+      "runs": 2
+    },
+    {
+      "category": "kb:tapering",
+      "min": 2202,
+      "avg": 2609,
+      "max": 3015,
+      "runs": 2
+    },
+    {
+      "category": "kb:recovery",
+      "min": 2097,
+      "avg": 2400,
+      "max": 2703,
+      "runs": 2
+    },
+    {
+      "category": "personal-data",
+      "min": 1954,
+      "avg": 2034,
+      "max": 2114,
+      "runs": 2
+    },
+    {
+      "category": "live-fact",
+      "min": 3839,
+      "avg": 5185,
+      "max": 6531,
+      "runs": 2
+    },
+    {
+      "category": "no-match",
+      "min": 2165,
+      "avg": 2227,
+      "max": 2289,
+      "runs": 2
+    }
+  ],
+  "overallAvg": 2886
+}
