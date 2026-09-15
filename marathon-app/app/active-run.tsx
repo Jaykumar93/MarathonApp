@@ -6,16 +6,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getPlanSessionById, type PlanSessionRow } from "../lib/data/plans";
 import { COUNTDOWN_SECONDS, useRunTracking } from "../lib/runTracking/RunTrackingContext";
 import { computeRouteDistanceMeters, computeRecentPaceSecondsPerKm, computeAveragePaceSecondsPerKm } from "../lib/gpsStats";
-import { getCurrentLeg, type RunLeg } from "../lib/intervalProgress";
+import { getCurrentLeg } from "../lib/intervalProgress";
 import { buildFallbackVoiceScript, type RunVoiceScript } from "../lib/runTracking/voiceScriptFallback";
 import { getOrGenerateVoiceScript } from "../lib/runTracking/voiceScript";
-import { formatDistance, formatMeters, formatPace } from "../lib/units";
+import { formatDistance, formatPace } from "../lib/units";
 import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
 import { fonts, palette } from "../lib/theme";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PhotoPicker } from "../components/ui/PhotoPicker";
 import { RunMap } from "../components/RunMap";
-import { RunProgressBar } from "../components/RunProgressBar";
+import { ActiveRunSheet } from "../components/ActiveRunSheet";
 import { useAuth } from "../lib/auth/AuthContext";
 
 function formatDateShort(iso: string): string {
@@ -30,44 +30,6 @@ function formatElapsed(totalSeconds: number): string {
   return h > 0
     ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
     : `${m}:${String(s).padStart(2, "0")}`;
-}
-
-const LEG_KIND_LABEL: Record<RunLeg["kind"], string> = {
-  warmup: "WARMUP",
-  rep: "INTERVAL",
-  recovery: "RECOVERY JOG",
-  cooldown: "COOLDOWN",
-  complete: "WORKOUT COMPLETE",
-};
-
-/**
- * The live text version of "continue next few km in xyz pace" - which leg
- * of a structured interval workout (see lib/intervalProgress.ts) the
- * runner is in right now, how much of it is left, and what pace it calls
- * for. Voice cues for section transitions now exist too (RunTrackingContext's
- * onLocationUpdate, via lib/runTracking/voiceEvents.ts) - this text stays
- * as the persistent on-screen readout alongside them, not a replacement.
- */
-function legMessage(leg: RunLeg, unit: "km" | "mi"): string {
-  switch (leg.kind) {
-    case "warmup":
-      return `${formatMeters(leg.metersRemainingInLeg)} easy, then reps begin`;
-    case "rep":
-      return `${formatMeters(leg.metersRemainingInLeg)} to go @ ${formatPace(leg.paceSecondsPerKm, unit)}`;
-    case "recovery":
-      return `${formatMeters(leg.metersRemainingInLeg)} easy jog @ ${formatPace(leg.paceSecondsPerKm, unit)}`;
-    case "cooldown":
-      return `${formatMeters(leg.metersRemainingInLeg)} easy to finish`;
-    case "complete":
-      return "Nice work - hit Stop when you're ready.";
-  }
-}
-
-function legKindLabel(leg: RunLeg): string {
-  if (leg.kind === "rep" || leg.kind === "recovery") {
-    return `${LEG_KIND_LABEL[leg.kind]} · REP ${leg.repNumber} OF ${leg.totalReps}`;
-  }
-  return LEG_KIND_LABEL[leg.kind];
 }
 
 /** Top-left, every phase - navigating away never stops tracking (see RunTrackingContext), so this is always safe to show. */
@@ -383,112 +345,46 @@ export default function ActiveRun() {
     : null;
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.mapScreen}>
+      <RunMap points={rt.points} currentCoordinate={rt.liveCoordinate} live recenterBottomOffset={234} />
+      {/*
+        TEMPORARY DIAGNOSTIC - remove once real-run testing is done.
+        pointerEvents="none" so it never steals a pan/tap from the map
+        underneath.
+      */}
+      <View style={[styles.debugOverlay, { top: backTop + 50 }]} pointerEvents="none">
+        <Text style={styles.debugText}>
+          phase: {rt.phase} | isLocationActive: {String(rt.isLocationActive)}{"\n"}
+          points.length: {rt.points.length} | liveCoordinate:{" "}
+          {rt.liveCoordinate ? `${rt.liveCoordinate.accuracy?.toFixed(1) ?? "?"}m` : "none yet"}
+        </Text>
+      </View>
+
       <BackButton onPress={goBack} top={backTop} />
       <MuteButton muted={rt.coachMuted} onPress={rt.toggleCoachMute} top={backTop} />
-      <View style={styles.header}>
-        <View style={[styles.liveDot, rt.phase === "paused" && styles.liveDotPaused]} />
-        <Text style={styles.headerText}>{rt.phase === "paused" ? "PAUSED" : "TRACKING"}</Text>
-      </View>
 
-      <View style={styles.paceBlock}>
-        <Text style={styles.paceValue}>{currentPace != null ? formatPace(currentPace, unit).replace(`/${unit}`, "") : "--:--"}</Text>
-        <Text style={styles.paceLabel}>CURRENT PACE / {unit.toUpperCase()}</Text>
-        {targetPaceSecondsPerKm != null && !currentLeg && (
-          <Text style={styles.paceTarget}>
-            Goal {formatPace(targetPaceSecondsPerKm, unit)}
-            {paceDeltaSecondsPerKm != null && (
-              <Text style={paceDeltaSecondsPerKm <= 0 ? styles.paceAhead : styles.paceBehind}>
-                {" "}
-                ({paceDeltaSecondsPerKm <= 0 ? "-" : "+"}
-                {Math.round(Math.abs(paceDeltaSecondsPerKm))}s)
-              </Text>
-            )}
-          </Text>
-        )}
-      </View>
-
-      <RunProgressBar
-        structure={rt.plannedSession?.interval_structure ?? null}
+      <ActiveRunSheet
+        phase={rt.phase as "running" | "paused"}
+        unit={unit}
+        distanceKm={distanceKm}
+        elapsedSeconds={rt.elapsedSeconds}
+        currentPace={currentPace}
+        averagePace={averagePace}
+        targetPaceSecondsPerKm={targetPaceSecondsPerKm}
+        paceDeltaSecondsPerKm={paceDeltaSecondsPerKm}
         currentLeg={currentLeg}
-        distanceCoveredMeters={distanceMeters}
-        plannedDistanceMeters={rt.plannedSession?.planned_distance_meters ?? null}
+        plannedSession={rt.plannedSession}
+        bottomInset={insets.bottom}
+        onPause={rt.pause}
+        onResume={rt.resume}
+        onStop={rt.stop}
       />
-
-      {currentLeg && (
-        <View style={[styles.intervalBox, currentLeg.kind === "recovery" && styles.intervalBoxRecovery]}>
-          <Text style={styles.intervalKind}>{legKindLabel(currentLeg)}</Text>
-          <Text style={styles.intervalMessage}>{legMessage(currentLeg, unit)}</Text>
-        </View>
-      )}
-
-      <View style={styles.statRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>DIST</Text>
-          <Text style={styles.statValue}>{formatDistance(distanceKm, unit)}</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>TIME</Text>
-          <Text style={styles.statValue}>{formatElapsed(rt.elapsedSeconds)}</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>AVG PACE</Text>
-          <Text style={styles.statValue}>{averagePace != null ? formatPace(averagePace, unit).replace(`/${unit}`, "") : "--:--"}</Text>
-        </View>
-      </View>
-
-      {rt.plannedSession && rt.plannedSession.session_type !== "rest" && !currentLeg && (
-        <View style={styles.plannedNote}>
-          <Text style={styles.plannedNoteText}>
-            Fulfilling today's {rt.plannedSession.session_type} run
-            {rt.plannedSession.planned_distance_meters
-              ? ` · ${formatDistance(rt.plannedSession.planned_distance_meters / 1000, unit)}`
-              : ""}
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.mapPlaceholder}>
-        <RunMap points={rt.points} currentCoordinate={rt.liveCoordinate} live />
-        {/*
-          TEMPORARY DIAGNOSTIC - remove once real-run testing is done.
-          Floats over the map's own top-left corner (pointerEvents="none" so
-          it never steals a pan/tap from the map underneath) rather than
-          sitting inline in the layout - this screen has no ScrollView, so
-          an inline block growing as more debug lines get added here would
-          risk pushing Pause/Stop off the bottom of the screen on a smaller
-          device. Add further lines to the same Text block below; the box
-          just grows downward over the map, nothing else on screen shifts.
-        */}
-        <View style={styles.debugOverlay} pointerEvents="none">
-          <Text style={styles.debugText}>
-            phase: {rt.phase} | isLocationActive: {String(rt.isLocationActive)}{"\n"}
-            points.length: {rt.points.length} | liveCoordinate:{" "}
-            {rt.liveCoordinate ? `${rt.liveCoordinate.accuracy?.toFixed(1) ?? "?"}m` : "none yet"}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.controls}>
-        {rt.phase === "paused" ? (
-          <Pressable style={styles.pauseBtn} onPress={rt.resume} accessibilityRole="button">
-            <Text style={styles.pauseBtnText}>Resume</Text>
-          </Pressable>
-        ) : (
-          <Pressable style={styles.pauseBtn} onPress={rt.pause} accessibilityRole="button">
-            <Text style={styles.pauseBtnText}>Pause</Text>
-          </Pressable>
-        )}
-        <Pressable style={styles.stopBtn} onPress={rt.stop} accessibilityRole="button">
-          <Text style={styles.stopBtnText}>Stop</Text>
-        </Pressable>
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: palette.predawn, padding: 20, paddingTop: 48 },
+  mapScreen: { flex: 1, backgroundColor: palette.predawn },
   center: {
     flex: 1,
     backgroundColor: palette.predawn,
@@ -560,81 +456,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   finishedStatValue: { fontFamily: fonts.dataBold, fontSize: 17, color: "#fff" },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 18 },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: palette.success },
-  liveDotPaused: { backgroundColor: palette.warning },
-  headerText: { fontFamily: fonts.monoSemiBold, fontSize: 11, letterSpacing: 1.5, color: "#c7c9cb" },
-  paceBlock: { alignItems: "center", marginBottom: 20 },
-  paceValue: { fontFamily: fonts.dataBold, fontSize: 56, color: "#fff", lineHeight: 64 },
   paceLabel: { fontFamily: fonts.monoMedium, fontSize: 11, letterSpacing: 1, color: "#8a8d92", marginTop: 4 },
-  paceTarget: { fontFamily: fonts.body, fontSize: 13, color: "#c7c9cb", marginTop: 8 },
-  paceAhead: { color: palette.success, fontFamily: fonts.bodySemiBold },
-  paceBehind: { color: palette.warning, fontFamily: fonts.bodySemiBold },
-  statRow: { flexDirection: "row", gap: 8, marginBottom: 14 },
-  statCard: {
-    flex: 1,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderRadius: 12,
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  statLabel: { fontFamily: fonts.monoMedium, fontSize: 9, letterSpacing: 1, color: "#8a8d92", marginBottom: 4 },
-  statValue: { fontFamily: fonts.dataBold, fontSize: 15, color: "#fff" },
-  plannedNote: { marginBottom: 12, alignItems: "center" },
-  plannedNoteText: { fontFamily: fonts.body, fontSize: 12, color: "#8a8d92", textAlign: "center" },
-  intervalBox: {
-    backgroundColor: "rgba(255,90,31,0.14)",
-    borderWidth: 1,
-    borderColor: "rgba(255,90,31,0.35)",
-    borderRadius: 14,
-    paddingVertical: 12,
-    alignItems: "center",
-    marginBottom: 14,
-  },
-  intervalBoxRecovery: {
-    backgroundColor: "rgba(62,142,126,0.14)",
-    borderColor: "rgba(62,142,126,0.35)",
-  },
-  intervalKind: { fontFamily: fonts.monoSemiBold, fontSize: 11, letterSpacing: 1, color: "#fff", marginBottom: 4 },
-  intervalMessage: { fontFamily: fonts.bodySemiBold, fontSize: 14.5, color: "#fff" },
-  // No overflow:"hidden" here on purpose - see RunMap.tsx's own styles
-  // comment. No alignItems/justifyContent either, unlike the placeholder
-  // text this box used to center - RunMap needs to actually stretch to
-  // fill the box's full width, not just its height, which "center" (the
-  // default cross-axis behavior is "stretch") was silently preventing.
-  mapPlaceholder: {
-    flex: 1,
-    minHeight: 100,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    marginBottom: 16,
-  },
-  // TEMPORARY DIAGNOSTIC styles - remove alongside the overlay above once
-  // real-run testing is done. Anchored to the map's top-left corner, clear
-  // of the recenter button (bottom-right) and every other on-screen control.
+  // TEMPORARY DIAGNOSTIC styles - remove once real-run testing of the
+  // bottom-sheet redesign is done. Sits below the back/mute button row
+  // rather than flush with the top, now that it floats over the full-screen
+  // map instead of a small map box.
   debugOverlay: {
     position: "absolute",
-    top: 8,
-    left: 8,
-    maxWidth: "70%",
+    left: 16,
+    right: 16,
     backgroundColor: "rgba(0,0,0,0.6)",
     padding: 8,
     borderRadius: 8,
     zIndex: 5,
   },
   debugText: { color: "#0f0", fontSize: 11, fontFamily: fonts.mono },
-  controls: { flexDirection: "row", gap: 10 },
-  pauseBtn: {
-    flex: 1,
-    height: 56,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.3)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pauseBtnText: { fontFamily: fonts.bodySemiBold, fontSize: 15.5, color: "#fff" },
-  stopBtn: { flex: 1, height: 56, borderRadius: 14, backgroundColor: palette.accent, alignItems: "center", justifyContent: "center" },
-  stopBtnText: { fontFamily: fonts.bodySemiBold, fontSize: 15.5, color: "#fff" },
 });
