@@ -35,7 +35,7 @@ export function OnboardingStepLayout({
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView contentContainerStyle={[styles.container, { paddingTop: spacing.screenPadding + insets.top }]}>
         <View style={styles.topRow}>
           {step > 1 ? (
