@@ -1,0 +1,211 @@
+{
+  "label": "fts-baseline",
+  "timestamp": "2026-09-15T06:01:08.153Z",
+  "results": [
+    {
+      "category": "kb:pacing",
+      "message": "What's the best way to pace a marathon so I don't blow up in the second half?",
+      "run": 1,
+      "ms": 6276,
+      "status": 200,
+      "ok": true,
+      "replyLength": 488
+    },
+    {
+      "category": "kb:pacing",
+      "message": "What's the best way to pace a marathon so I don't blow up in the second half?",
+      "run": 2,
+      "ms": 6304,
+      "status": 200,
+      "ok": true,
+      "replyLength": 615
+    },
+    {
+      "category": "kb:fueling",
+      "message": "How much should I be eating and drinking during a long run?",
+      "run": 1,
+      "ms": 39439,
+      "status": 200,
+      "ok": true,
+      "replyLength": 505
+    },
+    {
+      "category": "kb:fueling",
+      "message": "How much should I be eating and drinking during a long run?",
+      "run": 2,
+      "ms": 3766,
+      "status": 200,
+      "ok": true,
+      "replyLength": 586
+    },
+    {
+      "category": "kb:injury",
+      "message": "My knee feels a little sore after runs, should I be worried?",
+      "run": 1,
+      "ms": 15786,
+      "status": 200,
+      "ok": true,
+      "replyLength": 299
+    },
+    {
+      "category": "kb:injury",
+      "message": "My knee feels a little sore after runs, should I be worried?",
+      "run": 2,
+      "ms": 9847,
+      "status": 200,
+      "ok": true,
+      "replyLength": 883
+    },
+    {
+      "category": "kb:tapering",
+      "message": "How should I taper in the two weeks before my race?",
+      "run": 1,
+      "ms": 10334,
+      "status": 200,
+      "ok": true,
+      "replyLength": 624
+    },
+    {
+      "category": "kb:tapering",
+      "message": "How should I taper in the two weeks before my race?",
+      "run": 2,
+      "ms": 8729,
+      "status": 200,
+      "ok": true,
+      "replyLength": 924
+    },
+    {
+      "category": "kb:recovery",
+      "message": "How important is sleep for recovering from hard training?",
+      "run": 1,
+      "ms": 4075,
+      "status": 200,
+      "ok": true,
+      "replyLength": 512
+    },
+    {
+      "category": "kb:recovery",
+      "message": "How important is sleep for recovering from hard training?",
+      "run": 2,
+      "ms": 19336,
+      "status": 200,
+      "ok": true,
+      "replyLength": 430
+    },
+    {
+      "category": "personal-data",
+      "message": "How's my training going this week?",
+      "run": 1,
+      "ms": 7758,
+      "status": 200,
+      "ok": true,
+      "replyLength": 148
+    },
+    {
+      "category": "personal-data",
+      "message": "How's my training going this week?",
+      "run": 2,
+      "ms": 10774,
+      "status": 200,
+      "ok": true,
+      "replyLength": 148
+    },
+    {
+      "category": "live-fact",
+      "message": "When is the next Berlin Marathon and when does registration open?",
+      "run": 1,
+      "ms": 14214,
+      "status": 200,
+      "ok": true,
+      "replyLength": 345
+    },
+    {
+      "category": "live-fact",
+      "message": "When is the next Berlin Marathon and when does registration open?",
+      "run": 2,
+      "ms": 1341,
+      "status": 500,
+      "ok": false,
+      "replyLength": 0,
+      "error": "Groq request failed (429): {\"error\":{\"message\":\"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m2044cnhe1wtr4zdqjaqprc0` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 6355, Requested 1810. Please try again in 1.2375s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n"
+    },
+    {
+      "category": "no-match",
+      "message": "What's a good recipe for pasta carbonara?",
+      "run": 1,
+      "ms": 2214,
+      "status": 200,
+      "ok": true,
+      "replyLength": 194
+    },
+    {
+      "category": "no-match",
+      "message": "What's a good recipe for pasta carbonara?",
+      "run": 2,
+      "ms": 1208,
+      "status": 500,
+      "ok": false,
+      "replyLength": 0,
+      "error": "Groq request failed (429): {\"error\":{\"message\":\"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m2044cnhe1wtr4zdqjaqprc0` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 7211, Requested 1633. Please try again in 6.33s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n"
+    }
+  ],
+  "rows": [
+    {
+      "category": "kb:pacing",
+      "min": 6276,
+      "avg": 6290,
+      "max": 6304,
+      "runs": 2
+    },
+    {
+      "category": "kb:fueling",
+      "min": 3766,
+      "avg": 21603,
+      "max": 39439,
+      "runs": 2
+    },
+    {
+      "category": "kb:injury",
+      "min": 9847,
+      "avg": 12817,
+      "max": 15786,
+      "runs": 2
+    },
+    {
+      "category": "kb:tapering",
+      "min": 8729,
+      "avg": 9532,
+      "max": 10334,
+      "runs": 2
+    },
+    {
+      "category": "kb:recovery",
+      "min": 4075,
+      "avg": 11706,
+      "max": 19336,
+      "runs": 2
+    },
+    {
+      "category": "personal-data",
+      "min": 7758,
+      "avg": 9266,
+      "max": 10774,
+      "runs": 2
+    },
+    {
+      "category": "live-fact",
+      "min": 14214,
+      "avg": 14214,
+      "max": 14214,
+      "runs": 1
+    },
+    {
+      "category": "no-match",
+      "min": 2214,
+      "avg": 2214,
+      "max": 2214,
+      "runs": 1
+    }
+  ],
+  "overallAvg": 11347
+}

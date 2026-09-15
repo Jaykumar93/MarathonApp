@@ -1,0 +1,210 @@
+{
+  "label": "rag-hybrid-groq-only",
+  "timestamp": "2026-09-15T06:32:45.871Z",
+  "results": [
+    {
+      "category": "kb:pacing",
+      "message": "What's the best way to pace a marathon so I don't blow up in the second half?",
+      "run": 1,
+      "ms": 2426,
+      "status": 200,
+      "ok": true,
+      "replyLength": 678
+    },
+    {
+      "category": "kb:pacing",
+      "message": "What's the best way to pace a marathon so I don't blow up in the second half?",
+      "run": 2,
+      "ms": 4487,
+      "status": 200,
+      "ok": true,
+      "replyLength": 831
+    },
+    {
+      "category": "kb:fueling",
+      "message": "How much should I be eating and drinking during a long run?",
+      "run": 1,
+      "ms": 2580,
+      "status": 200,
+      "ok": true,
+      "replyLength": 418
+    },
+    {
+      "category": "kb:fueling",
+      "message": "How much should I be eating and drinking during a long run?",
+      "run": 2,
+      "ms": 1862,
+      "status": 200,
+      "ok": true,
+      "replyLength": 422
+    },
+    {
+      "category": "kb:injury",
+      "message": "My knee feels a little sore after runs, should I be worried?",
+      "run": 1,
+      "ms": 2817,
+      "status": 200,
+      "ok": true,
+      "replyLength": 637
+    },
+    {
+      "category": "kb:injury",
+      "message": "My knee feels a little sore after runs, should I be worried?",
+      "run": 2,
+      "ms": 2800,
+      "status": 200,
+      "ok": true,
+      "replyLength": 541
+    },
+    {
+      "category": "kb:tapering",
+      "message": "How should I taper in the two weeks before my race?",
+      "run": 1,
+      "ms": 3523,
+      "status": 200,
+      "ok": true,
+      "replyLength": 888
+    },
+    {
+      "category": "kb:tapering",
+      "message": "How should I taper in the two weeks before my race?",
+      "run": 2,
+      "ms": 5745,
+      "status": 200,
+      "ok": true,
+      "replyLength": 931
+    },
+    {
+      "category": "kb:recovery",
+      "message": "How important is sleep for recovering from hard training?",
+      "run": 1,
+      "ms": 2303,
+      "status": 200,
+      "ok": true,
+      "replyLength": 419
+    },
+    {
+      "category": "kb:recovery",
+      "message": "How important is sleep for recovering from hard training?",
+      "run": 2,
+      "ms": 2683,
+      "status": 200,
+      "ok": true,
+      "replyLength": 384
+    },
+    {
+      "category": "personal-data",
+      "message": "How's my training going this week?",
+      "run": 1,
+      "ms": 2656,
+      "status": 200,
+      "ok": true,
+      "replyLength": 206
+    },
+    {
+      "category": "personal-data",
+      "message": "How's my training going this week?",
+      "run": 2,
+      "ms": 2642,
+      "status": 200,
+      "ok": true,
+      "replyLength": 153
+    },
+    {
+      "category": "live-fact",
+      "message": "When is the next Berlin Marathon and when does registration open?",
+      "run": 1,
+      "ms": 6179,
+      "status": 200,
+      "ok": true,
+      "replyLength": 421
+    },
+    {
+      "category": "live-fact",
+      "message": "When is the next Berlin Marathon and when does registration open?",
+      "run": 2,
+      "ms": 4200,
+      "status": 500,
+      "ok": false,
+      "replyLength": 0,
+      "error": "Groq request failed (429): {\"error\":{\"message\":\"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m2044cnhe1wtr4zdqjaqprc0` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 5297, Requested 4702. Please try again in 14.9925s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n"
+    },
+    {
+      "category": "no-match",
+      "message": "What's a good recipe for pasta carbonara?",
+      "run": 1,
+      "ms": 2847,
+      "status": 200,
+      "ok": true,
+      "replyLength": 169
+    },
+    {
+      "category": "no-match",
+      "message": "What's a good recipe for pasta carbonara?",
+      "run": 2,
+      "ms": 2538,
+      "status": 200,
+      "ok": true,
+      "replyLength": 148
+    }
+  ],
+  "rows": [
+    {
+      "category": "kb:pacing",
+      "min": 2426,
+      "avg": 3457,
+      "max": 4487,
+      "runs": 2
+    },
+    {
+      "category": "kb:fueling",
+      "min": 1862,
+      "avg": 2221,
+      "max": 2580,
+      "runs": 2
+    },
+    {
+      "category": "kb:injury",
+      "min": 2800,
+      "avg": 2809,
+      "max": 2817,
+      "runs": 2
+    },
+    {
+      "category": "kb:tapering",
+      "min": 3523,
+      "avg": 4634,
+      "max": 5745,
+      "runs": 2
+    },
+    {
+      "category": "kb:recovery",
+      "min": 2303,
+      "avg": 2493,
+      "max": 2683,
+      "runs": 2
+    },
+    {
+      "category": "personal-data",
+      "min": 2642,
+      "avg": 2649,
+      "max": 2656,
+      "runs": 2
+    },
+    {
+      "category": "live-fact",
+      "min": 6179,
+      "avg": 6179,
+      "max": 6179,
+      "runs": 1
+    },
+    {
+      "category": "no-match",
+      "min": 2538,
+      "avg": 2693,
+      "max": 2847,
+      "runs": 2
+    }
+  ],
+  "overallAvg": 3206
+}
