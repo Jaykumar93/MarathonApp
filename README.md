@@ -24,9 +24,9 @@ Every training number a runner sees (pace zones, weekly volume, session distance
 
 The full technical writeup — architecture diagrams, the plan-generation engine's math, the AI coach's retrieval architecture and its evolution (embeddings → full-text search → hybrid RAG), the database schema, and real bugs found and fixed along the way — is published here:
 
-**[Stryde Engineering Docs — full technical documentation](https://drive.google.com/file/d/1mANIBJJ4d9t07hWs5aB0TC-iLuK3jJwE/view?usp=sharing)**
+**[Stryde Engineering Docs — full technical documentation](https://htmlpreview.github.io/?https://github.com/Jaykumar93/MarathonApp/blob/main/docs/stryde-docs-updated.html)**
 
-The source is also version-controlled in this repo at [`docs/stryde-docs-updated.html`](docs/stryde-docs-updated.html) — open it directly in a browser to view it offline.
+Also on [Google Drive](https://drive.google.com/file/d/1mANIBJJ4d9t07hWs5aB0TC-iLuK3jJwE/view?usp=sharing), and the source is version-controlled in this repo at [`docs/stryde-docs-updated.html`](docs/stryde-docs-updated.html).
 
 ## Project structure
 
