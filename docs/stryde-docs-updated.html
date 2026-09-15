@@ -1,0 +1,810 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style></head><body>
+<title>Stryde Engineering Docs</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root{
+  --predawn:#14161A; --frost:#EEEFEA; --accent:#FF5A1F; --contour:#2B4C43;
+  --success:#3E8E7E; --warning:#B8860F; --danger:#B3423A; --brand-echo:#2B4C43;
+
+  --bg:#F7F6F2; --surface:#FFFFFF; --surface-2:#F0EFE9; --code-bg:#14161A;
+  --text:#1B1D21; --text-dim:#5B5E58; --text-faint:#8A8D86;
+  --border:#DEDCD3; --border-strong:#C7C4B7;
+  --accent-fg:#FFFFFF;
+  --font-display:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14161A; --surface:#1B1E23; --surface-2:#20242A; --code-bg:#0E1013;
+    --text:#EEEFEA; --text-dim:#AFB3AC; --text-faint:#7C8079;
+    --border:#33373E; --border-strong:#454A52;
+    --warning:#E0B23A; --danger:#E0736A; --success:#5BB6A2; --brand-echo:#6BA696;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14161A; --surface:#1B1E23; --surface-2:#20242A; --code-bg:#0E1013;
+  --text:#EEEFEA; --text-dim:#AFB3AC; --text-faint:#7C8079;
+  --border:#33373E; --border-strong:#454A52;
+  --warning:#E0B23A; --danger:#E0736A; --success:#5BB6A2; --brand-echo:#6BA696;
+  color-scheme: dark;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:600;color:var(--text);text-wrap:balance;line-height:1.2}
+code,pre,.mono{font-family:var(--font-mono)}
+a{color:var(--accent)}
+img{max-width:100%}
+
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+
+/* ---------- Hero ---------- */
+.hero{background:var(--predawn);color:var(--frost);padding:72px 24px 56px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0;background:
+  radial-gradient(600px 300px at 85% -10%, rgba(255,90,31,.25), transparent 60%);
+  pointer-events:none}
+.hero-inner{max-width:1180px;margin:0 auto;position:relative}
+.hero-brand{display:flex;align-items:center;gap:16px;margin:0 0 20px}
+.hero-brand svg{flex-shrink:0}
+.eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+.hero h1{font-size:clamp(34px,5vw,54px);margin:0 0 14px;color:#fff}
+.hero p.lede{font-size:19px;max-width:60ch;color:#D9DAD3;margin:0 0 28px}
+.hero-stats{display:flex;gap:28px;flex-wrap:wrap;margin-top:8px}
+.hero-stat b{display:block;font-family:var(--font-display);font-size:26px;color:#fff}
+.hero-stat span{font-size:12.5px;color:#9EA19A;font-family:var(--font-mono)}
+
+/* ---------- Layout ---------- */
+.layout{display:grid;grid-template-columns:230px 1fr;gap:48px;padding:40px 24px 100px;max-width:1180px;margin:0 auto;align-items:start}
+@media (max-width:880px){.layout{grid-template-columns:1fr}}
+
+nav.toc{position:sticky;top:20px;max-height:calc(100vh - 40px);overflow-y:auto;font-size:13.5px;padding-right:8px}
+@media (max-width:880px){nav.toc{position:static;max-height:none;border:1px solid var(--border);border-radius:12px;padding:16px;background:var(--surface)}}
+nav.toc .toc-title{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;font-size:11px;color:var(--text-faint);margin-bottom:10px}
+nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:toc}
+nav.toc li{margin-bottom:2px}
+nav.toc a{display:block;color:var(--text-dim);text-decoration:none;padding:5px 8px;border-radius:6px;border-left:2px solid transparent}
+nav.toc a:hover{color:var(--text);background:var(--surface-2)}
+nav.toc ol ol{margin:2px 0 6px 10px}
+nav.toc ol ol a{font-size:12.5px;color:var(--text-faint)}
+
+main{min-width:0}
+section{margin-bottom:64px;scroll-margin-top:20px}
+section > .kicker{font-family:var(--font-mono);font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:.07em;margin:0 0 6px}
+section > h2{font-size:28px;margin:0 0 18px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+h3{font-size:19px;margin:32px 0 10px}
+h4{font-size:15px;margin:22px 0 8px;color:var(--text-dim)}
+p{margin:0 0 14px;color:var(--text)}
+p.dim{color:var(--text-dim)}
+ul,ol{margin:0 0 14px;padding-left:22px}
+li{margin-bottom:6px}
+strong{font-weight:600}
+
+/* ---------- Components ---------- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px;margin:18px 0}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:720px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11.5px;padding:3px 10px;border-radius:100px;border:1px solid var(--border-strong);color:var(--text-dim);background:var(--surface-2)}
+
+table{width:100%;border-collapse:collapse;margin:14px 0 22px;font-size:14px}
+caption{text-align:left;font-family:var(--font-mono);font-size:12px;color:var(--text-faint);margin-bottom:6px}
+th{text-align:left;font-family:var(--font-mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);padding:8px 12px;border-bottom:1px solid var(--border-strong);white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text-dim)}
+td:first-child,td code{color:var(--text)}
+tr:last-child td{border-bottom:none}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+.table-wrap table{margin:0}
+.table-wrap th:first-child,.table-wrap td:first-child{padding-left:16px}
+
+code{background:var(--surface-2);border:1px solid var(--border);padding:1px 6px;border-radius:5px;font-size:.88em;color:var(--accent)}
+pre{background:var(--code-bg);color:#D9DAD3;border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:13px;line-height:1.6;margin:14px 0}
+pre code{background:none;border:none;padding:0;color:inherit;font-size:1em}
+
+.callout{border-radius:10px;padding:14px 16px;margin:16px 0;border:1px solid var(--border);border-left:3px solid var(--border-strong);font-size:14.5px}
+.callout .label{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px}
+.callout.bug{border-left-color:var(--danger)}
+.callout.bug .label{color:var(--danger)}
+.callout.decision{border-left-color:var(--contour)}
+.callout.decision .label{color:var(--success)}
+.callout.reject{border-left-color:var(--warning)}
+.callout.reject .label{color:var(--warning)}
+.callout p:last-child{margin-bottom:0}
+
+.status-done{color:var(--success);font-weight:600}
+.status-progress{color:var(--warning);font-weight:600}
+.status-open{color:var(--text-faint)}
+
+figure{margin:22px 0}
+figure svg{width:100%;height:auto;display:block;background:var(--surface);border:1px solid var(--border);border-radius:12px}
+figcaption{font-size:13px;color:var(--text-faint);margin-top:8px;text-align:center}
+
+.diag-box{fill:var(--surface-2);stroke:var(--border-strong)}
+.diag-accent{fill:color-mix(in srgb, var(--accent) 14%, var(--surface));stroke:var(--accent)}
+.diag-contour{fill:color-mix(in srgb, var(--contour) 16%, var(--surface));stroke:var(--contour)}
+.diag-success{fill:color-mix(in srgb, var(--success) 16%, var(--surface));stroke:var(--success)}
+.diag-warn{fill:color-mix(in srgb, var(--warning) 16%, var(--surface));stroke:var(--warning)}
+.diag-outer{fill:none;stroke:var(--border-strong);stroke-dasharray:4 3}
+.dt{font-family:var(--font-body);font-weight:600;font-size:13px;fill:var(--text)}
+.ds{font-family:var(--font-body);font-size:11px;fill:var(--text-dim)}
+.dl{font-family:var(--font-mono);font-size:10.5px;fill:var(--text-faint)}
+.arrow{stroke:var(--text-faint);stroke-width:1.2;fill:none}
+
+.mermaid{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+
+footer{border-top:1px solid var(--border);padding:32px 24px 60px;text-align:center;color:var(--text-faint);font-size:13px}
+</style>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-brand">
+      <svg width="52" height="52" viewBox="0 0 100 100" role="img" aria-label="Stryde's Ridge Echo mark — a training-block terrain profile line, drawn twice">
+        <g transform="translate(-3,4)">
+          <polyline points="24,74 40,64 52,70 64,40 72,48 80,24 88,56" fill="none" stroke="#6BA696" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+          <polyline points="18,68 34,58 46,64 58,34 66,42 74,18 82,50" fill="none" stroke="#FF5A1F" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="74" cy="18" r="5" fill="#3E8E7E"/>
+        </g>
+      </svg>
+      <p class="eyebrow" style="margin:0">Project documentation — ideation to implementation</p>
+    </div>
+    <h1>Stryde</h1>
+    <p class="lede">A free, cross-platform marathon training app: a deterministic rule-based plan engine, rich activity tracking (GPS, manual, auto-sync), and an AI coach that explains training data but never invents it.</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><b>8</b><span>build tasks</span></div>
+      <div class="hero-stat"><b>10</b><span>database tables</span></div>
+      <div class="hero-stat"><b>4</b><span>edge functions</span></div>
+      <div class="hero-stat"><b>30</b><span>app screens</span></div>
+      <div class="hero-stat"><b>2</b><span>LLM providers</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+<nav class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#vision">1. Vision &amp; origin</a></li>
+    <li><a href="#stack">2. Tech stack</a></li>
+    <li><a href="#architecture">3. System architecture</a></li>
+    <li><a href="#features">4. Screens &amp; features</a></li>
+    <li><a href="#plan-engine">5. Plan generation engine</a>
+      <ol>
+        <li><a href="#pe-inputs">Onboarding inputs</a></li>
+        <li><a href="#pe-periodization">Periodization model</a></li>
+        <li><a href="#pe-pace">Pace &amp; volume math</a></li>
+        <li><a href="#pe-sessions">Session distribution</a></li>
+        <li><a href="#pe-adjust">Adaptive adjustment</a></li>
+      </ol>
+    </li>
+    <li><a href="#tracking">6. Tracking &amp; activity logging</a>
+      <ol>
+        <li><a href="#tr-manual">Manual logging</a></li>
+        <li><a href="#tr-gps">GPS tracking</a></li>
+        <li><a href="#tr-voice">Active Run &amp; voice coaching</a></li>
+        <li><a href="#tr-health">Health Connect</a></li>
+      </ol>
+    </li>
+    <li><a href="#coach">7. AI coach architecture</a>
+      <ol>
+        <li><a href="#co-journey">The journey</a></li>
+        <li><a href="#co-flow">Turn flow</a></li>
+        <li><a href="#co-sys">System architecture</a></li>
+        <li><a href="#co-correct">Correctness guarantees</a></li>
+        <li><a href="#co-rag">Hybrid RAG in detail</a></li>
+      </ol>
+    </li>
+    <li><a href="#db">8. Database design</a></li>
+    <li><a href="#status">9. Status &amp; roadmap</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section id="vision">
+  <p class="kicker">01</p>
+  <h2>Vision &amp; origin</h2>
+  <p>Stryde set out to be a <strong>Runna alternative built entirely on free-tier infrastructure</strong> — personalized marathon training without a subscription. Every training number a runner sees comes from a deterministic, testable rule engine, never from an LLM; the AI layer's job is to explain and contextualize that data, not generate it. That boundary shows up everywhere in this document, because it's the single decision the rest of the architecture is built to protect.</p>
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="margin-top:0">Target user</h4>
+      <p class="dim" style="margin-bottom:0">The founder's own training, plus a small, manually-approved cohort of technically-tolerant early testers willing to sideload an Android APK. Not built for a general/non-technical audience yet, and not iOS — though the codebase is cross-platform from day one so iOS needs no rearchitecture later.</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">Distribution</h4>
+      <p class="dim" style="margin-bottom:0">Android-first, direct-share APK (not a Play Store listing), gated behind a manual waitlist approval — no self-serve signup-to-access flow while the product is still being hardened.</p>
+    </div>
+  </div>
+  <div class="callout decision">
+    <span class="label">Core architectural principle</span>
+    <p>The plan engine <code>lib/planEngine/</code> is a pure, dependency-free TypeScript module — no network calls, no LLM involvement, fully unit-testable with fake onboarding inputs. An AI-generates-the-plan approach was explicitly considered and rejected: it reopens the injury risk the rule-based design exists to avoid, it's non-deterministic (can't be tested the same way), and training an AI on real published plans would conflict with the project's "self-authored knowledge base only, never scraped" rule. A cited investigation into a competitor's algorithm-only approach — physical therapists reporting real injuries traced to "algorithms accept[ing] user self-assessments uncritically" — directly shaped two concrete rules downstream: a forced easy-only intro period for unproven beginners, and measured activity data always outranking self-reported fitness.</p>
+  </div>
+
+  <h3>Design language — the Ridge Echo mark and "Pre-Dawn Run"</h3>
+  <p>The app icon (<code>components/ui/BrandMark.tsx</code>) draws the same terrain-profile polyline the Plan tab's own <code>BlockProfile</code> hero uses to visualize a training block's shape — traced twice, offset and faded on the first pass, solid on the second, as if the line were echoing — with a single accent dot marking the peak. The same shape doing double duty as both the app's icon and a real in-app data visualization isn't a coincidence: it's meant to read as "this app is about the shape of your training," not a generic running glyph.</p>
+  <div class="grid-3">
+    <div class="card">
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <span style="width:28px;height:28px;border-radius:7px;background:#14161A;border:1px solid var(--border)" title="Pre-Dawn #14161A"></span>
+        <span style="width:28px;height:28px;border-radius:7px;background:#EEEFEA;border:1px solid var(--border)" title="Frost #EEEFEA"></span>
+        <span style="width:28px;height:28px;border-radius:7px;background:#FF5A1F;border:1px solid var(--border)" title="Accent #FF5A1F"></span>
+      </div>
+      <h4 style="margin-top:0">Pre-Dawn / Frost / Accent</h4>
+      <p class="dim" style="margin-bottom:0">The base palette every screen builds from — a near-black ground, a warm off-white surface, and one saturated orange accent reserved for calls to action and the one thing on a screen that should draw the eye.</p>
+    </div>
+    <div class="card">
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <span style="width:28px;height:28px;border-radius:7px;background:#2B4C43;border:1px solid var(--border)" title="Contour #2B4C43"></span>
+        <span style="width:28px;height:28px;border-radius:7px;background:#3E8E7E;border:1px solid var(--border)" title="Success #3E8E7E"></span>
+      </div>
+      <h4 style="margin-top:0">Contour &amp; Success</h4>
+      <p class="dim" style="margin-bottom:0">A muted forest-green pair used for the mark's echo line and for anything meaning "done," "on track," or "healthy" — recovery legs, completed sessions, a synced connection.</p>
+    </div>
+    <div class="card">
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <span style="width:28px;height:28px;border-radius:7px;background:#B8860F;border:1px solid var(--border)" title="Warning #B8860F"></span>
+        <span style="width:28px;height:28px;border-radius:7px;background:#B3423A;border:1px solid var(--border)" title="Danger #B3423A"></span>
+      </div>
+      <h4 style="margin-top:0">Warning &amp; Danger</h4>
+      <p class="dim" style="margin-bottom:0">Reserved strictly for things that need attention — a missed-session banner, a destructive confirm, a real error — never used decoratively.</p>
+    </div>
+  </div>
+  <p class="dim" style="font-size:13.5px">Same core hex values light and dark — only surfaces, text, and borders reskin between the two modes (see <a href="#features">Dark mode</a>), so the brand doesn't shift depending on the runner's own device setting. Active Run is the one deliberate exception, permanently dark for outdoor daylight legibility regardless of the toggle.</p>
+</section>
+
+<section id="stack">
+  <p class="kicker">02</p>
+  <h2>Tech stack</h2>
+  <div class="grid-3">
+    <div class="card">
+      <h4 style="margin-top:0">Frontend</h4>
+      <p class="dim" style="margin-bottom:0">React Native 0.86 + React 19, Expo SDK 57 (expo-router file-based nav), react-native-maps, react-native-svg, react-native-health-connect, expo-location / -task-manager / -notifications / -speech / -sharing, Sentry, react-native-web (web target).</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">Backend</h4>
+      <p class="dim" style="margin-bottom:0">Supabase: Postgres (pgvector, pg_cron, pg_net extensions), Auth, Storage, Edge Functions (Deno). RLS on every table. No custom server beyond Edge Functions.</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">AI &amp; external services</h4>
+      <p class="dim" style="margin-bottom:0">Gemini Flash (primary generation + embeddings) + Groq (fallback generation), pgvector (semantic search), Tavily (live web search), Open-Meteo (race-day weather), Google Maps, Firebase Cloud Messaging (push), Sentry (crash reporting).</p>
+    </div>
+  </div>
+  <p class="dim" style="font-size:13.5px">Every external service is named explicitly to the user in-app (<code>privacy-policy.tsx</code>) — nothing is a silent third-party dependency.</p>
+</section>
+
+<section id="architecture">
+  <p class="kicker">03</p>
+  <h2>System architecture</h2>
+  <p>The client never talks to a custom server — every read/write goes through Supabase directly (Postgres via <code>@supabase/supabase-js</code>, RLS-scoped by the caller's own JWT) or through one of four Edge Functions for anything needing a secret or an LLM call.</p>
+  <figure>
+    <svg viewBox="0 0 900 520" role="img" aria-label="Stryde system architecture: the React Native client talks to Supabase Auth, Postgres, and Storage directly, and to four Edge Functions for AI and cron work; the Edge Functions in turn call Gemini/Groq and Tavily, plus Open-Meteo and Sentry.">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <rect x="330" y="20" width="240" height="56" rx="10" class="diag-accent"/>
+      <text x="450" y="42" text-anchor="middle" class="dt">React Native client</text>
+      <text x="450" y="60" text-anchor="middle" class="ds">Expo Router · 30 screens</text>
+
+      <rect x="40" y="130" width="820" height="230" rx="20" class="diag-outer"/>
+      <text x="64" y="156" class="dt">Supabase</text>
+
+      <rect x="70" y="180" width="160" height="56" rx="10" class="diag-box"/>
+      <text x="150" y="202" text-anchor="middle" class="dt">Auth</text>
+      <text x="150" y="220" text-anchor="middle" class="ds">Google · email/pw</text>
+
+      <rect x="260" y="180" width="180" height="56" rx="10" class="diag-box"/>
+      <text x="350" y="202" text-anchor="middle" class="dt">Postgres</text>
+      <text x="350" y="220" text-anchor="middle" class="ds">10 tables · RLS · pgvector</text>
+
+      <rect x="470" y="180" width="160" height="56" rx="10" class="diag-box"/>
+      <text x="550" y="202" text-anchor="middle" class="dt">Storage</text>
+      <text x="550" y="220" text-anchor="middle" class="ds">activity-photos</text>
+
+      <rect x="660" y="180" width="170" height="56" rx="10" class="diag-box"/>
+      <text x="745" y="202" text-anchor="middle" class="dt">pg_cron + pg_net</text>
+      <text x="745" y="220" text-anchor="middle" class="ds">hourly notification job</text>
+
+      <rect x="90" y="270" width="740" height="70" rx="10" class="diag-contour"/>
+      <text x="460" y="294" text-anchor="middle" class="dt">Edge Functions (Deno)</text>
+      <text x="180" y="318" text-anchor="middle" class="ds">coach-chat</text>
+      <text x="350" y="318" text-anchor="middle" class="ds">generate-run-script</text>
+      <text x="530" y="318" text-anchor="middle" class="ds">send-daily-notification</text>
+      <text x="700" y="318" text-anchor="middle" class="ds">admin-set-approval</text>
+
+      <rect x="60" y="420" width="150" height="56" rx="10" class="diag-box"/>
+      <text x="135" y="442" text-anchor="middle" class="dt">Gemini / Groq</text>
+      <text x="135" y="460" text-anchor="middle" class="ds">generation + embeddings</text>
+
+      <rect x="345" y="420" width="150" height="56" rx="10" class="diag-box"/>
+      <text x="420" y="442" text-anchor="middle" class="dt">Tavily</text>
+      <text x="420" y="460" text-anchor="middle" class="ds">live web search</text>
+
+      <rect x="630" y="420" width="200" height="56" rx="10" class="diag-box"/>
+      <text x="730" y="442" text-anchor="middle" class="dt">Open-Meteo · Sentry</text>
+      <text x="730" y="460" text-anchor="middle" class="ds">weather · crash reporting</text>
+
+      <line x1="450" y1="76" x2="450" y2="128" class="arrow" marker-end="url(#ar)"/>
+      <path d="M135 340 L135 420" class="arrow" marker-end="url(#ar)"/>
+      <path d="M420 340 L420 420" class="arrow" marker-end="url(#ar)"/>
+      <path d="M730 340 L730 420" class="arrow" marker-end="url(#ar)"/>
+    </svg>
+    <figcaption>The client reaches Supabase directly for everything except AI/cron work, which routes through four Deno Edge Functions.</figcaption>
+  </figure>
+
+  <h3>Navigation &amp; auth gating</h3>
+  <p>Expo Router's file-based routing splits into an <code>(auth)</code> group (sign-in/up, forgot-password), an <code>onboarding/</code> group (6 steps), a 5-tab main shell <code>(tabs)/</code>, and 12 pushed top-level screens. A single <code>AuthGate</code> in <code>app/_layout.tsx</code> runs three sequential checks on every navigation: signed-out users get bounced to sign-in (except the auth group and the privacy policy, reachable pre-account); signed-in-but-not-approved users get bounced to a waitlist screen; approved users get bounced back into the tabs unless they're inside one of the explicitly exempted top-level screens. Every new top-level screen this project has ever added needed its own entry in that exemption list — a recurring gotcha called out repeatedly across the implementation logs.</p>
+
+  <h3>Production build: EAS environments, and a genuine blank-screen bug</h3>
+  <p>The first real production Android build (an <code>internal</code>-distribution APK for direct-share sideloading, not a Play Store <code>store</code> build) surfaced a config gotcha that a dev-client build never exercises: EAS's build <em>profiles</em> (<code>development</code>/<code>preview</code>/<code>production</code> in <code>eas.json</code>) are a separate concept from EAS-managed <em>environments</em>, which only auto-resolve to <code>"production"</code> when a profile's <code>distribution</code> is <code>"store"</code> — this project's <code>production</code> profile uses <code>"internal"</code>, so it silently fell through to the <code>"preview"</code> environment (zero configured env vars) until <code>"environment": "production"</code> was set explicitly. A release-type build also enables R8/ProGuard minification for the first time ever on this codebase, since every prior build had been a dev-client build that loads JS live from Metro and never exercises it.</p>
+  <div class="callout bug">
+    <span class="label">Real bug — a permanently blank screen with zero diagnostic signal</span>
+    <p>Roughly ten hypotheses were tested and ruled out in sequence — missing EAS env vars (a real, separate bug, fixed but didn't resolve this), the Sentry Metro/config plugin, R8/ProGuard, a stale AsyncStorage state, an Expo Router patch-version mismatch, EAS's build-fingerprint cache — before real on-device evidence (adb was blocked by a Windows Firewall issue the entire time, so the working technique was temporary on-screen debug overlays, hot-reloaded through the existing Metro connection) isolated the actual cause: <code>AuthContext</code>'s initial <code>supabase.auth.getSession()</code> call could, intermittently, never settle at all — not reject, not resolve, just hang, with <code>loading</code> stuck <code>true</code> and <code>hasActiveGoal</code> stuck <code>null</code> forever. No thrown exception (nothing for Sentry to capture), no rejected promise — a native-crash-indistinguishable blank screen with genuinely nothing to go on until the overlays made the hang visible. Fixed with a <code>.finally()</code>/<code>finally{}</code> guarantee around both the initial session check and the auth-state-change listener, plus an independent 4-second timeout forcing font-loading to stop blocking the splash screen either way. The precise root cause of <em>why</em> the promise hung was never conclusively identified — it stopped reproducing once the fix landed — so this is "confirmed the symptom is gone across several cold launches," not "found the exact mechanism," and worth watching for recurrence.</p>
+  </div>
+</section>
+
+<section id="features">
+  <p class="kicker">04</p>
+  <h2>Screens &amp; features</h2>
+  <div class="table-wrap">
+    <table>
+      <caption>The 5-tab main shell</caption>
+      <tr><th>Tab</th><th>What it shows</th></tr>
+      <tr><td>Home</td><td>Countdown to race day, weekly calendar strip, plan-adjustment banner, today's session, a Block Profile mini-slice, mileage goal, recent activity, gear, weather, a coach insight card.</td></tr>
+      <tr><td>Plan</td><td>Full Block Profile terrain hero, week-by-week session list, calendar scroller, inline mark-done / move-to-tomorrow actions.</td></tr>
+      <tr><td>Track</td><td>Always-available run-start screen (GPS or manual) — full-bleed, no tab bar while a run is active.</td></tr>
+      <tr><td>Activity</td><td>History list plus Trends: stats, pace, mileage, filterable by date range and type.</td></tr>
+      <tr><td>Coach</td><td>AI chat, conversation history, reference chips linking a reply back to the activity or knowledge-base article it drew on.</td></tr>
+    </table>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <caption>Pushed detail &amp; utility screens</caption>
+      <tr><th>Screen</th><th>Purpose</th></tr>
+      <tr><td>settings</td><td>Theme, distance unit, voice coaching, notification hour, Health Connect connect/sync/disconnect, sign-out.</td></tr>
+      <tr><td>edit-plan</td><td>Regenerate an existing goal's plan (distance, date, calibration) via supersede-and-recreate.</td></tr>
+      <tr><td>log-activity</td><td>Manual entry — quick mode (date/type/distance/duration/RPE) plus an expandable detail section.</td></tr>
+      <tr><td>run-summary</td><td>Post-run detail/edit view: route, splits, shoe, planned-vs-actual delta, delete.</td></tr>
+      <tr><td>planned-session</td><td>Detail of an upcoming session, voice-script preview, quick-start into Active Run.</td></tr>
+      <tr><td>active-run</td><td>Live GPS tracking, permanently dark, countdown start, Pace Band, voice cues.</td></tr>
+      <tr><td>share-run</td><td>Shareable route card + GPX/TCX export.</td></tr>
+      <tr><td>gear</td><td>Shoe list, cumulative mileage, retirement.</td></tr>
+      <tr><td>race-day</td><td>Coach-generated readiness summary, full Pace Band, race-day weather, editable morning-of checklist.</td></tr>
+      <tr><td>notifications</td><td>Persistent in-app inbox (missed-run reminders today).</td></tr>
+      <tr><td>admin</td><td>Waitlist approve/revoke, gated by <code>profiles.is_admin</code>.</td></tr>
+      <tr><td>privacy-policy</td><td>Names every third party by name; reachable pre-signup.</td></tr>
+    </table>
+  </div>
+
+  <h3>Dark mode</h3>
+  <p class="dim">A full app-wide light/dark toggle (<code>profiles.theme_preference</code>) built around the "Pre-Dawn Run" palette — the same core hex values in both modes, only surfaces/text/borders reskin. Active Run is the sole permanently-dark exception, for outdoor legibility regardless of the toggle.</p>
+
+  <h3>Notifications — two independent systems</h3>
+  <p class="dim">An ephemeral OS push (hourly <code>pg_cron</code> job → <code>send-daily-notification</code>, gated by each user's own local hour and IANA timezone) delivers a daily AI motivational nudge. Separately, a persistent <code>notifications</code> table backs an in-app inbox — today populated only by missed-run reminders — so a reminder survives even if the transient push was dismissed unseen.</p>
+</section>
+
+<section id="plan-engine">
+  <p class="kicker">05</p>
+  <h2>Plan generation engine</h2>
+  <p>A pure, deterministic, dependency-free module (<code>lib/planEngine/</code>) — no Supabase, no network, no LLM. It takes a <code>GoalInput</code> and returns a <code>GeneratedPlan</code>; persisting the result and building live <code>historicalContext</code> from real activity data is the calling code's job, never the engine's own.</p>
+
+  <h3 id="pe-inputs">Onboarding inputs</h3>
+  <div class="table-wrap">
+    <table>
+      <tr><th>Field</th><th>Meaning</th></tr>
+      <tr><td><code>raceDistanceKm</code></td><td>Raw km value (not an enum) — supports custom and ultra distances. Bucketed by <code>getDistanceCategory()</code> into short/middle/marathon/ultra, which drives methodology throughout.</td></tr>
+      <tr><td><code>goalDate</code></td><td>Race day; also becomes the date the race session lands on.</td></tr>
+      <tr><td><code>targetTimeSeconds</code></td><td>Desired finish time — 2nd in the pace-evidence trust chain.</td></tr>
+      <tr><td><code>currentWeeklyMileageKm</code></td><td>Self-reported fitness — 2nd-lowest-trust volume signal.</td></tr>
+      <tr><td><code>experienceLevel</code></td><td>Drives fallback pace zones, fallback starting volume, and the beginner intro-period gate.</td></tr>
+      <tr><td><code>calibrationRaceTimeSeconds</code> / <code>...DistanceKm</code></td><td>A real recent race result, predicts pace via Riegel's formula. Required together.</td></tr>
+      <tr><td><code>trainingDaysPerWeek</code></td><td>1–7, selects the session-type-per-week table row.</td></tr>
+      <tr><td><code>longRunDay</code></td><td>Anchors the week — every other session is spaced out from it.</td></tr>
+      <tr><td><code>historicalContext.recentAvgWeeklyDistanceKm</code></td><td>Measured (not reported) recent volume — highest-trust volume signal, always wins when present.</td></tr>
+      <tr><td><code>historicalContext.priorRaceResults</code></td><td>Actual finish times from the runner's own completed goals — highest-trust pace signal, outranks even an explicit target time.</td></tr>
+    </table>
+  </div>
+
+  <h3 id="pe-periodization">Periodization model</h3>
+  <p>Four phases in fixed order — <strong>base → build → peak → taper</strong> — sourced from Pfitzinger-style periodization research, not placeholder guesses.</p>
+  <div class="table-wrap">
+    <table>
+      <tr><th>Phase</th><th>Length</th></tr>
+      <tr><td>Base</td><td>~25% of total weeks (floor 1)</td></tr>
+      <tr><td>Build</td><td>Whatever remains after the other three are subtracted (floor 1)</td></tr>
+      <tr><td>Peak</td><td>2 weeks if total ≥ 16, else 1 (+1 for long ultra plans)</td></tr>
+      <tr><td>Taper</td><td>3 weeks if total ≥ 14, else 2 (+1 for long ultra plans)</td></tr>
+    </table>
+  </div>
+  <p class="dim" style="font-size:13.5px">Peak and taper are deliberately <em>fixed</em>, not proportional to plan length — "a 5-week taper is never appropriate regardless of plan length."</p>
+
+  <h4>Plan length by distance</h4>
+  <div class="table-wrap">
+    <table>
+      <tr><th>Distance</th><th>Default weeks</th><th>Minimum weeks</th></tr>
+      <tr><td>5K</td><td>8</td><td>5</td></tr>
+      <tr><td>10K</td><td>10</td><td>6</td></tr>
+      <tr><td>Half marathon</td><td>12</td><td>8</td></tr>
+      <tr><td>Marathon</td><td>18</td><td>12</td></tr>
+      <tr><td>Ultra</td><td colspan="2">Extrapolated: +0.35 (default) / +0.25 (min) weeks per km beyond marathon</td></tr>
+    </table>
+  </div>
+  <p class="dim" style="font-size:13.5px">Below the structural floor of 5 weeks, generation refuses outright. Between the floor and the recommended minimum, a plan is still built — just flagged with a schedule-feasibility warning rather than blocked.</p>
+
+  <h3 id="pe-pace">Pace &amp; volume math</h3>
+  <p><strong>Pace-zone trust chain</strong> (each tier only used if the one above is absent): a prior real race result → an explicit target time (capped if unrealistic, below) → a calibration race via Riegel's formula → experience-level default bands.</p>
+  <pre><code>Riegel's formula:  T2 = T1 × (D2 / D1)^1.06
+
+Marathon/ultra correction (Riegel underestimates long-distance time):
+  ×1.03 base
+  ×1.02 extra if the calibration race was ≤10km (large distance gap)
+  ×1.08 extra on top for ultra goals
+
+Feasibility cap: a requested target time faster than 93% of the
+evidence-based prediction is overridden by the evidence-based pace,
+with a warning attached to the plan.</code></pre>
+
+  <p><strong>Weekly volume progression</strong> — a "3-up-1-down" cycle: three weeks of +9% growth, then a cutback week at 72.5% of that cycle's peak, capped overall at 1.6× the starting weekly volume.</p>
+  <div class="callout bug">
+    <span class="label">Real bug — the compounding-decay cycle</span>
+    <p>Each new cycle's growth must compound from the <em>previous cycle's peak</em>, not from the cutback week that preceded it. Growing off the cutback dip instead nets <code>1.09³ × 0.725 ≈ 0.939</code> per 4-week cycle — net <strong>decay</strong> every cycle instead of progress. Invisible to short unit tests (which only ever exercised 1–2 cutbacks); caught only by running the actual CLI tool against a realistic 26-week plan and noticing the peak volume come out "absurdly low" (17.8km/week instead of the expected 24km/week cap). Fixed by tracking the last cycle's peak separately. The team's own stated lesson from this: <em>run the thing end-to-end and eyeball a number against intuition — green tests on a short scenario aren't sufficient for compounding math.</em></p>
+  </div>
+
+  <h3 id="pe-sessions">Session distribution</h3>
+  <p>Three lookup tables, keyed by training days/week and phase: a <strong>base table</strong> (favors tempo), a <strong>hard table</strong> (introduces intervals, used build/peak/taper), and an <strong>ultra table</strong> (80/20-principle, minimal tempo, never interval). The long run always lands on the user's chosen day; everything else is spread by even step-spacing so hard sessions aren't clustered by construction.</p>
+  <div class="callout bug">
+    <span class="label">Real bug — uncapped easy days</span>
+    <p>An "easy" day absorbs whatever weekly volume the long/tempo/interval sessions didn't use. Previously uncapped, a low training-days-per-week plan could dump 55–70% of an entire week's volume into one easy run — often bigger than that week's own long run, and frequently the plan's very first scheduled session. Fixed with a hard cap: no easy run may exceed 65% of that week's long-run distance. Leftover volume beyond the cap is simply dropped — the weekly total becomes a soft target, not an exact quota to force-fit.</p>
+  </div>
+  <p><strong>Interval structure</strong> is a real warmup/reps/recovery/cooldown shape (added as a follow-up once Active Run's live guidance for interval days turned out no more specific than any other run type) — rep distance scales by phase (600m build/taper, 1000m peak), recovery is 50% of rep distance, and rep count is derived from the remaining "hard" time budget, clamped 3–12 reps.</p>
+
+  <h3 id="pe-adjust">Adaptive adjustment — proposed, never applied automatically</h3>
+  <p>Two or more missed sessions (excluding rest/race days) in the trailing 7 days triggers a banner offering to regenerate the plan from today forward, at a volume the runner can actually sustain right now — computed from their real trailing-14-day logged average, <em>not</em> the original self-reported starting mileage ("exactly the number that led to the plan being too aggressive to keep up with in the first place"). Race day, distance, and experience level are untouched — only the ramp restarts, gently. Declining sets a 7-day cooldown before re-prompting. The banner's own code comment is explicit: <em>"Never auto-applies anything — this only ever proposes, and only acts on an explicit tap."</em></p>
+
+  <h4>Plan history — nothing is ever deleted</h4>
+  <p class="dim">Regenerating a plan sets <code>is_deleted=true</code> on the superseded row and inserts a fresh one, rather than overwriting in place — a partial unique index enforces at most one <em>current</em> plan per goal while allowing unlimited historical ones to accumulate. A day already lived through under an old plan stays visible on the calendar even after an edit, sourced from the superseded plan's own session rows rather than vanishing.</p>
+</section>
+
+<section id="tracking">
+  <p class="kicker">06</p>
+  <h2>Tracking &amp; activity logging</h2>
+
+  <h3 id="tr-manual">Manual logging</h3>
+  <p>Only <strong>distance and duration are save-blocking</strong> — RPE, notes, heart rate, and elevation are always skippable, behind an expandable disclosure. A logged activity that's short of a linked session's target distance stays linked but doesn't flip that session to "done" — the same "does this still meet the target" check runs on create, edit, and delete, so session-completion state always reflects what's actually still logged.</p>
+
+  <h3 id="tr-gps">GPS tracking</h3>
+  <p><code>expo-location</code> at <strong>Balanced accuracy</strong>, polling every ~4 seconds or 10 meters moved. Two independent noise filters run before a point is ever recorded:</p>
+  <ul>
+    <li><strong>Accuracy-radius rejection</strong> — any fix reporting worse than 30m accuracy is dropped outright, not averaged in. A stationary phone's network-based position estimate can wander tens of meters between reads; accepting it would sum that wander straight into distance.</li>
+    <li><strong>Plausible-movement rejection</strong> — a fix implying faster than 8 m/s (~2:05/km, faster than any realistic sustained run) since the last accepted point is rejected too, catching what the accuracy check alone misses.</li>
+  </ul>
+  <div class="callout bug">
+    <span class="label">Real bug — GPS glitched even standing still</span>
+    <p>Neither filter existed on first real-hardware test; distance/pace summed raw GPS wander directly. Fixed by adding both filters above, plus a pace ceiling (readings implying slower than 30:00/km show "--:--" instead of an absurd number like "8435:04").</p>
+  </div>
+  <p>Recording is offline-first — only the final save on Stop needs a network call, and a failed save queues locally (AsyncStorage) with automatic retry the next time the Track tab regains focus, showing <em>"this run is saved on your device and will sync automatically."</em></p>
+
+  <h3 id="tr-voice">Active Run &amp; voice coaching</h3>
+  <p>Tapping Start speaks a full heads-up line first, then — only once that finishes, via <code>expo-speech</code>'s own <code>onDone</code> callback rather than a guessed delay — a plain 5-second countdown plays with voice and the on-screen numeral moving together. An earlier 30-second version (silent until only the final 5 seconds were spoken) was shortened per direct feedback; a first sync fix (<code>Speech.stop()</code> before every spoken number) resolved the drift but read as a jarring cutoff, so the real fix sequences the two phases instead of racing them. During the run, a pure distance-based state machine tracks which interval leg (warmup/rep/recovery/cooldown) the runner is in and fires a one-time transition line the instant it changes, plus a rotating motivational line roughly halfway through any leg long enough to matter.</p>
+  <p>Scripts are AI-generated once per session (Gemini/Groq, same provider pattern as the coach) and cached permanently on the session row — never regenerated after. A deterministic, fully offline fallback script is built synchronously at run start so the countdown always has something to say immediately, then silently swapped for the real AI script if/when it resolves (in practice it almost always already has, since two upstream screens prefetch it ahead of "Start" being tapped). A failed AI generation is deliberately <em>not</em> cached, so a transient outage self-heals on the next attempt instead of permanently freezing a session on the degraded fallback.</p>
+  <div class="callout bug">
+    <span class="label">Real bug — the live map going blank exactly when it mattered most</span>
+    <p>One array (<code>points</code>) was being asked to do two jobs — what the map should show, and what counts as a measured distance point — and the 30m accuracy filter that's correct for the second job was silently breaking the first: a real GPS fix could arrive and still leave the map showing nothing while it waited for one accurate enough to count. Fixed with a second field, <code>liveCoordinate</code>, updated on every raw fix regardless of accuracy for the map's puck/camera only, while <code>points</code> stays exactly as strictly filtered for distance/splits. A related design change: the GPS subscription now opens the instant Start is tapped rather than after the countdown finishes, so the countdown's few seconds become free warm-up time instead of a second, redundant cold-start right when tracking needs to begin — with <code>isLocationActive</code> (a first-class piece of state, not re-derived from <code>phase</code> at each call site) telling every screen exactly when it's safe to run its own separate GPS watch.</p>
+  </div>
+
+  <h3 id="tr-health">Health Connect (Android)</h3>
+  <p>A platform-agnostic <code>HealthDataProvider</code> interface (already including a <code>"healthkit"</code> source value, unbuilt, for an eventual iOS Phase 2) sits behind Settings' connect/sync/disconnect flow. Real implementation reads <code>ExerciseSession</code> + aggregated <code>Distance</code>/<code>TotalCaloriesBurned</code>, filtered to running-type sessions only.</p>
+  <div class="callout bug">
+    <span class="label">Real bug — permission granted, reads still failed</span>
+    <p>Even after independently re-checking granted permissions (rather than trusting the request call's own return value) and re-initializing the native client on every sync (it isn't persisted across app restarts), the exact same <code>SecurityException</code> persisted. Root cause: <strong>Android 16's newer Health Connect permission model requires the app to actually target SDK 36</strong> for a granted permission's enforcement to take effect — confirmed only after bumping <code>targetSdkVersion</code> and shipping a third dev-build iteration to test it.</p>
+  </div>
+  <p>De-duplication against manually-logged or re-synced activities is entirely the database's job — a unique index on <code>(user_id, source, external_id)</code> — so the sync code just catches the resulting constraint violation and treats it as an ordinary "already imported" outcome.</p>
+
+  <h3>Gear &amp; photos</h3>
+  <p class="dim">A shoe's <code>cumulative_distance_km</code> is entirely trigger-maintained from linked activities (never client-writable) — insert/update/delete on <code>activities</code> keeps it exactly in sync, with a default 725km (~450mi) retirement threshold. Activity photos live in a deliberately public-read Storage bucket (avoids signed-URL refresh logic anywhere a photo displays), write-scoped by RLS on the uploader's own <code>auth.uid()</code> path segment, capped at 3 photos per activity in app code.</p>
+</section>
+
+<section id="coach">
+  <p class="kicker">07</p>
+  <h2>AI coach architecture</h2>
+  <p>The most-iterated system in the project — this section covers the actual journey, not just the final shape, because the wrong turns are as informative as the destination.</p>
+
+  <h3 id="co-journey">The journey</h3>
+  <ol>
+    <li><strong>Original RAG</strong> — one fixed pipeline per message: an unconditional Hugging Face embedding call, a pgvector KB match, activity/plan context, and a weekly-mileage summary, all stuffed into one system prompt, one LLM call, no web access.</li>
+    <li><strong>Full agentic tool-calling</strong> — search_knowledge_base, web_search, get_recent_activities, and get_weekly_summary all became model-decided tool calls in a sequential loop. Real correctness win (web access, at last) but a real latency regression: a compound question could cost 2–3× the round-trips of the original single call.</li>
+    <li><strong>Partial rollback</strong> — KB and user-data lookups reverted to unconditional fetch (their round-trip cost was never worth the "maybe skip it" flexibility, and it put the weekly-mileage-must-match-the-chart guarantee at the mercy of the model remembering to call a tool). Only <code>web_search</code> stayed a real tool, gated by a zero-network keyword heuristic so it isn't even declared on questions that don't need it.</li>
+    <li><strong>The latency floor turned out to be somewhere else entirely</strong> — a from-scratch architecture review (run deliberately blind to the existing code, to avoid anchoring on it) converged on the same suspect independently: the unconditional Hugging Face embedding call itself, hitting a free inference tier with no latency SLA, to search a knowledge base of only 5 articles that doesn't need semantic recall at that size.</li>
+    <li><strong>Full-text-only architecture</strong> — KB matching moved from pgvector/embeddings to plain Postgres full-text search (no external network call at all); every independent read for a turn fires concurrently instead of sequentially; a weekly-mileage number is template-substituted after generation instead of trusted to the model; a live factual bug (confusing a race's registration-announcement date with its actual date) led to differentiating how much reasoning effort the model spends per call. Correct for a 5-article corpus, but it gave up semantic recall entirely — a question worded with none of an article's own vocabulary could no longer match it at all.</li>
+    <li><strong>Hybrid RAG — the current architecture</strong> — with a portfolio goal specifically calling for a real, demonstrable RAG implementation rather than a justified-but-less-impressive lexical-only one, real vector search was brought back properly this time: <strong>pgvector</strong> similarity search combined with the existing full-text search via <strong>Reciprocal Rank Fusion</strong>, so a lexical match and a semantic match both count instead of picking one strategy over the other. Embeddings come from <strong>Gemini's own <code>gemini-embedding-001</code></strong> (768-dim, text-only GA model — not the newer multimodal <code>gemini-embedding-2-preview</code>, which is still in preview and unnecessary for text-only articles), reusing the same provider/API key the coach's chat calls already use rather than reintroducing Hugging Face or any second vendor. Queries and documents are embedded under different <code>task_type</code> values (<code>RETRIEVAL_QUERY</code> vs. <code>RETRIEVAL_DOCUMENT</code>) — a detail the original embedding-only implementation never used — since retrieval-tuned embedding models are trained to place the two sides close together specifically <em>because</em> they're tagged asymmetrically. A failed/unavailable embedding degrades to full-text-only rather than failing the request. See <a href="#co-rag">Hybrid RAG in detail</a> below.</li>
+  </ol>
+
+  <h3 id="co-flow">Turn flow (current)</h3>
+  <figure>
+    <svg viewBox="0 0 900 570" role="img" aria-label="Coach turn flow: a user message triggers a parallel context fetch (query embedding, activity data, weekly summary), then a hybrid full-text plus vector KB search once the embedding resolves, then a keyword heuristic decides whether to declare the web_search tool before the single LLM call, which either answers directly or, if it calls web_search, requires one more model call with elevated reasoning effort before the reply is template-substituted and returned; persistence happens afterward, in the background.">
+      <defs>
+        <marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <rect x="360" y="16" width="180" height="44" rx="8" class="diag-box"/>
+      <text x="450" y="43" text-anchor="middle" class="dt">User message</text>
+      <line x1="450" y1="60" x2="450" y2="96" class="arrow" marker-end="url(#ar2)"/>
+
+      <rect x="250" y="96" width="400" height="64" rx="10" class="diag-contour"/>
+      <text x="450" y="120" text-anchor="middle" class="dt">Parallel context fetch — Promise.all</text>
+      <text x="450" y="140" text-anchor="middle" class="ds">query embedding · activities · weekly total</text>
+      <line x1="450" y1="160" x2="450" y2="196" class="arrow" marker-end="url(#ar2)"/>
+
+      <rect x="280" y="196" width="340" height="56" rx="10" class="diag-contour"/>
+      <text x="450" y="218" text-anchor="middle" class="dt">Hybrid KB search</text>
+      <text x="450" y="236" text-anchor="middle" class="ds">full-text + pgvector, combined via RRF</text>
+      <line x1="450" y1="252" x2="450" y2="288" class="arrow" marker-end="url(#ar2)"/>
+
+      <rect x="330" y="288" width="240" height="56" rx="10" class="diag-box"/>
+      <text x="450" y="310" text-anchor="middle" class="dt">needsWebSearch()</text>
+      <text x="450" y="328" text-anchor="middle" class="ds">keyword heuristic, zero network</text>
+      <line x1="450" y1="344" x2="450" y2="380" class="arrow" marker-end="url(#ar2)"/>
+
+      <rect x="300" y="380" width="300" height="56" rx="10" class="diag-accent"/>
+      <text x="450" y="402" text-anchor="middle" class="dt">LLM call — thinking: low</text>
+      <text x="450" y="420" text-anchor="middle" class="ds">web_search declared only if flagged</text>
+
+      <path d="M450 436 L450 470 L200 470 L200 502" class="arrow" marker-end="url(#ar2)"/>
+      <path d="M450 436 L450 470 L700 470 L700 502" class="arrow" marker-end="url(#ar2)"/>
+      <text x="290" y="464" text-anchor="middle" class="dl">no tool call</text>
+      <text x="600" y="464" text-anchor="middle" class="dl">web_search called</text>
+
+      <rect x="100" y="502" width="200" height="50" rx="8" class="diag-success"/>
+      <text x="200" y="532" text-anchor="middle" class="dt">Templated reply</text>
+
+      <rect x="600" y="502" width="200" height="50" rx="8" class="diag-warn"/>
+      <text x="700" y="524" text-anchor="middle" class="dt">2nd LLM call</text>
+      <text x="700" y="538" text-anchor="middle" class="ds">thinking: medium</text>
+    </svg>
+    <figcaption>The hybrid KB search is the one genuinely sequential step the RAG upgrade added, since it needs the embedding above; only the call that follows a tool result gets elevated reasoning effort otherwise.</figcaption>
+  </figure>
+
+  <h3 id="co-sys">System architecture (current)</h3>
+  <figure>
+    <svg viewBox="0 0 900 380" role="img" aria-label="AI coach system architecture: the coach-chat edge function contains context assembly and an agent loop, backed by Postgres for hybrid full-text plus vector KB search and activity data, Gemini and Groq for generation and embeddings, and Tavily for the one real tool call.">
+      <defs>
+        <marker id="ar3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <rect x="330" y="16" width="240" height="44" rx="8" class="diag-box"/>
+      <text x="450" y="43" text-anchor="middle" class="dt">Coach tab (client)</text>
+      <line x1="450" y1="60" x2="450" y2="90" class="arrow" marker-end="url(#ar3)"/>
+
+      <rect x="80" y="90" width="740" height="180" rx="18" class="diag-outer"/>
+      <text x="104" y="114" class="dt">coach-chat edge function</text>
+
+      <rect x="110" y="140" width="330" height="70" rx="10" class="diag-contour"/>
+      <text x="275" y="164" text-anchor="middle" class="dt">Context assembly</text>
+      <text x="275" y="184" text-anchor="middle" class="ds">parallel fetch, heuristic gate</text>
+
+      <rect x="470" y="140" width="330" height="70" rx="10" class="diag-accent"/>
+      <text x="635" y="164" text-anchor="middle" class="dt">Agent loop</text>
+      <text x="635" y="184" text-anchor="middle" class="ds">Gemini primary, Groq fallback</text>
+
+      <line x1="275" y1="270" x2="275" y2="300" class="arrow" marker-end="url(#ar3)"/>
+      <line x1="635" y1="270" x2="635" y2="300" class="arrow" marker-end="url(#ar3)"/>
+
+      <rect x="150" y="300" width="250" height="56" rx="10" class="diag-box"/>
+      <text x="275" y="322" text-anchor="middle" class="dt">Postgres</text>
+      <text x="275" y="340" text-anchor="middle" class="ds">hybrid KB search (pgvector+FTS) · activities</text>
+
+      <rect x="500" y="300" width="140" height="56" rx="10" class="diag-box"/>
+      <text x="570" y="322" text-anchor="middle" class="dt">Gemini / Groq</text>
+      <text x="570" y="340" text-anchor="middle" class="ds">generation</text>
+
+      <rect x="660" y="300" width="140" height="56" rx="10" class="diag-box"/>
+      <text x="730" y="322" text-anchor="middle" class="dt">Tavily</text>
+      <text x="730" y="340" text-anchor="middle" class="ds">web_search</text>
+    </svg>
+    <figcaption>Persistence to <code>coach_messages</code> happens after the response is already sent, via <code>EdgeRuntime.waitUntil()</code> — not shown, since it's off the request path entirely.</figcaption>
+  </figure>
+
+  <h3 id="co-correct">Correctness guarantees</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="margin-top:0">Weekly mileage can't drift from the chart</h4>
+      <p class="dim" style="margin-bottom:0">The model never generates the current week's own number as text. It writes a literal <code>{{THIS_WEEK_KM}}</code> placeholder; the exact precomputed value (same Monday-start bucketing the client's own chart uses) is substituted in afterward. Not a prompt instruction the model could ignore — the model never has the opportunity to be wrong about this one fact.</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">Web results can't be mistaken for training advice</h4>
+      <p class="dim" style="margin-bottom:0">A hard rule instructs the model to treat <code>web_search</code> output as unverified third-party content, never as authoritative as the curated knowledge base, and never to follow instructions embedded in a search result.</p>
+    </div>
+  </div>
+  <div class="callout bug">
+    <span class="label">Real bug — a press release's own publish date, mistaken for a race date</span>
+    <p>Asked when the Tata Mumbai Marathon was, the coach confidently stated a date that was actually when a government press release <em>about registration opening</em> was published — not the race date at all. A prompt-level warning about exactly this failure mode didn't fix it; the model even built a plausible-sounding wrong narrative around the bad date on the next attempt. The real fix was structural: Gemini's default "low" thinking effort (lowered earlier, for latency, since most tool-decision calls are mechanical) wasn't enough for the one call that actually needs to scrutinize a source, not just pick a tool. Reasoning effort now differs by call: <code>low</code> for a fresh decision, <code>medium</code> once a tool result is already in context — the common case stays untouched, and the one call that needs care gets it.</p>
+  </div>
+  <div class="callout decision">
+    <span class="label">Why full-text search, not embeddings — the intermediate step</span>
+    <p>At 5–30 topically distinct articles, lexical matching finds the same things semantic search would, without a synchronous dependency on a free-tier inference API with no latency guarantee. Live-tested against the exact calibration questions used to originally tune the old cosine-similarity thresholds: full-text correctly matched the pacing question to only the Pacing article, returned <strong>zero</strong> matches for an off-topic shoe-color question (something the old approach needed a whole similarity-margin heuristic to handle), and correctly matched the knee-pain question to Injury Prevention.</p>
+  </div>
+
+  <h3 id="co-rag">Hybrid RAG in detail — the current architecture</h3>
+  <p>Full-text search has a real blind spot lexical calibration questions don't surface: it can't catch a question that's conceptually related to an article but shares none of its vocabulary. Rebuilt as a genuine hybrid rather than reverting to embeddings-only — see <a href="#co-journey">the journey</a> above for what changed and why.</p>
+
+  <div class="table-wrap">
+    <table>
+      <caption>What's used, and why</caption>
+      <tr><th>Piece</th><th>Choice</th><th>Why</th></tr>
+      <tr><td>Vector store</td><td><code>pgvector</code> on the existing Postgres database</td><td>Already available — no new datastore, no new service to operate.</td></tr>
+      <tr><td>Embedding model</td><td>Gemini <code>gemini-embedding-001</code>, 768-dim</td><td>Text-only, GA/stable (not the multimodal, still-preview <code>gemini-embedding-2-preview</code>); reuses the same provider/API key the coach's chat calls already use instead of a second vendor. Verified live against Google's own cookbook example before implementing — three different doc-page fetches disagreed with each other on the model name and request-field casing before a direct GitHub source settled it.</td></tr>
+      <tr><td>Combination strategy</td><td>Reciprocal Rank Fusion — <code>score = Σ 1/(60+rank)</code> across whichever ranked list(s) a row appears in</td><td>Lexical search catches exact-term matches semantic search can under-rank; semantic search catches conceptual matches worded completely differently, which lexical matching misses outright. Neither alone is as good as both together.</td></tr>
+      <tr><td>Query vs. document embeddings</td><td>Different <code>task_type</code> per side — <code>RETRIEVAL_QUERY</code> for the live question, <code>RETRIEVAL_DOCUMENT</code> for each seeded article</td><td>Retrieval-tuned embedding models are trained to place the two sides close together <em>because</em> they're tagged asymmetrically, not because they look alike as plain text — the original MiniLM setup had no such concept.</td></tr>
+      <tr><td>Failure handling</td><td>A failed/unavailable embedding call passes <code>null</code> through to the SQL function, which falls back to full-text-only ranking</td><td>A KB search degrading gracefully beats the whole coach reply failing over one embedding call.</td></tr>
+    </table>
+  </div>
+
+  <div class="callout decision">
+    <span class="label">Concrete proof, not just added complexity</span>
+    <p>The query <em>"what should I eat before a long endurance event to avoid stomach problems"</em> — deliberately zero shared vocabulary with the "Fueling and hydration" article — returns <strong>zero matches</strong> from the full-text-only RPC. The hybrid RPC correctly surfaces that exact article as the top result via vector similarity.</p>
+  </div>
+
+  <h4>Measuring the honest cost</h4>
+  <p>A same-provider A/B benchmark (<code>scripts/benchmarkCoachChat.ts</code>) timed a fixed set of 8 questions against the deployed function, forcing both configurations through the same LLM (Groq) so the comparison measured only the retrieval change, sidestepping a discovery made mid-benchmark: Gemini's free tier caps text generation at <strong>20 requests per day, per project, per model</strong> — surfaced by a <code>RESOURCE_EXHAUSTED</code> 429 with that exact quota name once enough test traffic had run through it.</p>
+  <div class="table-wrap">
+    <table>
+      <caption>Groq-only A/B result, 8 categories × 2 runs each</caption>
+      <tr><th></th><th>Full-text only</th><th>Hybrid RAG</th></tr>
+      <tr><td>Overall average</td><td>2886ms</td><td>3206ms</td></tr>
+      <tr><td>Success rate</td><td>16/16</td><td>15/16</td></tr>
+    </table>
+  </div>
+  <p class="dim" style="font-size:13.5px">Hybrid retrieval costs roughly <strong>11% more latency</strong> on average — the honest price of one extra sequential step (embedding the question before the KB search can run). Set against the retrieval-quality proof above, that's a measured trade-off, not a guess: measurably slower, measurably better recall. The pre-hybrid <code>embedding</code> column and the original cosine-similarity <code>match_knowledge_base()</code> function were fully replaced (384→768 dimensions, a different embedding model entirely) rather than kept alongside the new one — there was no reason to carry two incompatible generations of embeddings for the same five articles once every row got re-seeded anyway.</p>
+</section>
+
+<section id="db">
+  <p class="kicker">08</p>
+  <h2>Database design</h2>
+  <p>10 tables, all RLS-scoped to <code>auth.uid()</code>, with a consistent soft-delete/status-transition convention instead of hard deletes almost everywhere — training and activity history is treated as a durable record, not disposable state.</p>
+
+  <figure>
+    <svg viewBox="0 0 1200 540" role="img" aria-label="Stryde database entity relationship diagram: profiles owns goals, plans, plan sessions, activities, shoes, coach messages, push tokens, and notifications, all scoped by user_id; goals generate plans, plans schedule plan sessions, plan sessions and (directly) plans are fulfilled by activities, shoes are worn for activities, and both plan sessions and activities can be asked about via coach messages, with plan sessions also reminding via notifications; knowledge_base sits outside this group as a global, non-user-scoped reference table.">
+      <defs>
+        <marker id="ar4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <rect x="385" y="16" width="200" height="56" rx="10" class="diag-accent"/>
+      <text x="485" y="42" text-anchor="middle" class="dt">PROFILES</text>
+      <text x="485" y="60" text-anchor="middle" class="ds">id PK · status · is_admin</text>
+      <line x1="485" y1="72" x2="485" y2="108" class="arrow" marker-end="url(#ar4)"/>
+
+      <rect x="20" y="108" width="930" height="388" rx="18" class="diag-outer"/>
+      <text x="44" y="132" class="dl">every table below scoped to auth.uid() (profiles.id)</text>
+
+      <path d="M360 160 C360 122, 840 122, 840 160" class="arrow" stroke-dasharray="4 3" marker-end="url(#ar4)"/>
+      <text x="600" y="119" text-anchor="middle" class="dl">fulfilled by (direct, no session)</text>
+
+      <rect x="40" y="160" width="180" height="72" rx="10" class="diag-box"/>
+      <text x="130" y="188" text-anchor="middle" class="dt">GOALS</text>
+      <text x="130" y="206" text-anchor="middle" class="ds">id PK · distance_km</text>
+      <text x="130" y="220" text-anchor="middle" class="ds">· goal_date</text>
+
+      <rect x="270" y="160" width="180" height="72" rx="10" class="diag-box"/>
+      <text x="360" y="188" text-anchor="middle" class="dt">PLANS</text>
+      <text x="360" y="206" text-anchor="middle" class="ds">id PK · start_date</text>
+      <text x="360" y="220" text-anchor="middle" class="ds">· is_deleted</text>
+
+      <rect x="500" y="160" width="210" height="72" rx="10" class="diag-box"/>
+      <text x="605" y="188" text-anchor="middle" class="dt">PLAN_SESSIONS</text>
+      <text x="605" y="206" text-anchor="middle" class="ds">id PK · session_date</text>
+      <text x="605" y="220" text-anchor="middle" class="ds">· session_type · status</text>
+
+      <rect x="750" y="160" width="180" height="72" rx="10" class="diag-box"/>
+      <text x="840" y="188" text-anchor="middle" class="dt">ACTIVITIES</text>
+      <text x="840" y="206" text-anchor="middle" class="ds">id PK · distance_m</text>
+      <text x="840" y="220" text-anchor="middle" class="ds">· source · route</text>
+
+      <line x1="220" y1="196" x2="270" y2="196" class="arrow" marker-end="url(#ar4)"/>
+      <text x="245" y="183" text-anchor="middle" class="dl">generates</text>
+      <line x1="450" y1="196" x2="500" y2="196" class="arrow" marker-end="url(#ar4)"/>
+      <text x="475" y="183" text-anchor="middle" class="dl">schedules</text>
+      <line x1="710" y1="196" x2="750" y2="196" class="arrow" marker-end="url(#ar4)"/>
+      <text x="730" y="183" text-anchor="middle" class="dl">fulfilled by</text>
+
+      <rect x="40" y="424" width="180" height="72" rx="10" class="diag-box"/>
+      <text x="130" y="456" text-anchor="middle" class="dt">PUSH_TOKENS</text>
+      <text x="130" y="474" text-anchor="middle" class="ds">id PK · token · timezone</text>
+
+      <rect x="270" y="424" width="180" height="72" rx="10" class="diag-box"/>
+      <text x="360" y="456" text-anchor="middle" class="dt">NOTIFICATIONS</text>
+      <text x="360" y="474" text-anchor="middle" class="ds">id PK · type · read</text>
+
+      <rect x="500" y="424" width="230" height="72" rx="10" class="diag-box"/>
+      <text x="615" y="456" text-anchor="middle" class="dt">COACH_MESSAGES</text>
+      <text x="615" y="474" text-anchor="middle" class="ds">id PK · role · provider</text>
+
+      <rect x="750" y="424" width="180" height="72" rx="10" class="diag-box"/>
+      <text x="840" y="456" text-anchor="middle" class="dt">SHOES</text>
+      <text x="840" y="474" text-anchor="middle" class="ds">id PK · distance_km · retired</text>
+
+      <path d="M550 232 L550 272 L360 272 L360 424" class="arrow" marker-end="url(#ar4)"/>
+      <text x="460" y="259" text-anchor="middle" class="dl">reminds about</text>
+
+      <path d="M660 232 L660 312 L560 312 L560 424" class="arrow" marker-end="url(#ar4)"/>
+      <text x="610" y="299" text-anchor="middle" class="dl">asked about</text>
+      <path d="M770 232 L770 352 L670 352 L670 424" class="arrow" marker-end="url(#ar4)"/>
+
+      <line x1="840" y1="232" x2="840" y2="424" class="arrow" marker-end="url(#ar4)"/>
+      <text x="875" y="330" text-anchor="middle" class="dl">worn for</text>
+
+      <rect x="1010" y="284" width="150" height="90" rx="10" class="diag-contour"/>
+      <text x="1085" y="312" text-anchor="middle" class="dt">KNOWLEDGE_BASE</text>
+      <text x="1085" y="332" text-anchor="middle" class="ds">id PK · title</text>
+      <text x="1085" y="348" text-anchor="middle" class="ds">embedding(768)</text>
+    </svg>
+    <figcaption>Every table traces back to <code>profiles</code> via <code>user_id</code> and RLS, except <code>knowledge_base</code> — a global, read-all reference table with no <code>user_id</code> column at all.</figcaption>
+  </figure>
+
+  <h3>Recurring schema conventions</h3>
+  <ul>
+    <li><strong>Soft-delete over hard-delete.</strong> Goals, plans, and activities all use an <code>is_deleted</code>/status flag rather than a real DELETE — history stays queryable even after a user "removes" something.</li>
+    <li><strong>Ownership double-checked beyond RLS.</strong> Several tables carry an explicit trigger (e.g. <code>activities_enforce_links_owner</code>) that re-verifies a cross-reference like <code>shoe_id</code> or <code>plan_session_id</code> actually belongs to the same user — RLS alone only checks the row's own <code>user_id</code>, not whether its foreign keys point at that same user's other rows.</li>
+    <li><strong>One active row per user, enforced by partial unique index</strong> — at most one non-deleted goal, one current plan per goal, one push token per device.</li>
+    <li><strong>Grants aren't automatic.</strong> <code>supabase db push</code> doesn't inherit dashboard-default table privileges — a recurring class of follow-up migration across this project exists purely to patch a missing <code>GRANT</code>.</li>
+  </ul>
+</section>
+
+<section id="status">
+  <p class="kicker">09</p>
+  <h2>Status &amp; roadmap</h2>
+  <div class="table-wrap">
+    <table>
+      <tr><th>#</th><th>Task</th><th>Status</th></tr>
+      <tr><td>1</td><td>Environment &amp; accounts</td><td><span class="status-done">Done</span></td></tr>
+      <tr><td>2</td><td>Supabase backend (schema + Auth + waitlist)</td><td><span class="status-done">Done</span></td></tr>
+      <tr><td>3</td><td>Plan-generator engine</td><td><span class="status-done">Done</span></td></tr>
+      <tr><td>4</td><td>Navigation + Home/Plan wired to real data</td><td><span class="status-done">Done</span></td></tr>
+      <tr><td>5</td><td>Manual activity logging</td><td><span class="status-done">Done</span></td></tr>
+      <tr><td>6</td><td>GPS tracking, Active Run, maps</td><td><span class="status-done">Done</span></td></tr>
+      <tr><td>7</td><td>Health Connect auto-sync</td><td><span class="status-done">Done</span></td></tr>
+      <tr><td>8</td><td>Trends, AI Coach, polish + first EAS build</td><td><span class="status-done">Done</span></td></tr>
+    </table>
+  </div>
+  <h4>Shipped since the first production build</h4>
+  <ul>
+    <li>First real production Android build — live-verified on a real device, after tracking down a genuine intermittent blank-screen bug (see the "Production build" callout above).</li>
+    <li>The live-location map bug during an active run, and a redundant GPS cold-start on Start — both fixed at the architectural level (<code>isLocationActive</code>, <code>liveCoordinate</code>).</li>
+    <li>Google Sign-In's <code>redirect_uri_mismatch</code> regression — Google Console's Authorized redirect URIs had gone empty; fixed on the dashboard side, not code.</li>
+    <li><code>KeyboardAvoidingView</code> was silently a no-op on Android everywhere it was used (<code>behavior: undefined</code>) — now uses <code>"height"</code> on all six screens.</li>
+    <li>The AI coach's knowledge-base search upgraded to hybrid full-text + vector RAG (see <a href="#co-rag">Hybrid RAG in detail</a>).</li>
+  </ul>
+  <h4>Remaining before real waitlist testers</h4>
+  <ul>
+    <li>Confirm background location survives a locked screen (real device only).</li>
+    <li>GPX/TCX export verified against a real GPS-recorded run importing into Strava/Garmin.</li>
+    <li>Health Connect final clean end-to-end re-confirmation, plus the Play Console health-app declaration.</li>
+    <li>Apple Sign-In — not needed for the Android-only Phase 1 build, a real gap only if iOS ships.</li>
+    <li>Gemini's free-tier daily request quota (20/day per project/model, discovered during RAG benchmarking) needs a real plan before any meaningful traffic — either a paid tier or leaning harder on the Groq fallback.</li>
+  </ul>
+  <p class="dim" style="font-size:13.5px">Deliberately deferred, not blocking: re-enabling Supabase's "Confirm email" (off since early RLS testing, to avoid the free-tier rate limit) and Sentry source-map upload (disabled for the first production build after an incomplete org/project config broke it; crash reporting itself still works, just without de-obfuscated stack traces until that's wired up properly).</p>
+</section>
+
+</main>
+</div>
+
+<footer>
+  <svg width="34" height="34" viewBox="0 0 100 100" role="img" aria-label="Stryde's Ridge Echo mark" style="display:block;margin:0 auto 10px">
+    <g transform="translate(-3,4)">
+      <polyline points="24,74 40,64 52,70 64,40 72,48 80,24 88,56" fill="none" stroke="var(--brand-echo)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+      <polyline points="18,68 34,58 46,64 58,34 66,42 74,18 82,50" fill="none" stroke="var(--accent)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="74" cy="18" r="5" fill="var(--success)"/>
+    </g>
+  </svg>
+  Stryde — generated from the project's own migrations, implementation logs, and source, not from memory.
+</footer>
+
+</body></html>
