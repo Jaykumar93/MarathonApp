@@ -26,8 +26,6 @@ The full technical writeup — architecture diagrams, the plan-generation engine
 
 **[Stryde Engineering Docs — full technical documentation](https://htmlpreview.github.io/?https://github.com/Jaykumar93/MarathonApp/blob/main/docs/stryde-docs-updated.html)**
 
-Also on [Google Drive](https://drive.google.com/file/d/1mANIBJJ4d9t07hWs5aB0TC-iLuK3jJwE/view?usp=sharing), and the source is version-controlled in this repo at [`docs/stryde-docs-updated.html`](docs/stryde-docs-updated.html).
-
 ## Project structure
 
 ```
