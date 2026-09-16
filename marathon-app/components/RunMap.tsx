@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import MapView, { Marker, Polyline, type MapStyleElement } from "react-native-maps";
 import Svg, { Circle, Path } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import type { RoutePoint } from "../lib/gpsStats";
 import { palette } from "../lib/theme";
 
@@ -74,6 +75,39 @@ export function RunMap({ points, live = false, currentCoordinate, recenterBottom
   const displayPoint = currentCoordinate ?? lastPoint;
   const displayCoordinate = currentCoordinate ? { latitude: currentCoordinate.lat, longitude: currentCoordinate.lng } : lastCoordinate;
   const hasZoomedInRef = useRef(false);
+
+  // The device's actual compass orientation - NOT location.coords.heading
+  // (course-over-ground, derived from consecutive GPS fixes), which is what
+  // the puck used to rotate by. Course-over-ground only means anything while
+  // moving in a fairly straight line at real speed; standing still, moving
+  // slowly, or mid-turn it's noisy-to-meaningless, which is exactly what
+  // read as "points in random". watchHeadingAsync reads the magnetometer
+  // directly, so it reflects which way the phone is actually facing
+  // regardless of whether - or how - the runner is currently moving.
+  const [deviceHeadingDegrees, setDeviceHeadingDegrees] = useState<number | null>(null);
+  useEffect(() => {
+    if (!live) return;
+    let cancelled = false;
+    let subscription: Location.LocationSubscription | null = null;
+    Location.watchHeadingAsync((heading) => {
+      if (cancelled) return;
+      // trueHeading is -1 when the OS can't yet resolve true-north
+      // correction (needs a location fix first) - magHeading comes from the
+      // compass alone and is available immediately, close enough almost
+      // everywhere to be a fine fallback rather than leaving the puck
+      // pointed at whatever it last had, or unrotated.
+      setDeviceHeadingDegrees(heading.trueHeading >= 0 ? heading.trueHeading : heading.magHeading);
+    })
+      .then((sub) => {
+        if (cancelled) sub.remove();
+        else subscription = sub;
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      subscription?.remove();
+    };
+  }, [live]);
 
   // Live mode still auto-centers on your position by default, but a manual
   // drag (see onPanDrag below) pauses that so it doesn't fight your finger
@@ -147,7 +181,7 @@ export function RunMap({ points, live = false, currentCoordinate, recenterBottom
         {coordinates.length >= 2 && <Polyline coordinates={coordinates} strokeColor={palette.accent} strokeWidth={4} />}
         {live && displayCoordinate && (
           <Marker coordinate={displayCoordinate} anchor={{ x: 0.5, y: 0.5 }} flat>
-            <HeadingPuck headingDegrees={displayPoint?.heading} />
+            <HeadingPuck headingDegrees={deviceHeadingDegrees ?? displayPoint?.heading} />
           </Marker>
         )}
         {!live && coordinates.length > 0 && (
