@@ -10,9 +10,8 @@ import { Card } from "../components/ui/Card";
 const THIRD_PARTIES: { name: string; gets: string; why: string }[] = [
   { name: "Supabase", gets: "Everything in this policy - it's our database, auth, and file storage provider", why: "Hosts the app's entire backend" },
   { name: "Google", gets: "Your email/name if you sign in with Google; map tiles and location while viewing a live route; Health Connect data if connected", why: "Sign-in, maps, health sync" },
-  { name: "Google Gemini", gets: "Your AI coach question, plus the specific training data needed to answer it", why: "Generates the coach's reply (primary)" },
+  { name: "Google Gemini", gets: "Your AI coach question, plus the specific training data needed to answer it; also used to turn your question into a search vector for finding relevant help articles", why: "Generates the coach's reply (primary) and its knowledge-base search" },
   { name: "Groq", gets: "The same, only if Gemini is unavailable", why: "Generates the coach's reply (backup)" },
-  { name: "Hugging Face", gets: "The text of your coach question (not your training data)", why: "Turns your question into a search vector" },
   { name: "Expo", gets: "Your push token", why: "Delivers push notifications" },
   { name: "Open-Meteo", gets: "Race location coordinates only, no account info", why: "Race-day weather forecast" },
   { name: "Sentry", gets: "Device/OS info and crash stack traces, once configured", why: "Crash reporting" },
@@ -51,7 +50,7 @@ export default function PrivacyPolicy() {
         </Pressable>
       </View>
       <Text style={styles.header}>Privacy Policy</Text>
-      <Text style={styles.effectiveDate}>Effective date: September 9, 2026</Text>
+      <Text style={styles.effectiveDate}>Effective date: September 21, 2026</Text>
       <Text style={styles.intro}>
         Stryde is built and run by a single independent developer, currently in a manually-approved early-access
         phase. This describes what the app actually collects and where it goes - not a generic template.
@@ -133,7 +132,7 @@ export default function PrivacyPolicy() {
         <Text style={styles.body}>
           If what the app does changes in a way that affects this policy, this page and its effective date will
           change too. Built and operated by one person - for any question, or to request deletion, email{" "}
-          <Text style={styles.emailLink}>www.jaykumarpokar@gmail.com</Text>.
+          <Text style={styles.emailLink}>jaykumarpokar9@gmail.com</Text>.
         </Text>
       </Card>
     </ScrollView>

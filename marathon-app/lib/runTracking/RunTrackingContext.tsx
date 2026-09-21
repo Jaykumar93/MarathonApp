@@ -4,6 +4,7 @@ import * as Location from "expo-location";
 import * as Speech from "expo-speech";
 import * as Notifications from "expo-notifications";
 import notifee, { AndroidImportance } from "@notifee/react-native";
+import { BackgroundLocationDisclosure } from "../../components/BackgroundLocationDisclosure";
 import { formatDistance, formatPace } from "../units";
 import { useAuth } from "../auth/AuthContext";
 import { getPlanSessionById, type PlanSessionRow } from "../data/plans";
@@ -276,6 +277,28 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
   // permission - checked by startLocationDelivery so pause/resume don't
   // each have to re-request it.
   const backgroundAvailableRef = useRef(false);
+  // Play policy requires a disclosure the runner affirmatively acts on
+  // before the OS's own background-location dialog appears, separate from
+  // that dialog's own rationale text - see BackgroundLocationDisclosure.
+  // Only shown when permission isn't already granted (requestDisclosure
+  // resolves immediately without showing anything in that case).
+  const [showBgDisclosure, setShowBgDisclosure] = useState(false);
+  const bgDisclosureResolveRef = useRef<((proceed: boolean) => void) | null>(null);
+
+  const requestBackgroundDisclosure = useCallback(async (): Promise<boolean> => {
+    const current = await Location.getBackgroundPermissionsAsync().catch(() => null);
+    if (current?.status === "granted") return true;
+    return new Promise<boolean>((resolve) => {
+      bgDisclosureResolveRef.current = resolve;
+      setShowBgDisclosure(true);
+    });
+  }, []);
+
+  function handleBgDisclosureResponse(proceed: boolean) {
+    setShowBgDisclosure(false);
+    bgDisclosureResolveRef.current?.(proceed);
+    bgDisclosureResolveRef.current = null;
+  }
   // Imperative mirror of `phase`, same reason as voiceScriptRef above -
   // onLocationUpdate needs the current phase synchronously, without being
   // recreated (and re-handed to the long-lived GPS subscription callback)
@@ -622,8 +645,13 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
       // of a foreground-only watch so tracking survives the screen
       // locking or the app losing focus.
       try {
-        const bg = await Location.requestBackgroundPermissionsAsync();
-        backgroundAvailableRef.current = bg.status === "granted";
+        const disclosureAccepted = await requestBackgroundDisclosure();
+        if (disclosureAccepted) {
+          const bg = await Location.requestBackgroundPermissionsAsync();
+          backgroundAvailableRef.current = bg.status === "granted";
+        } else {
+          backgroundAvailableRef.current = false;
+        }
       } catch {
         backgroundAvailableRef.current = false;
       }
@@ -637,7 +665,7 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
       await startLocationDelivery();
       beginCountdown();
     },
-    [beginCountdown, startLocationDelivery, unit]
+    [beginCountdown, startLocationDelivery, unit, requestBackgroundDisclosure]
   );
 
   const pause = useCallback(async () => {
@@ -779,6 +807,11 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
       }}
     >
       {children}
+      <BackgroundLocationDisclosure
+        visible={showBgDisclosure}
+        onContinue={() => handleBgDisclosureResponse(true)}
+        onDecline={() => handleBgDisclosureResponse(false)}
+      />
     </RunTrackingContext.Provider>
   );
 }
