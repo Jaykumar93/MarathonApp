@@ -69,9 +69,11 @@
       [
         "expo-notifications",
         {
-          "color": "#FF5A1F"
+          "color": "#FF5A1F",
+          "icon": "./assets/android-icon-monochrome.png"
         }
       ],
+      "@notifee/react-native",
       [
         "expo-build-properties",
         {

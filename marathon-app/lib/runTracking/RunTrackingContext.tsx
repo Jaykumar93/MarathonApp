@@ -3,6 +3,7 @@ import { Platform } from "react-native";
 import * as Location from "expo-location";
 import * as Speech from "expo-speech";
 import * as Notifications from "expo-notifications";
+import notifee, { AndroidImportance } from "@notifee/react-native";
 import { formatDistance, formatPace } from "../units";
 import { useAuth } from "../auth/AuthContext";
 import { getPlanSessionById, type PlanSessionRow } from "../data/plans";
@@ -96,16 +97,32 @@ function formatElapsedCompact(totalSeconds: number): string {
   return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`;
 }
 
-// A fixed identifier, re-issued repeatedly with `trigger: null` (shows
-// immediately, replacing any existing notification with the same id) -
-// Android-only (see the platform's own comment on RunTrackingProvider's
-// startLocationDelivery, which already runs its own separate, static
-// foreground-service notification required to keep background location
-// alive - this is a second, richer one shown alongside it, not a
-// replacement for it). iOS Live Activities would be the real equivalent
-// there, but that needs native ActivityKit work outside Expo's managed
-// reach - not attempted here.
+// A fixed identifier, re-issued repeatedly (shows immediately, replacing
+// any existing notification with the same id) - shown alongside
+// RunTrackingProvider's own separate, static foreground-service
+// notification required to keep background location alive (see
+// startLocationDelivery), not a replacement for it: that one is owned by
+// expo-location's own native background-task plumbing, and re-pointing it
+// at a separately-managed notifee foreground service isn't a documented,
+// safe integration - two native modules would each expect to own that
+// registration. This is deliberately a second, richer notification instead.
 const ACTIVE_RUN_NOTIFICATION_ID = "active-run-status";
+const ACTIVE_RUN_CHANNEL_ID = "active-run";
+
+// notifee.createChannel is idempotent, but there's no reason to re-issue the
+// bridge call on every km-split update - once per app run is enough.
+let activeRunChannelReady = false;
+async function ensureActiveRunChannel(): Promise<void> {
+  if (activeRunChannelReady) return;
+  await notifee.createChannel({
+    id: ACTIVE_RUN_CHANNEL_ID,
+    name: "Live run tracking",
+    // LOW: updates every ~km without a sound/heads-up popup each time - this
+    // notification exists to be glanced at, not to interrupt.
+    importance: AndroidImportance.LOW,
+  });
+  activeRunChannelReady = true;
+}
 
 async function updateRunStatusNotification(
   distanceKm: number,
@@ -114,23 +131,38 @@ async function updateRunStatusNotification(
   unit: "km" | "mi",
   plannedDistanceMeters: number | null
 ): Promise<void> {
-  if (Platform.OS !== "android") return;
   const progressPct = plannedDistanceMeters ? Math.min(100, Math.round(((distanceKm * 1000) / plannedDistanceMeters) * 100)) : null;
-  const body = [
-    formatDistance(distanceKm, unit),
-    formatElapsedCompact(elapsedSeconds),
-    paceSecondsPerKm != null ? formatPace(paceSecondsPerKm, unit) : null,
-    progressPct != null ? `${progressPct}%` : null,
-  ]
+  const statsLine = [formatDistance(distanceKm, unit), formatElapsedCompact(elapsedSeconds), paceSecondsPerKm != null ? formatPace(paceSecondsPerKm, unit) : null]
     .filter(Boolean)
     .join(" · ");
 
   try {
-    await Notifications.scheduleNotificationAsync({
-      identifier: ACTIVE_RUN_NOTIFICATION_ID,
-      content: { title: "Run in progress", body, sticky: true, sound: false },
-      trigger: null,
-    });
+    if (Platform.OS === "android") {
+      await ensureActiveRunChannel();
+      await notifee.displayNotification({
+        id: ACTIVE_RUN_NOTIFICATION_ID,
+        title: "Run in progress",
+        body: statsLine,
+        android: {
+          channelId: ACTIVE_RUN_CHANNEL_ID,
+          ongoing: true,
+          autoCancel: false,
+          color: "#FF5A1F",
+          smallIcon: "notification_icon", // the drawable expo-notifications' own config plugin generates from app.json's icon
+          progress: progressPct != null ? { max: 100, current: progressPct } : undefined,
+        },
+      });
+    } else {
+      // iOS has no progress-bar concept for a local notification - same
+      // plain-text line the body used to carry, with the percentage
+      // appended the way the pre-notifee Android version used to show it.
+      const body = progressPct != null ? `${statsLine} · ${progressPct}%` : statsLine;
+      await Notifications.scheduleNotificationAsync({
+        identifier: ACTIVE_RUN_NOTIFICATION_ID,
+        content: { title: "Run in progress", body, sticky: true, sound: false },
+        trigger: null,
+      });
+    }
   } catch {
     // Best-effort only - a notification failing to update should never
     // interrupt the actual run being tracked.
@@ -138,8 +170,11 @@ async function updateRunStatusNotification(
 }
 
 function dismissRunStatusNotification(): void {
-  if (Platform.OS !== "android") return;
-  Notifications.dismissNotificationAsync(ACTIVE_RUN_NOTIFICATION_ID).catch(() => {});
+  if (Platform.OS === "android") {
+    notifee.cancelNotification(ACTIVE_RUN_NOTIFICATION_ID).catch(() => {});
+  } else {
+    Notifications.dismissNotificationAsync(ACTIVE_RUN_NOTIFICATION_ID).catch(() => {});
+  }
 }
 
 export interface FinalRunStats {

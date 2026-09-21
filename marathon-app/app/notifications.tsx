@@ -2,8 +2,10 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../lib/auth/AuthContext";
 import { useNotifications } from "../lib/notifications/NotificationsContext";
+import { NOTIFICATION_ICON } from "../lib/notifications/notificationVisuals";
 import {
   getNotifications,
   markAllNotificationsRead,
@@ -13,6 +15,9 @@ import {
 import { fonts, spacing, type } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
+
+type Group = "Today" | "This week" | "Earlier";
+const GROUP_ORDER: Group[] = ["Today", "This week", "Earlier"];
 
 /**
  * The persistent counterpart to the daily AI motivation push - that one
@@ -67,6 +72,7 @@ export default function Notifications() {
   }
 
   const hasUnread = notifications.some((n) => !n.read);
+  const grouped = useMemo(() => groupByRecency(notifications), [notifications]);
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: 24 + insets.top }]}>
@@ -75,39 +81,74 @@ export default function Notifications() {
           <Text style={styles.backLink}>‹ Back</Text>
         </Pressable>
         {hasUnread && (
-          <Pressable onPress={handleMarkAllRead} hitSlop={10}>
-            <Text style={styles.markAllLink}>Mark all read</Text>
+          <Pressable onPress={handleMarkAllRead} hitSlop={10} style={styles.markPill}>
+            <Text style={styles.markPillText}>Mark all read</Text>
           </Pressable>
         )}
       </View>
       <Text style={styles.header}>Notifications</Text>
 
       {!loading && notifications.length === 0 && (
-        <Text style={styles.emptyText}>Nothing here yet - missed-run reminders will show up in this list.</Text>
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIconCircle}>
+            <Ionicons name="notifications-outline" size={22} color={colors.textFaint} />
+          </View>
+          <Text style={styles.emptyTitle}>You're all caught up</Text>
+          <Text style={styles.emptySub}>Missed-run reminders will show up here.</Text>
+        </View>
       )}
 
-      {notifications.map((notification) => (
-        <Pressable key={notification.id} onPress={() => handlePress(notification)}>
-          <Card style={notification.read ? styles.readCard : undefined}>
-            <View style={styles.rowTop}>
-              {!notification.read && <View style={styles.unreadDot} />}
-              <Text style={[styles.title, notification.read && styles.readText]}>{notification.title}</Text>
-            </View>
-            <Text style={[styles.body, notification.read && styles.readText]}>{notification.body}</Text>
-            <Text style={styles.timestamp}>{formatRelativeTime(notification.created_at)}</Text>
-          </Card>
-        </Pressable>
+      {GROUP_ORDER.filter((g) => grouped[g].length > 0).map((group) => (
+        <View key={group}>
+          <Text style={styles.groupLabel}>{group}</Text>
+          {grouped[group].map((notification) => (
+            <Pressable key={notification.id} onPress={() => handlePress(notification)}>
+              <Card
+                style={{
+                  ...styles.card,
+                  ...(!notification.read ? styles.unreadCard : null),
+                  ...(notification.read ? styles.readCard : null),
+                }}
+              >
+                {!notification.read && <View style={styles.unreadBar} />}
+                <View style={styles.iconWrap}>
+                  <Ionicons name={NOTIFICATION_ICON[notification.type]} size={17} color={colors.warningText} />
+                </View>
+                <View style={styles.cardBody}>
+                  <View style={styles.rowTop}>
+                    <Text style={[styles.title, notification.read && styles.readText]}>{notification.title}</Text>
+                    <Text style={styles.timestamp}>{formatRelativeTime(notification.created_at)}</Text>
+                  </View>
+                  <Text style={[styles.body, notification.read && styles.readText]}>{notification.body}</Text>
+                </View>
+              </Card>
+            </Pressable>
+          ))}
+        </View>
       ))}
     </ScrollView>
   );
 }
 
+function groupByRecency(rows: NotificationRow[]): Record<Group, NotificationRow[]> {
+  const groups: Record<Group, NotificationRow[]> = { Today: [], "This week": [], Earlier: [] };
+  for (const row of rows) {
+    const diffDays = Math.floor((Date.now() - new Date(row.created_at).getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays <= 0) groups.Today.push(row);
+    else if (diffDays <= 7) groups["This week"].push(row);
+    else groups.Earlier.push(row);
+  }
+  return groups;
+}
+
 function formatRelativeTime(createdAt: string): string {
   const diffMs = Date.now() - new Date(createdAt).getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays <= 0) return "Today";
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  if (diffHours < 1) return "Just now";
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
   if (diffDays === 1) return "Yesterday";
-  return `${diffDays} days ago`;
+  return `${diffDays}d ago`;
 }
 
 function createStyles(colors: Colors) {
@@ -116,15 +157,64 @@ function createStyles(colors: Colors) {
     container: { padding: spacing.screenPadding, paddingBottom: 40 },
     topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
     backLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
-    markAllLink: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.accent },
+    markPill: {
+      backgroundColor: `${colors.accent}1A`,
+      borderWidth: 1,
+      borderColor: `${colors.accent}40`,
+      borderRadius: 100,
+      paddingVertical: 5,
+      paddingHorizontal: 11,
+    },
+    markPillText: { fontFamily: fonts.bodySemiBold, fontSize: 11.5, color: colors.accent },
     header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary, marginBottom: 18 },
-    emptyText: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textFaint },
-    readCard: { opacity: 0.6 },
-    rowTop: { flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 3 },
-    unreadDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: colors.accent },
-    title: { fontFamily: fonts.bodySemiBold, fontSize: 14.5, color: colors.textPrimary },
+    emptyState: { alignItems: "center", paddingTop: 50, gap: 10 },
+    emptyIconCircle: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.cardBg,
+      borderWidth: 1,
+      borderColor: colors.cardLine,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    emptyTitle: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.textPrimary },
+    emptySub: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, textAlign: "center" },
+    groupLabel: {
+      fontFamily: fonts.mono,
+      fontSize: type.sectionLabel,
+      letterSpacing: 0.5,
+      textTransform: "uppercase",
+      color: colors.textFaint,
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    card: { flexDirection: "row", gap: 11, alignItems: "flex-start" },
+    unreadCard: { backgroundColor: colors.warningBg },
+    readCard: { opacity: 0.55 },
+    unreadBar: {
+      position: "absolute",
+      left: 0,
+      top: 10,
+      bottom: 10,
+      width: 3,
+      borderRadius: 3,
+      backgroundColor: colors.accent,
+    },
+    iconWrap: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: `${colors.warning}1F`,
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    },
+    cardBody: { flex: 1 },
+    rowTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 2 },
+    title: { fontFamily: fonts.bodyBold, fontSize: 14.5, color: colors.textPrimary, flexShrink: 1 },
+    timestamp: { fontFamily: fonts.mono, fontSize: 10.5, color: colors.textFaint, flexShrink: 0 },
     body: { fontFamily: fonts.body, fontSize: 13.5, color: colors.textDim, lineHeight: 19 },
     readText: { color: colors.textFaint },
-    timestamp: { fontFamily: fonts.mono, fontSize: 11, color: colors.textFaint, marginTop: 8 },
   });
 }
