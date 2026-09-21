@@ -49,7 +49,7 @@ function buildPrompt(fullName: string | null, today: PlanSessionRow | null, miss
   return { systemPrompt, userMessage: parts.join(" ") };
 }
 
-async function sendExpoPush(messages: { to: string; title: string; body: string }[]): Promise<any[]> {
+async function sendExpoPush(messages: { to: string; title: string; body: string; color: string; channelId: string }[]): Promise<any[]> {
   if (messages.length === 0) return [];
   const res = await fetch("https://exp.host/--/api/v2/push/send", {
     method: "POST",
@@ -129,12 +129,16 @@ Deno.serve(async (req) => {
       }
     }
 
-    const pushMessages: { to: string; title: string; body: string }[] = [];
+    const pushMessages: { to: string; title: string; body: string; color: string; channelId: string }[] = [];
     const tokenIdByIndex: string[] = [];
     for (const [userId, tokens] of tokensByUserId) {
       const body = messageByUserId.get(userId)!;
       for (const t of tokens) {
-        pushMessages.push({ to: t.token, title: "Stryde", body });
+        // color/channelId are Android-only fields (iOS silently ignores them)
+        // - the channel itself is created client-side once, on sign-in (see
+        // lib/notifications/pushToken.ts's registerForPushNotifications), so
+        // it already exists by the time any push referencing it arrives.
+        pushMessages.push({ to: t.token, title: "Stryde", body, color: "#FF5A1F", channelId: "daily-nudge" });
         tokenIdByIndex.push(t.rowId);
       }
     }
