@@ -73,7 +73,6 @@
           "icon": "./assets/android-icon-monochrome.png"
         }
       ],
-      "@notifee/react-native",
       [
         "expo-build-properties",
         {
