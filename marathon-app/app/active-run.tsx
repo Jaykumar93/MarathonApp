@@ -15,7 +15,7 @@ import { fonts, palette } from "../lib/theme";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PhotoPicker } from "../components/ui/PhotoPicker";
 import { RunMap } from "../components/RunMap";
-import { ActiveRunSheet } from "../components/ActiveRunSheet";
+import { ActiveRunSheet, COLLAPSED_HEIGHT } from "../components/ActiveRunSheet";
 import { useAuth } from "../lib/auth/AuthContext";
 
 function formatDateShort(iso: string): string {
@@ -346,7 +346,17 @@ export default function ActiveRun() {
 
   return (
     <View style={styles.mapScreen}>
-      <RunMap points={rt.points} currentCoordinate={rt.liveCoordinate} live recenterBottomOffset={234} />
+      <RunMap
+        points={rt.points}
+        currentCoordinate={rt.liveCoordinate}
+        live
+        // The collapsed sheet's own real height (see ActiveRunSheet), plus
+        // insets.bottom the same way the sheet itself accounts for it, plus
+        // a real gap - was a flat 234 that didn't grow with the device's own
+        // bottom inset, so on a taller gesture-nav inset the button ended up
+        // nearly touching the sheet's top edge instead of sitting above it.
+        recenterBottomOffset={COLLAPSED_HEIGHT + insets.bottom + 20}
+      />
 
       <BackButton onPress={goBack} top={backTop} />
       <MuteButton muted={rt.coachMuted} onPress={rt.toggleCoachMute} top={backTop} />

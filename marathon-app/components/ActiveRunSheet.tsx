@@ -60,7 +60,7 @@ interface ActiveRunSheetProps {
   onStop: () => void;
 }
 
-const COLLAPSED_HEIGHT = 214;
+export const COLLAPSED_HEIGHT = 214;
 const EXPANDED_HEIGHT_FRACTION = 0.86;
 // Below this, a drag reads as a tap/scroll jitter, not a deliberate swipe -
 // same threshold convention as lib/useHorizontalSwipe.ts, just vertical.
@@ -160,12 +160,16 @@ export function ActiveRunSheet({
   const showPlannedNote = !!plannedSession && plannedSession.session_type !== "rest" && !currentLeg;
 
   return (
-    <Animated.View style={[styles.sheet, { height }]}>
-      <View {...panResponder.panHandlers} style={styles.handleArea}>
-        <Pressable onPress={() => animateTo(!isExpanded)} hitSlop={12} accessibilityRole="button" accessibilityLabel={isExpanded ? "Collapse run details" : "Expand run details"}>
-          <View style={styles.handleBar} />
-        </Pressable>
-      </View>
+    <Animated.View style={[styles.sheet, { height }]} {...panResponder.panHandlers}>
+      <Pressable
+        style={styles.handleArea}
+        onPress={() => animateTo(!isExpanded)}
+        hitSlop={12}
+        accessibilityRole="button"
+        accessibilityLabel={isExpanded ? "Collapse run details" : "Expand run details"}
+      >
+        <View style={styles.handleBar} />
+      </Pressable>
 
       <Animated.View style={[styles.collapsedContent, { opacity: collapsedOpacity }]} pointerEvents={isExpanded ? "none" : "auto"}>
         <RunProgressBar
@@ -189,7 +193,7 @@ export function ActiveRunSheet({
             <Text style={styles.collapsedSideLabel}>TIME</Text>
           </View>
         </View>
-        <View style={styles.controls}>
+        <View style={[styles.controls, styles.collapsedControls]}>
           {phase === "paused" ? (
             <Pressable style={styles.pauseBtn} onPress={onResume} accessibilityRole="button">
               <Text style={styles.pauseBtnText}>Resume</Text>
@@ -355,6 +359,13 @@ const styles = StyleSheet.create({
   paceBehind: { color: palette.warning, fontFamily: fonts.bodySemiBold },
 
   controls: { flexDirection: "row", gap: 10, marginTop: "auto" },
+  // collapsedContent isn't a bounded flex container (it's absolutely
+  // positioned, sized by its own content), so controls' own marginTop:
+  // "auto" - which only does anything inside a flexed, bounded parent like
+  // expandedContent - collapses to ~0 there instead of pushing down, which
+  // is what read as the stats row and Pause/Stop sitting right on top of
+  // each other. An explicit gap instead.
+  collapsedControls: { marginTop: 18 },
   pauseBtn: { flex: 1, height: 52, borderRadius: 14, borderWidth: 1.5, borderColor: "rgba(255,255,255,0.3)", alignItems: "center", justifyContent: "center" },
   pauseBtnText: { fontFamily: fonts.bodySemiBold, fontSize: 15.5, color: "#fff" },
   stopBtn: { flex: 1, height: 52, borderRadius: 14, backgroundColor: palette.accent, alignItems: "center", justifyContent: "center" },
