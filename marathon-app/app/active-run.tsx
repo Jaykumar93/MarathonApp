@@ -347,18 +347,6 @@ export default function ActiveRun() {
   return (
     <View style={styles.mapScreen}>
       <RunMap points={rt.points} currentCoordinate={rt.liveCoordinate} live recenterBottomOffset={234} />
-      {/*
-        TEMPORARY DIAGNOSTIC - remove once real-run testing is done.
-        pointerEvents="none" so it never steals a pan/tap from the map
-        underneath.
-      */}
-      <View style={[styles.debugOverlay, { top: backTop + 50 }]} pointerEvents="none">
-        <Text style={styles.debugText}>
-          phase: {rt.phase} | isLocationActive: {String(rt.isLocationActive)}{"\n"}
-          points.length: {rt.points.length} | liveCoordinate:{" "}
-          {rt.liveCoordinate ? `${rt.liveCoordinate.accuracy?.toFixed(1) ?? "?"}m` : "none yet"}
-        </Text>
-      </View>
 
       <BackButton onPress={goBack} top={backTop} />
       <MuteButton muted={rt.coachMuted} onPress={rt.toggleCoachMute} top={backTop} />
@@ -457,18 +445,4 @@ const styles = StyleSheet.create({
   },
   finishedStatValue: { fontFamily: fonts.dataBold, fontSize: 17, color: "#fff" },
   paceLabel: { fontFamily: fonts.monoMedium, fontSize: 11, letterSpacing: 1, color: "#8a8d92", marginTop: 4 },
-  // TEMPORARY DIAGNOSTIC styles - remove once real-run testing of the
-  // bottom-sheet redesign is done. Sits below the back/mute button row
-  // rather than flush with the top, now that it floats over the full-screen
-  // map instead of a small map box.
-  debugOverlay: {
-    position: "absolute",
-    left: 16,
-    right: 16,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    padding: 8,
-    borderRadius: 8,
-    zIndex: 5,
-  },
-  debugText: { color: "#0f0", fontSize: 11, fontFamily: fonts.mono },
 });
