@@ -83,7 +83,8 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "./plugins/withApkName.js"
     ]
   }
 }
