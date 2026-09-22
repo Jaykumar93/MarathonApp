@@ -126,6 +126,15 @@ export function ActiveRunSheet({
   const animateToRef = useRef(animateTo);
   animateToRef.current = animateTo;
 
+  // Fixed once per gesture, in onPanResponderGrant - gesture.dy is
+  // cumulative from the start of the gesture, not a per-frame increment, so
+  // the base to add it to has to be frozen at grant time too. Reading
+  // progressValueRef (which updates on every setValue below) as the base
+  // instead double-applies: each move event's delta landed on top of an
+  // already-partially-moved value, compounding into movement that outran
+  // the finger more with every frame - what read as "too sensitive."
+  const gestureStartProgressRef = useRef(0);
+
   // Built once - like useHorizontalSwipe, recreating the responder on every
   // render would drop an in-progress gesture. Reads the latest callback
   // through the refs above instead of closing over a stale render's values.
@@ -135,12 +144,12 @@ export function ActiveRunSheet({
       onMoveShouldSetPanResponderCapture: (_, gesture) => Math.abs(gesture.dy) > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
       onPanResponderGrant: () => {
         progress.stopAnimation();
+        gestureStartProgressRef.current = progressValueRef.current;
       },
       onPanResponderMove: (_, gesture: PanResponderGestureState) => {
-        const base = progressValueRef.current;
         // Dragging up (negative dy) increases progress toward expanded.
         const delta = dragRangeRef.current > 0 ? -gesture.dy / dragRangeRef.current : 0;
-        progress.setValue(Math.max(0, Math.min(1, base + delta)));
+        progress.setValue(Math.max(0, Math.min(1, gestureStartProgressRef.current + delta)));
       },
       onPanResponderRelease: (_, gesture: PanResponderGestureState) => {
         const current = progressValueRef.current;
