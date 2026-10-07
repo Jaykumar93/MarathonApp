@@ -3,6 +3,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ViewShot, { type ViewShotRef } from "react-native-view-shot";
+import Svg, { Defs, Pattern, Rect } from "react-native-svg";
 import * as Sharing from "expo-sharing";
 import { File, Paths } from "expo-file-system";
 import { useAuth } from "../lib/auth/AuthContext";
@@ -12,10 +13,19 @@ import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
 import { fonts, spacing, type } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
-import { ShareRouteCard, SHARE_TEMPLATES, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT, type ShareTemplate } from "../components/ShareRouteCard";
+import {
+  ShareRouteCard,
+  SHARE_TEMPLATES,
+  SHARE_CARD_WIDTH,
+  SHARE_CARD_HEIGHT,
+  SHARE_EXPORT_WIDTH,
+  SHARE_EXPORT_HEIGHT,
+  type ShareTemplate,
+} from "../components/ShareRouteCard";
 import type { RoutePoint } from "../lib/gpsStats";
 import { serializeGpx } from "../lib/export/gpx";
 import { serializeTcx } from "../lib/export/tcx";
+import { saveImageToDevice } from "../lib/export/saveImage";
 import type { ExportActivity } from "../lib/export/types";
 
 type ExportFormat = "gpx" | "tcx";
@@ -43,6 +53,8 @@ function formatDuration(seconds: number): string {
  * (expo-sharing), both of which work in plain Expo Go, no dev build
  * needed. Three fixed templates (see ShareRouteCard) rather than a
  * freeform position/font editor - see the implementation log for why.
+ * Each design is a portrait 9:16, transparent-background PNG, and can be
+ * either shared through the OS share sheet or downloaded to a folder.
  *
  * The template picker is a swiped, paged carousel of the actual full-size
  * cards rather than tappable buttons - and doubles as the capture source:
@@ -65,6 +77,8 @@ export default function ShareRun() {
   const [template, setTemplate] = useState<ShareTemplate>("classic");
   const [usePhotoBackground, setUsePhotoBackground] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [shareAvailable, setShareAvailable] = useState(true);
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const viewShotRef = useRef<ViewShotRef>(null);
@@ -86,14 +100,34 @@ export default function ShareRun() {
     else router.replace("/(tabs)/activity");
   }
 
+  function showNotice(message: string) {
+    setNotice(message);
+    setTimeout(() => setNotice((current) => (current === message ? null : current)), 3500);
+  }
+
   async function handleShare() {
     if (!viewShotRef.current) return;
     setSharing(true);
     try {
       const uri = await viewShotRef.current.capture();
-      await Sharing.shareAsync(uri);
+      await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: "Share your run" });
     } finally {
       setSharing(false);
+    }
+  }
+
+  async function handleDownload() {
+    if (!viewShotRef.current || !activity) return;
+    setDownloading(true);
+    try {
+      const uri = await viewShotRef.current.capture();
+      const filename = `stryde-${template}-${activity.start_time.slice(0, 10)}-${Date.now()}.png`;
+      const saved = await saveImageToDevice(uri, filename);
+      if (saved) showNotice("Saved - find it in the folder you picked.");
+    } catch {
+      showNotice("Couldn't save that image. Try again, or pick a different folder.");
+    } finally {
+      setDownloading(false);
     }
   }
 
@@ -189,7 +223,32 @@ export default function ShareRun() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.previewWrap}>
-          <ViewShot ref={viewShotRef} options={{ format: "png", quality: 1 }} style={styles.captureBox}>
+          {/* Sits behind the capture box, not inside it - this is only here so
+              the transparent areas (and the white text) are visible while
+              previewing; it is never part of the exported PNG. */}
+          <View style={styles.checkerboard} pointerEvents="none">
+            <Svg width={SHARE_CARD_WIDTH} height={SHARE_CARD_HEIGHT}>
+              <Defs>
+                <Pattern id="checker" width={24} height={24} patternUnits="userSpaceOnUse">
+                  <Rect x={0} y={0} width={24} height={24} fill="#2a2d33" />
+                  <Rect x={0} y={0} width={12} height={12} fill="#3a3d44" />
+                  <Rect x={12} y={12} width={12} height={12} fill="#3a3d44" />
+                </Pattern>
+              </Defs>
+              <Rect x={0} y={0} width={SHARE_CARD_WIDTH} height={SHARE_CARD_HEIGHT} fill="url(#checker)" />
+            </Svg>
+          </View>
+          <ViewShot
+            ref={viewShotRef}
+            options={{
+              format: "png",
+              quality: 1,
+              width: SHARE_EXPORT_WIDTH,
+              height: SHARE_EXPORT_HEIGHT,
+              result: Platform.OS === "web" ? "data-uri" : "tmpfile",
+            }}
+            style={styles.captureBox}
+          >
             <ScrollView
               horizontal
               pagingEnabled
@@ -212,6 +271,11 @@ export default function ShareRun() {
         </View>
         <Text style={styles.templateName}>{SHARE_TEMPLATES.find((t) => t.id === template)?.label}</Text>
         <Text style={styles.swipeHint}>Swipe the card to change design</Text>
+        <Text style={styles.transparentHint}>
+          {usePhotoBackground && photos.length > 0
+            ? "Photo background on - the image won't be transparent."
+            : "Saved as a transparent PNG (1080 × 1920) - the checkerboard isn't part of the image."}
+        </Text>
 
         {photos.length > 0 && (
           <View style={styles.toggleRow}>
@@ -260,7 +324,26 @@ export default function ShareRun() {
       </ScrollView>
 
       <View style={[styles.shareButtonWrap, { bottom: insets.bottom + 24 }]}>
-        <PrimaryButton label={sharing ? "Preparing…" : "Share"} onPress={handleShare} disabled={sharing || !shareAvailable} loading={sharing} />
+        {notice && <Text style={styles.notice}>{notice}</Text>}
+        <View style={styles.buttonRow}>
+          <View style={styles.buttonSlot}>
+            <PrimaryButton
+              label={downloading ? "Saving…" : "Download"}
+              variant="secondary"
+              onPress={handleDownload}
+              disabled={downloading || sharing}
+              loading={downloading}
+            />
+          </View>
+          <View style={styles.buttonSlot}>
+            <PrimaryButton
+              label={sharing ? "Preparing…" : "Share"}
+              onPress={handleShare}
+              disabled={sharing || downloading || !shareAvailable}
+              loading={sharing}
+            />
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -275,14 +358,19 @@ function createStyles(colors: Colors) {
   backLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
   scrollFlex: { flex: 1 },
   scrollContent: { paddingHorizontal: spacing.screenPadding },
-  previewWrap: { alignItems: "center", marginTop: 6 },
-  captureBox: { width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT, borderRadius: 20, overflow: "hidden" },
+  previewWrap: { alignSelf: "center", width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT, marginTop: 6, borderRadius: 16, overflow: "hidden" },
+  checkerboard: { position: "absolute", top: 0, left: 0 },
+  // No borderRadius/background here - the capture must stay a plain,
+  // transparent rectangle (previewWrap's own rounding only clips the
+  // on-screen preview, outside the capture).
+  captureBox: { width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT, overflow: "hidden" },
   carouselPage: { width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT },
   dotsRow: { flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 14 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.cardLine },
   dotActive: { backgroundColor: colors.accent, width: 16 },
   templateName: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.textPrimary, textAlign: "center", marginTop: 8 },
   swipeHint: { fontFamily: fonts.body, fontSize: 11.5, color: colors.textFaint, textAlign: "center", marginTop: 2 },
+  transparentHint: { fontFamily: fonts.body, fontSize: 11.5, color: colors.textFaint, textAlign: "center", marginTop: 8, paddingHorizontal: 12 },
   toggleRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -315,6 +403,20 @@ function createStyles(colors: Colors) {
     position: "absolute",
     left: spacing.screenPadding,
     right: spacing.screenPadding,
+  },
+  buttonRow: { flexDirection: "row", gap: 10 },
+  buttonSlot: { flex: 1 },
+  notice: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12.5,
+    color: colors.textPrimary,
+    textAlign: "center",
+    backgroundColor: colors.cardBg,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    overflow: "hidden",
   },
   });
 }
