@@ -13,9 +13,10 @@ import { formatHms, parseHms } from "../lib/timeFormat";
 import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
 import { projectRoute } from "../lib/routeShape";
 import type { RoutePoint } from "../lib/gpsStats";
-import { fonts, spacing, type } from "../lib/theme";
+import { fonts, spacing, type, text, inputText, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
+import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
 import { ChipSelect } from "../components/ui/ChipSelect";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PhotoPicker } from "../components/ui/PhotoPicker";
@@ -174,18 +175,16 @@ export default function RunSummary() {
     <View style={styles.screen}>
       <ScrollView
         style={styles.scrollFlex}
-        contentContainerStyle={[styles.container, { paddingTop: 20 + insets.top, paddingBottom: 96 + insets.bottom }]}
+        contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: 96 + insets.bottom }]}
       >
-        <View style={styles.topRow}>
-          <Pressable onPress={goBack} hitSlop={10}>
-            <Text style={styles.backLink}>‹ Back</Text>
-          </Pressable>
-          {!editing && (
-            <Pressable onPress={startEditing} hitSlop={10} accessibilityLabel="Edit run details">
-              <Ionicons name="pencil-outline" size={18} color={colors.textDim} />
-            </Pressable>
-          )}
-        </View>
+        <ScreenHeader
+          onBack={goBack}
+          right={
+            !editing ? (
+              <Pressable onPress={startEditing} hitSlop={10} accessibilityLabel="Edit run details"> <Ionicons name="pencil-outline" size={18} color={colors.textDim} /> </Pressable>
+            ) : undefined
+          }
+        />
 
         {editing ? (
           <TextInput
@@ -436,35 +435,33 @@ function createStyles(colors: Colors) {
   scrollFlex: { flex: 1 },
   container: { padding: spacing.screenPadding, paddingTop: 20, gap: 4 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
-  body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
-  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 },
-  backLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
+  body: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
   header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary, textAlign: "center" },
-  nameLine: { fontFamily: fonts.bodySemiBold, fontSize: 14.5, color: colors.textPrimary, textAlign: "center", marginTop: 4 },
+  nameLine: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary, textAlign: "center", marginTop: 4 },
   nameInput: {
     fontFamily: fonts.bodySemiBold,
-    fontSize: 15,
+    ...inputText("emphasis"),
     color: colors.textPrimary,
     textAlign: "center",
     borderWidth: 1,
     borderColor: colors.cardLine,
-    borderRadius: 10,
+    borderRadius: radius.md,
     paddingVertical: 8,
     paddingHorizontal: 12,
     backgroundColor: colors.cardBg,
   },
   dateLine: {
     fontFamily: fonts.body,
-    fontSize: 13,
+    ...text("small"),
     color: colors.textDim,
     textAlign: "center",
     marginTop: 6,
     marginBottom: 18,
   },
   photoRow: { flexDirection: "row", gap: 8, marginTop: 4, marginBottom: 4, justifyContent: "center" },
-  photoThumb: { width: 84, height: 84, borderRadius: 12 },
+  photoThumb: { width: 84, height: 84, borderRadius: radius.md },
   photoEditSection: { marginTop: 4, marginBottom: 8 },
-  fieldLabel: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.textDim, marginBottom: 8 },
+  fieldLabel: { fontFamily: fonts.bodyMedium, ...inputText("small"), color: colors.textDim, marginBottom: 8 },
   fieldGap: { marginTop: 12 },
   statRow: { flexDirection: "row", gap: 8, marginBottom: 6 },
   statCard: {
@@ -486,8 +483,8 @@ function createStyles(colors: Colors) {
   },
   trackedNote: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, textAlign: "center", marginBottom: 10 },
   askCoachRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, marginBottom: 10 },
-  askCoachText: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.secondaryAccent },
-  cardTitle: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: colors.textPrimary, marginBottom: 6 },
+  askCoachText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.secondaryAccent },
+  cardTitle: { fontFamily: fonts.bodyBold, ...text("small"), color: colors.textPrimary, marginBottom: 6 },
   routeCardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
   routeLegend: { flexDirection: "row", gap: 16, marginTop: 8 },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
@@ -517,8 +514,8 @@ function createStyles(colors: Colors) {
   modalBackdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(20,22,26,0.45)" },
   confirmSheet: {
     backgroundColor: colors.sheetBg,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
     padding: 20,
     paddingBottom: 28,
     borderWidth: 1.5,
@@ -528,13 +525,13 @@ function createStyles(colors: Colors) {
   alertIcon: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: radius.pill,
     backgroundColor: colors.dangerBg,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
   },
-  confirmTitle: { fontFamily: fonts.bodyBold, fontSize: 16.5, color: colors.danger, marginBottom: 4 },
-  confirmBody: { fontFamily: fonts.body, fontSize: 13.5, color: colors.textDim, marginBottom: 16 },
+  confirmTitle: { fontFamily: fonts.bodyBold, ...text("emphasis"), color: colors.danger, marginBottom: 4 },
+  confirmBody: { fontFamily: fonts.body, ...text("body"), color: colors.textDim, marginBottom: 16 },
   });
 }

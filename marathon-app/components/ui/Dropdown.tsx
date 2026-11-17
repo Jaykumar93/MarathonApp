@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, ViewStyle } from "react-native";
-import { fonts } from "../../lib/theme";
+import { fonts, text, radius } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Badge } from "./Badge";
 
@@ -84,17 +84,17 @@ function createStyles(colors: Colors) {
       height: 50,
       borderWidth: 1,
       borderColor: colors.cardLine,
-      borderRadius: 12,
+      borderRadius: radius.md,
       backgroundColor: colors.cardBg,
       paddingHorizontal: 12,
       flexDirection: "row",
       alignItems: "center",
       gap: 6,
     },
-    boxCompact: { height: 34, paddingHorizontal: 10, borderRadius: 17 },
-    value: { fontFamily: fonts.bodySemiBold, fontSize: 14.5, color: colors.textPrimary, flex: 1 },
-    valueCompact: { fontFamily: fonts.bodyMedium, fontSize: 12.5 },
-    caret: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint },
+    boxCompact: { height: 34, paddingHorizontal: 10, borderRadius: radius.pill },
+    value: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary, flex: 1 },
+    valueCompact: { fontFamily: fonts.bodyMedium, ...text("small") },
+    caret: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint },
     overlayWrap: { flex: 1, justifyContent: "center", alignItems: "center", padding: 32 },
     backdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(20,22,26,0.45)" },
     sheet: {
@@ -102,13 +102,13 @@ function createStyles(colors: Colors) {
       maxWidth: 280,
       maxHeight: 360,
       backgroundColor: colors.sheetBg,
-      borderRadius: 16,
+      borderRadius: radius.lg,
       paddingVertical: 6,
       overflow: "hidden",
     },
     optionRow: { paddingVertical: 13, paddingHorizontal: 20 },
     optionRowSelected: { backgroundColor: colors.screenBg },
-    optionText: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.textPrimary },
+    optionText: { fontFamily: fonts.bodyMedium, ...text("emphasis"), color: colors.textPrimary },
     optionTextSelected: { fontFamily: fonts.bodySemiBold, color: colors.accent },
   });
 }

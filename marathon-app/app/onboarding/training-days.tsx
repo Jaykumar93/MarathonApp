@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
 import { ChipSelect } from "../../components/ui/ChipSelect";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
-import { fonts } from "../../lib/theme";
+import { fonts, text } from "../../lib/theme";
 import { useTheme } from "../../lib/theme/ThemeContext";
 import type { DayOfWeek } from "../../lib/planEngine/types";
 
@@ -37,7 +37,7 @@ export default function TrainingDays() {
       nextDisabled={!answers.trainingDaysPerWeek || !answers.longRunDay}
     >
       <View>
-        <Text style={{ fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textDim, marginBottom: 8 }}>
+        <Text style={{ fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textDim, marginBottom: 8 }}>
           Days per week
         </Text>
         <ChipSelect
@@ -47,7 +47,7 @@ export default function TrainingDays() {
         />
       </View>
       <View>
-        <Text style={{ fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textDim, marginBottom: 8 }}>
+        <Text style={{ fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textDim, marginBottom: 8 }}>
           Long run day
         </Text>
         <ChipSelect

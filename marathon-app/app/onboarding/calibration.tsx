@@ -6,7 +6,7 @@ import { ChipSelect } from "../../components/ui/ChipSelect";
 import { TextField } from "../../components/ui/TextField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
 import { parseHms } from "../../lib/timeFormat";
-import { fonts, palette } from "../../lib/theme";
+import { fonts, palette, text } from "../../lib/theme";
 import { useTheme } from "../../lib/theme/ThemeContext";
 
 const CALIBRATION_DISTANCE_OPTIONS = [
@@ -64,7 +64,7 @@ export default function Calibration() {
         keyboardType="numbers-and-punctuation"
       />
       <View>
-        <Text style={{ fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textDim, marginBottom: 8 }}>
+        <Text style={{ fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textDim, marginBottom: 8 }}>
           Or a recent race result
         </Text>
         <TextField
@@ -75,7 +75,7 @@ export default function Calibration() {
           keyboardType="numbers-and-punctuation"
         />
         <View style={{ marginTop: 12 }}>
-          <Text style={{ fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textDim, marginBottom: 8 }}>
+          <Text style={{ fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textDim, marginBottom: 8 }}>
             Distance
           </Text>
           <ChipSelect
@@ -100,7 +100,7 @@ export default function Calibration() {
             />
           </View>
           {calibrationIncomplete && (
-            <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: palette.danger, marginTop: 8 }}>
+            <Text style={{ fontFamily: fonts.body, ...text("small"), color: palette.danger, marginTop: 8 }}>
               Pick the distance this time was run over, or clear the duration field to skip this section.
             </Text>
           )}

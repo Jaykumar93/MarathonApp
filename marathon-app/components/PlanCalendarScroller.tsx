@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
-import { fonts, noSelectStyle, palette } from "../lib/theme";
+import { fonts, noSelectStyle, palette, text, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { useHorizontalSwipe } from "../lib/useHorizontalSwipe";
 import { useSlideTransition } from "../lib/useSlideTransition";
@@ -261,14 +261,14 @@ export function PlanCalendarScroller({ days, selectedDate, onSelectDate }: PlanC
 function createStyles(colors: Colors) {
   return StyleSheet.create({
     header: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 8 },
-    navArrow: { fontFamily: fonts.dataBold, fontSize: 20, color: colors.textDim, paddingHorizontal: 6 },
+    navArrow: { fontFamily: fonts.dataBold, ...text("stat"), color: colors.textDim, paddingHorizontal: 6 },
     navArrowDisabled: { opacity: 0.3 },
-    monthLabel: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.textPrimary },
+    monthLabel: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
     list: { gap: 0, paddingVertical: 2 },
     dayCol: { width: CELL_WIDTH, alignItems: "center", gap: 5 },
-    dayName: { fontSize: 8.5, color: colors.textFaint, fontWeight: "600" },
-    cell: { width: 32, height: 32, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+    dayName: { ...text("micro"), color: colors.textFaint, fontWeight: "600" },
+    cell: { width: 32, height: 32, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
     todayRing: { borderWidth: 2.5, borderColor: colors.textPrimary },
-    cellText: { fontFamily: fonts.data, fontSize: 11.5, fontWeight: "600" },
+    cellText: { fontFamily: fonts.data, ...text("caption"), fontWeight: "600" },
   });
 }

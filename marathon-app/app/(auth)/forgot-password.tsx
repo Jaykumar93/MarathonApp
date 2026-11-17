@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Link } from "expo-router";
 import { requestPasswordReset } from "../../lib/auth/passwordReset";
-import { fonts, palette, spacing } from "../../lib/theme";
+import { fonts, palette, spacing, text, fs } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { BrandMark } from "../../components/ui/BrandMark";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { TextField } from "../../components/ui/TextField";
+import { KeyboardAvoider } from "../../components/ui/KeyboardAvoider";
 
 export default function ForgotPassword() {
   const { colors } = useTheme();
@@ -51,7 +52,7 @@ export default function ForgotPassword() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+    <KeyboardAvoider style={styles.flex}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.markRow}>
           <BrandMark size={56} />
@@ -75,7 +76,7 @@ export default function ForgotPassword() {
           </Link>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAvoider>
   );
 }
 
@@ -84,11 +85,11 @@ function createStyles(colors: Colors) {
     flex: { flex: 1, backgroundColor: colors.screenBg },
     container: { flexGrow: 1, padding: spacing.screenPadding, justifyContent: "center", gap: 22 },
     markRow: { alignItems: "center", marginBottom: 4 },
-    title: { fontFamily: fonts.dataBold, fontSize: 26, color: colors.textPrimary },
-    subtitle: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim, lineHeight: 19 },
+    title: { fontFamily: fonts.dataBold, ...text("headline"), color: colors.textPrimary },
+    subtitle: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: colors.textDim, lineHeight: 19 },
     form: { gap: 14 },
-    error: { fontFamily: fonts.body, fontSize: 13, color: palette.danger },
+    error: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
     footerRow: { flexDirection: "row", justifyContent: "center" },
-    footerLink: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.accent },
+    footerLink: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accent },
   });
 }

@@ -1,13 +1,14 @@
 import React, { useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
-import { fonts, palette, spacing } from "../lib/theme";
+import { fonts, palette, spacing, text } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { BrandMark } from "../components/ui/BrandMark";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { TextField } from "../components/ui/TextField";
+import { KeyboardAvoider } from "../components/ui/KeyboardAvoider";
 
 /**
  * Only ever reached via the password-recovery email link - see
@@ -51,7 +52,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+    <KeyboardAvoider style={styles.flex}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.markRow}>
           <BrandMark size={56} />
@@ -99,7 +100,7 @@ export default function ResetPassword() {
           />
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAvoider>
   );
 }
 
@@ -108,9 +109,9 @@ function createStyles(colors: Colors) {
     flex: { flex: 1, backgroundColor: colors.screenBg },
     container: { flexGrow: 1, padding: spacing.screenPadding, justifyContent: "center", gap: 22 },
     markRow: { alignItems: "center", marginBottom: 4 },
-    title: { fontFamily: fonts.dataBold, fontSize: 26, color: colors.textPrimary },
-    subtitle: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
+    title: { fontFamily: fonts.dataBold, ...text("headline"), color: colors.textPrimary },
+    subtitle: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
     form: { gap: 14 },
-    error: { fontFamily: fonts.body, fontSize: 13, color: palette.danger },
+    error: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
   });
 }

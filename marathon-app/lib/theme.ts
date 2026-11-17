@@ -36,28 +36,121 @@ export const fonts = {
   monoSemiBold: "JetBrainsMono_600SemiBold",
 } as const;
 
-// Bumped up across the board (see the "components look small" real-device
-// feedback that also flagged Active Run's own local stat sizing) - a
-// moderate, proportional increase rather than Active Run's much larger
-// jump, since these are read sitting still browsing a screen, not glanced
-// at mid-run. Used by 19+ files (see `type.` usages) - a shared-token fix
-// here is what actually gives every screen consistent, readable sizing at
-// once, instead of patching each screen's own local styles one at a time.
+// The one font-size scale. Eight text steps plus four display steps - every
+// fontSize in the app should be one of these, not a local half-size like
+// 13.5 or 8.5 (there were ~30 distinct values before this, several below
+// the 11 floor that real-device feedback flagged as unreadably small).
+// The older names (hLg, hMd, pDim, ...) are kept as aliases onto the same
+// steps, since 19+ files already use them.
 export const type = {
+  micro: 11,
+  caption: 12,
+  small: 13,
+  body: 14,
+  emphasis: 16,
+  title: 19,
+  stat: 22,
+  headline: 25,
+  display: 30,
+  hero: 40,
+  numeral: 60,
+  countdown: 96,
+
+  // aliases (existing call sites)
   hLg: 25,
   hMd: 19,
   pDim: 13,
   pFaint: 12,
   sectionLabel: 11,
-  statValue: 20,
-  statLabel: 10.5,
+  statValue: 22,
+  statLabel: 11,
 } as const;
+
+/** Same object as `type`, under a name that can't collide with a local variable called `type` (activity.type, a `type` prop, ...) - used where a file needs the raw size. */
+export const fs = type;
+
+export type TypeStep ="micro" | "caption" | "small" | "body" | "emphasis" | "title" | "stat" | "headline" | "display" | "hero" | "numeral" | "countdown";
+
+const LINE_HEIGHT: Record<TypeStep, number> = {
+  micro: 14,
+  caption: 16,
+  small: 18,
+  body: 20,
+  emphasis: 22,
+  title: 25,
+  stat: 28,
+  headline: 31,
+  display: 36,
+  hero: 46,
+  numeral: 66,
+  countdown: 100,
+};
+
+/**
+ * fontSize + an explicit lineHeight + includeFontPadding: false, spread into
+ * a text style: `...text("body")`. Left to defaults, iOS and Android lay the
+ * same custom font out differently (Android adds extra top/bottom "font
+ * padding" and the two default to different line heights), which is what
+ * made identical styles sit a few pixels apart between platforms. Pinning
+ * all three makes a line of text the same height everywhere.
+ *
+ * Don't spread this into a TextInput style - an explicit lineHeight shifts
+ * a single-line input's text off-center on iOS; use `inputText()` there.
+ */
+export function text(step: TypeStep) {
+  return { fontSize: type[step], lineHeight: LINE_HEIGHT[step], includeFontPadding: false } as const;
+}
+
+/** For TextInput styles: the size and Android padding fix, without lineHeight (see text()). */
+export function inputText(step: TypeStep) {
+  return { fontSize: type[step], includeFontPadding: false } as const;
+}
 
 export const spacing = {
   screenPadding: 18,
   cardPadding: 14,
   cardGap: 10,
   cardRadius: 16,
+} as const;
+
+// A short spacing scale for new layout code - the screen/card tokens above
+// stay as the named exceptions for the two paddings every screen shares.
+export const space = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  xxl: 32,
+} as const;
+
+// Corner radii. Four steps; `pill` is any element whose radius should be
+// "as round as its own height allows" (React Native clamps an oversized
+// radius to half the shorter side on both platforms, so one big number
+// covers every pill and circle without recomputing size / 2 per element).
+export const radius = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 22,
+  pill: 999,
+} as const;
+
+// Active Run, Track and the share card are deliberately dark (or colorless)
+// regardless of the app's light/dark toggle, so they don't consume
+// ThemeContext - their colors live here instead of as raw hex/rgba literals
+// scattered through each file.
+export const darkSurface = {
+  bg: palette.predawn,
+  text: "#FFFFFF",
+  textDim: "#C7C9CB",
+  textFaint: "#8A8D92",
+  card: "rgba(255,255,255,0.06)",
+  outline: "rgba(255,255,255,0.3)",
+  line: "rgba(255,255,255,0.12)",
+  handle: "rgba(255,255,255,0.28)",
+  scrim: "rgba(0,0,0,0.5)",
+  floating: "rgba(20,22,26,0.85)",
 } as const;
 
 /**

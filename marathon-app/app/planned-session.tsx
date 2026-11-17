@@ -10,10 +10,11 @@ import { buildFallbackVoiceScript, type RunVoiceScript } from "../lib/runTrackin
 import { getOrGenerateVoiceScript } from "../lib/runTracking/voiceScript";
 import { formatDistance, formatPace } from "../lib/units";
 import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
-import { fonts, spacing, type } from "../lib/theme";
+import { fonts, spacing, type, text } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
+import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
 
 function formatDateHeading(iso: string): string {
   const d = new Date(iso + "T00:00:00Z");
@@ -101,14 +102,9 @@ export default function PlannedSessionDetail() {
     <View style={styles.screen}>
       <ScrollView
         style={styles.scrollFlex}
-        contentContainerStyle={[styles.container, { paddingTop: 20 + insets.top, paddingBottom: 96 + insets.bottom }]}
+        contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: 96 + insets.bottom }]}
       >
-        <View style={styles.topRow}>
-          <Pressable onPress={goBack} hitSlop={10}>
-            <Text style={styles.backLink}>‹ Back</Text>
-          </Pressable>
-        </View>
-        <Text style={styles.header}>Planned · {SESSION_TYPE_LABEL[session.session_type] ?? session.session_type}</Text>
+        <ScreenHeader title={`Planned · ${SESSION_TYPE_LABEL[session.session_type] ?? session.session_type}`} onBack={goBack} />
         <Text style={styles.dateLine}>{formatDateHeading(session.session_date)}</Text>
 
         <View style={styles.statRow}>
@@ -174,11 +170,8 @@ function createStyles(colors: Colors) {
   scrollFlex: { flex: 1 },
   container: { padding: spacing.screenPadding, paddingTop: 20, gap: 4 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
-  body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
-  topRow: { marginBottom: 14 },
-  backLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
-  header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary, textAlign: "center" },
-  dateLine: { fontFamily: fonts.body, fontSize: 13, color: colors.textDim, textAlign: "center", marginBottom: 18 },
+  body: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
+  dateLine: { fontFamily: fonts.body, ...text("small"), color: colors.textDim, textAlign: "center", marginBottom: 18 },
   statRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
   statCard: {
     flex: 1,
@@ -190,7 +183,7 @@ function createStyles(colors: Colors) {
   statLabel: { fontFamily: fonts.monoMedium, fontSize: type.statLabel, color: colors.textFaint, marginBottom: 4 },
   statValue: { fontFamily: fonts.dataBold, fontSize: type.statValue, color: colors.textPrimary },
   cardHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  cardTitle: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: colors.textPrimary, marginBottom: 6 },
+  cardTitle: { fontFamily: fonts.bodyBold, ...text("small"), color: colors.textPrimary, marginBottom: 6 },
   detailLine: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim, marginTop: 2 },
   detailLineSpaced: { marginTop: 8 },
   startButtonWrap: {

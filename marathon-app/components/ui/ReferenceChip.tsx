@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { fonts } from "../../lib/theme";
+import { fonts, text, radius } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 
 interface ReferenceChipProps {
@@ -39,11 +39,11 @@ function createStyles(colors: Colors) {
       backgroundColor: colors.cardBg,
       borderWidth: 1,
       borderColor: colors.cardLine,
-      borderRadius: 100,
+      borderRadius: radius.pill,
       paddingVertical: 5,
       paddingHorizontal: 10,
     },
-    text: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.textDim },
-    arrow: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.secondaryAccent },
+    text: { fontFamily: fonts.bodyMedium, ...text("micro"), color: colors.textDim },
+    arrow: { fontFamily: fonts.bodySemiBold, ...text("caption"), color: colors.secondaryAccent },
   });
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { fonts } from "../../lib/theme";
+import { fonts, text } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Dropdown } from "./Dropdown";
 
@@ -102,7 +102,7 @@ export function DateField({ label, value, onChange, yearsAhead = 5, yearsBack = 
 function createStyles(colors: Colors) {
   return StyleSheet.create({
     wrap: { gap: 6 },
-    label: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.textDim },
+    label: { fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textDim },
     row: { flexDirection: "row", gap: 8 },
   });
 }

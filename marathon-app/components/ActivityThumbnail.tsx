@@ -6,7 +6,7 @@ import type { ActivityRow } from "../lib/data/activities";
 import { projectRoute } from "../lib/routeShape";
 import type { RoutePoint } from "../lib/gpsStats";
 import { SESSION_TYPE_COLOR } from "../lib/sessionTypes";
-import { palette } from "../lib/theme";
+import { palette, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 
 const SIZE = 40;
@@ -52,7 +52,7 @@ const badgeStyles = StyleSheet.create({
     bottom: 0,
     width: 16,
     height: 16,
-    borderRadius: 8,
+    borderRadius: radius.pill,
     backgroundColor: palette.accent,
     borderWidth: 1.5,
     borderColor: "#fff",
@@ -111,7 +111,7 @@ function createStyles(colors: Colors) {
     wrap: {
       width: SIZE,
       height: SIZE,
-      borderRadius: 10,
+      borderRadius: radius.md,
       alignItems: "center",
       justifyContent: "center",
       overflow: "hidden",

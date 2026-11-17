@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { fonts } from "../../lib/theme";
+import { fonts, text, radius } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 
 /** Small inline count pill - used by both the "Filters" button and Dropdown's own badge prop, so an active-filter indicator always looks and sits the same way wherever it appears. */
@@ -19,12 +19,12 @@ function createStyles(colors: Colors) {
     badge: {
       minWidth: 16,
       height: 16,
-      borderRadius: 8,
+      borderRadius: radius.pill,
       backgroundColor: colors.accent,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: 3,
     },
-    text: { fontFamily: fonts.monoSemiBold, fontSize: 9.5, color: "#fff" },
+    text: { fontFamily: fonts.monoSemiBold, ...text("micro"), color: "#fff" },
   });
 }

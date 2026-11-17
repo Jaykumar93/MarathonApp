@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../lib/auth/AuthContext";
@@ -15,12 +15,13 @@ import { getPlanSessionById, type PlanSessionRow } from "../../lib/data/plans";
 import { askCoach } from "../../lib/coach/askCoach";
 import { formatDistance, formatPace } from "../../lib/units";
 import { SESSION_TYPE_LABEL } from "../../lib/sessionTypes";
-import { fonts, spacing } from "../../lib/theme";
+import { fonts, spacing, text, fs, inputText, radius } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Card } from "../../components/ui/Card";
 import { ReferenceChip } from "../../components/ui/ReferenceChip";
 import { CoachChart } from "../../components/ui/CoachChart";
 import { CoachMessageBody } from "../../components/ui/CoachMessageBody";
+import { KeyboardAvoider } from "../../components/ui/KeyboardAvoider";
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -400,7 +401,7 @@ export default function Coach() {
   ) : null;
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={90}>
+    <KeyboardAvoider style={styles.flex} offset={90}>
       <View style={styles.toolbarRow}>
         <Pressable style={styles.toolbarButton} onPress={startNewChat} hitSlop={8} accessibilityRole="button" accessibilityLabel="Start a new chat">
           <Ionicons name="add-circle-outline" size={14} color={colors.textDim} />
@@ -525,7 +526,7 @@ export default function Coach() {
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+    </KeyboardAvoider>
   );
 }
 
@@ -540,24 +541,24 @@ function createStyles(colors: Colors) {
       paddingTop: 4,
       paddingBottom: 2,
     },
-    toolbarButton: { flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 6, borderRadius: 8 },
-    toolbarButtonText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.textDim },
+    toolbarButton: { flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 6, borderRadius: radius.sm },
+    toolbarButtonText: { fontFamily: fonts.bodyMedium, ...text("micro"), color: colors.textDim },
     listContent: { flexGrow: 1, padding: spacing.screenPadding, gap: 12 },
     emptyState: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, paddingTop: 60, paddingHorizontal: 20 },
-    emptyTitle: { fontFamily: fonts.dataBold, fontSize: 18, color: colors.textPrimary },
-    emptyBody: { fontFamily: fonts.body, fontSize: 13.5, color: colors.textDim, textAlign: "center", lineHeight: 19 },
+    emptyTitle: { fontFamily: fonts.dataBold, ...text("title"), color: colors.textPrimary },
+    emptyBody: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: colors.textDim, textAlign: "center", lineHeight: 19 },
     rowUser: { alignItems: "flex-end", gap: 6 },
     rowAssistant: { alignItems: "flex-start", gap: 6 },
-    bubble: { maxWidth: "85%", borderRadius: 16, paddingVertical: 10, paddingHorizontal: 14 },
+    bubble: { maxWidth: "85%", borderRadius: radius.lg, paddingVertical: 10, paddingHorizontal: 14 },
     bubbleUser: { backgroundColor: colors.accent, borderBottomRightRadius: 4 },
     bubbleAssistant: { backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.cardLine, borderBottomLeftRadius: 4 },
     thinkingBubble: { flexDirection: "row", alignItems: "center", gap: 8 },
-    thinkingText: { fontFamily: fonts.body, fontSize: 13, color: colors.textDim },
+    thinkingText: { fontFamily: fonts.body, ...text("small"), color: colors.textDim },
     chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, maxWidth: "90%" },
     entryCard: { marginBottom: 4 },
-    entryTitle: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.textPrimary },
-    entryDetail: { fontFamily: fonts.mono, fontSize: 12, color: colors.textDim, marginTop: 3 },
-    errorText: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.danger, paddingHorizontal: spacing.screenPadding, paddingBottom: 4 },
+    entryTitle: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
+    entryDetail: { fontFamily: fonts.mono, ...text("caption"), color: colors.textDim, marginTop: 3 },
+    errorText: { fontFamily: fonts.bodyMedium, ...text("small"), color: colors.danger, paddingHorizontal: spacing.screenPadding, paddingBottom: 4 },
     inputRow: {
       flexDirection: "row",
       alignItems: "flex-end",
@@ -569,20 +570,20 @@ function createStyles(colors: Colors) {
       flex: 1,
       minHeight: 44,
       maxHeight: 120,
-      borderRadius: 14,
+      borderRadius: radius.md,
       borderWidth: 1,
       borderColor: colors.cardLine,
       backgroundColor: colors.inputBg,
       paddingVertical: 10,
       paddingHorizontal: 14,
       fontFamily: fonts.body,
-      fontSize: 14.5,
+      ...inputText("body"),
       color: colors.textPrimary,
     },
     sendButton: {
       width: 44,
       height: 44,
-      borderRadius: 22,
+      borderRadius: radius.pill,
       backgroundColor: colors.accent,
       alignItems: "center",
       justifyContent: "center",
@@ -592,8 +593,8 @@ function createStyles(colors: Colors) {
     modalBackdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(20,22,26,0.45)" },
     historySheet: {
       backgroundColor: colors.sheetBg,
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
       padding: 20,
       paddingBottom: 28,
       borderWidth: 1,
@@ -601,8 +602,8 @@ function createStyles(colors: Colors) {
       borderBottomWidth: 0,
       maxHeight: "70%",
     },
-    historyTitle: { fontFamily: fonts.bodyBold, fontSize: 16.5, color: colors.textPrimary, marginBottom: 12 },
-    historyEmpty: { fontFamily: fonts.body, fontSize: 13.5, color: colors.textDim },
+    historyTitle: { fontFamily: fonts.bodyBold, ...text("emphasis"), color: colors.textPrimary, marginBottom: 12 },
+    historyEmpty: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
     historyList: { flexGrow: 0 },
     historyRow: {
       flexDirection: "row",
@@ -614,12 +615,12 @@ function createStyles(colors: Colors) {
     },
     historyRowMain: { flex: 1, gap: 3 },
     historyDeleteButton: { padding: 4 },
-    historyPreview: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary },
+    historyPreview: { fontFamily: fonts.bodyMedium, ...text("body"), color: colors.textPrimary },
     historyPreviewActive: { color: colors.accent },
-    historyMeta: { fontFamily: fonts.mono, fontSize: 10.5, color: colors.textFaint },
-    historyConfirmText: { flex: 1, fontFamily: fonts.body, fontSize: 13, color: colors.textDim },
+    historyMeta: { fontFamily: fonts.mono, ...text("micro"), color: colors.textFaint },
+    historyConfirmText: { flex: 1, fontFamily: fonts.body, ...text("small"), color: colors.textDim },
     historyConfirmRow: { flexDirection: "row", gap: 14 },
-    historyCancelText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textDim },
-    historyDeleteConfirmText: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.danger },
+    historyCancelText: { fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textDim },
+    historyDeleteConfirmText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.danger },
   });
 }

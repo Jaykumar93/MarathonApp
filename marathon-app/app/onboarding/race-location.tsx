@@ -5,7 +5,7 @@ import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
 import { TextField } from "../../components/ui/TextField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
 import { geocodeCity } from "../../lib/weather/openMeteo";
-import { fonts, palette } from "../../lib/theme";
+import { fonts, palette, text } from "../../lib/theme";
 
 export default function RaceLocation() {
   const router = useRouter();
@@ -42,7 +42,7 @@ export default function RaceLocation() {
       nextLoading={geocoding}
     >
       <TextField label="City" value={city} onChangeText={setCity} placeholder="e.g. Chicago, IL" />
-      {error && <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: palette.danger }}>{error}</Text>}
+      {error && <Text style={{ fontFamily: fonts.body, ...text("small"), color: palette.danger }}>{error}</Text>}
     </OnboardingStepLayout>
   );
 }

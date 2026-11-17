@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { RoutePoint } from "../lib/gpsStats";
-import { fonts } from "../lib/theme";
+import { fonts, text, radius } from "../lib/theme";
 
 interface RunMapProps {
   points: RoutePoint[];
@@ -26,6 +26,6 @@ export function RunMap({}: RunMapProps) {
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.06)" },
-  text: { fontFamily: fonts.body, fontSize: 12, color: "#5a5d62", textAlign: "center", paddingHorizontal: 30 },
+  fill: { flex: 1, borderRadius: radius.md, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.06)" },
+  text: { fontFamily: fonts.body, ...text("caption"), color: "#5a5d62", textAlign: "center", paddingHorizontal: 30 },
 });

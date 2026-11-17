@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../lib/auth/AuthContext";
 import { supabase } from "../lib/supabase";
-import { fonts, spacing } from "../lib/theme";
+import { fonts, spacing, text, fs } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 
@@ -49,13 +49,13 @@ function createStyles(colors: Colors) {
     container: { flexGrow: 1, justifyContent: "center", padding: spacing.screenPadding, gap: 14, backgroundColor: colors.screenBg },
     badge: {
       fontFamily: fonts.monoMedium,
-      fontSize: 11,
+      ...text("micro"),
       textTransform: "uppercase",
       letterSpacing: 1,
       color: colors.warning,
     },
-    title: { fontFamily: fonts.dataBold, fontSize: 26, color: colors.textPrimary },
-    body: { fontFamily: fonts.body, fontSize: 14.5, lineHeight: 21, color: colors.textDim },
+    title: { fontFamily: fonts.dataBold, ...text("headline"), color: colors.textPrimary },
+    body: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, lineHeight: 21, color: colors.textDim },
     actions: { gap: 10, marginTop: 8 },
   });
 }

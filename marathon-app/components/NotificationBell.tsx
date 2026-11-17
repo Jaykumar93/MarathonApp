@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { fonts } from "../lib/theme";
+import { fonts, text, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { useNotifications } from "../lib/notifications/NotificationsContext";
 
@@ -39,12 +39,12 @@ function createStyles(colors: Colors) {
       right: -4,
       minWidth: 16,
       height: 16,
-      borderRadius: 8,
+      borderRadius: radius.pill,
       paddingHorizontal: 3,
       backgroundColor: colors.accent,
       alignItems: "center",
       justifyContent: "center",
     },
-    badgeText: { fontFamily: fonts.bodyBold, fontSize: 10, color: "#fff" },
+    badgeText: { fontFamily: fonts.bodyBold, ...text("micro"), color: "#fff" },
   });
 }

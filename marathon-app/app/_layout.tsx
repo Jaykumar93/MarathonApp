@@ -29,6 +29,7 @@ import { isPasswordRecoveryUrl } from "../lib/auth/passwordReset";
 import { NotificationsProvider } from "../lib/notifications/NotificationsContext";
 import { RunTrackingProvider } from "../lib/runTracking/RunTrackingContext";
 import { ThemeProvider } from "../lib/theme/ThemeContext";
+import { ThemedStatusBar } from "../components/ThemedStatusBar";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -107,6 +108,7 @@ function RootLayoutInner() {
     <AuthProvider>
       <NotificationsProvider>
         <ThemeProvider>
+          <ThemedStatusBar />
           <RunTrackingProvider>
             <AuthGate />
           </RunTrackingProvider>

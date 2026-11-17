@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { fonts, noSelectStyle } from "../lib/theme";
+import { fonts, noSelectStyle, text } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import type { ActivityRow } from "../lib/data/activities";
 import { todayIso } from "../lib/data/usePlanData";
@@ -114,8 +114,8 @@ export function MonthActivityChart({
 function createStyles(colors: Colors) {
   return StyleSheet.create({
     header: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 10 },
-    navArrow: { fontFamily: fonts.dataBold, fontSize: 20, color: colors.textDim, paddingHorizontal: 6 },
-    monthLabel: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.textPrimary },
+    navArrow: { fontFamily: fonts.dataBold, ...text("stat"), color: colors.textDim, paddingHorizontal: 6 },
+    monthLabel: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
     // paddingTop needs to clear PressTooltip's bubble (anchored `top: -38`
     // above the bar it's attached to, ~21px tall) - 26 wasn't enough
     // headroom and let the bubble overlap this chart's own month label.
@@ -126,7 +126,7 @@ function createStyles(colors: Colors) {
     barFilled: { backgroundColor: colors.accent },
     barEmpty: { backgroundColor: colors.cardLine },
     barSelected: { backgroundColor: colors.contour },
-    dayLabel: { fontFamily: fonts.mono, fontSize: 8, color: colors.textFaint, marginTop: 4 },
+    dayLabel: { fontFamily: fonts.mono, ...text("micro"), color: colors.textFaint, marginTop: 4 },
     dayLabelToday: { color: colors.accent, fontFamily: fonts.monoSemiBold },
   });
 }

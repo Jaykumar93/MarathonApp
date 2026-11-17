@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, Switch, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
 import { useAuth } from "../lib/auth/AuthContext";
 import { supabase } from "../lib/supabase";
-import { fonts, palette, spacing, type } from "../lib/theme";
+import { fonts, palette, spacing, type, text } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
@@ -14,6 +14,8 @@ import { TextField } from "../components/ui/TextField";
 import { Dropdown } from "../components/ui/Dropdown";
 import { healthConnectProvider } from "../lib/health/healthConnectProvider";
 import { syncHealthActivities } from "../lib/health/syncHealthData";
+import { SectionLabel } from "../components/ui/SectionLabel";
+import { Toggle } from "../components/ui/Toggle";
 
 const UNIT_OPTIONS = [
   { value: "km" as const, label: "Kilometers" },
@@ -230,7 +232,7 @@ export default function Settings() {
       </View>
       <Text style={styles.header}>Profile & Settings</Text>
 
-      <Text style={styles.sectionLabel}>PROFILE</Text>
+      <SectionLabel>PROFILE</SectionLabel>
       <Card>
         <TextField label="Name" value={name} onChangeText={setName} placeholder="Your name" autoCapitalize="words" />
         {nameDirty && (
@@ -272,7 +274,7 @@ export default function Settings() {
         <Text style={styles.memberSince}>Member since {formatMemberSince(profile?.created_at)}</Text>
       </Card>
 
-      <Text style={styles.sectionLabel}>APP CONNECTIONS</Text>
+      <SectionLabel>APP CONNECTIONS</SectionLabel>
       <Card>
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
@@ -307,7 +309,7 @@ export default function Settings() {
         {!!healthSyncStatus && <Text style={styles.subLabel}>{healthSyncStatus}</Text>}
       </Card>
 
-      <Text style={styles.sectionLabel}>GEAR</Text>
+      <SectionLabel>GEAR</SectionLabel>
       <Card>
         <Pressable style={styles.row} onPress={() => router.push("/gear")}>
           <Text style={styles.label}>Shoes</Text>
@@ -315,7 +317,7 @@ export default function Settings() {
         </Pressable>
       </Card>
 
-      <Text style={styles.sectionLabel}>PREFERENCES</Text>
+      <SectionLabel>PREFERENCES</SectionLabel>
       <Card>
         <Text style={styles.label}>Distance unit</Text>
         <View style={{ marginTop: 8, opacity: savingUnit ? 0.5 : 1 }}>
@@ -326,11 +328,9 @@ export default function Settings() {
 
         <View style={styles.row}>
           <Text style={styles.label}>Dark mode</Text>
-          <Switch
+          <Toggle
             value={mode === "dark"}
             onValueChange={(dark) => setMode(dark ? "dark" : "light")}
-            trackColor={{ false: colors.cardLine, true: colors.accent }}
-            thumbColor="#fff"
           />
         </View>
 
@@ -341,12 +341,10 @@ export default function Settings() {
             <Text style={styles.label}>Voice coaching</Text>
             <Text style={styles.subLabel}>Hear distance, time, and pace called out during a tracked run</Text>
           </View>
-          <Switch
+          <Toggle
             value={profile?.voice_coaching_enabled ?? false}
             onValueChange={handleVoiceToggle}
             disabled={savingVoiceToggle}
-            trackColor={{ false: colors.cardLine, true: colors.accent }}
-            thumbColor="#fff"
           />
         </View>
 
@@ -387,12 +385,10 @@ export default function Settings() {
             <Text style={styles.label}>Daily notification</Text>
             <Text style={styles.subLabel}>A personalized morning message about today's run (and a nudge if you missed one)</Text>
           </View>
-          <Switch
+          <Toggle
             value={profile?.daily_notification_enabled ?? false}
             onValueChange={handleDailyNotificationToggle}
             disabled={savingNotificationToggle}
-            trackColor={{ false: colors.cardLine, true: colors.accent }}
-            thumbColor="#fff"
           />
         </View>
 
@@ -412,14 +408,14 @@ export default function Settings() {
 
       {profile?.is_admin && (
         <>
-          <Text style={styles.sectionLabel}>ADMIN</Text>
+          <SectionLabel>ADMIN</SectionLabel>
           <Card>
             <PrimaryButton label="Manage waitlist" variant="secondary" onPress={() => router.push("/admin")} />
           </Card>
         </>
       )}
 
-      <Text style={styles.sectionLabel}>ABOUT</Text>
+      <SectionLabel>ABOUT</SectionLabel>
       <Card>
         <View style={styles.row}>
           <Text style={styles.label}>Stryde version</Text>
@@ -444,17 +440,8 @@ function createStyles(colors: Colors) {
   screen: { flex: 1, backgroundColor: colors.screenBg },
   container: { padding: spacing.screenPadding, paddingTop: 24 },
   topRow: { marginBottom: 10 },
-  homeLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
+  homeLink: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textDim },
   header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary, marginBottom: 16 },
-  sectionLabel: {
-    fontFamily: fonts.monoMedium,
-    fontSize: type.sectionLabel,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    color: colors.textFaint,
-    marginTop: 4,
-    marginBottom: 7,
-  },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6 },
   label: { fontFamily: fonts.bodyMedium, fontSize: type.pDim, color: colors.textDim },
   subLabel: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
@@ -462,11 +449,11 @@ function createStyles(colors: Colors) {
   comingSoon: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint },
   connectedLabel: { fontFamily: fonts.bodySemiBold, fontSize: type.pFaint, color: colors.success },
   connectLink: { fontFamily: fonts.bodySemiBold, fontSize: type.pFaint, color: colors.accent },
-  disconnectLink: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.textFaint },
+  disconnectLink: { fontFamily: fonts.bodyMedium, ...text("micro"), color: colors.textFaint },
   divider: { height: 1, backgroundColor: colors.cardLine, marginVertical: 12 },
   fieldGap: { marginTop: 12 },
   inlineSave: { marginTop: 10 },
-  errorText: { fontFamily: fonts.body, fontSize: 12.5, color: palette.danger, marginTop: 6 },
+  errorText: { fontFamily: fonts.body, ...text("small"), color: palette.danger, marginTop: 6 },
   memberSince: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 12 },
   });
 }

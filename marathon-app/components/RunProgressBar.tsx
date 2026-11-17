@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import type { IntervalStructure } from "../lib/planEngine/types";
 import type { RunLeg } from "../lib/intervalProgress";
-import { palette } from "../lib/theme";
+import { palette, darkSurface } from "../lib/theme";
 
 interface Segment {
   kind: "warmup" | "rep" | "recovery" | "cooldown";
@@ -92,13 +92,13 @@ const styles = StyleSheet.create({
   track: {
     height: 7,
     borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: darkSurface.line,
     overflow: "hidden",
   },
   trackCompact: {
     height: 5,
     borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: darkSurface.line,
     overflow: "hidden",
   },
   fill: { height: "100%", borderRadius: 4 },

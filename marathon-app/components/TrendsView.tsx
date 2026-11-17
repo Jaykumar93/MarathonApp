@@ -11,7 +11,7 @@ import {
 import { formatDistance } from "../lib/units";
 import { formatHms } from "../lib/timeFormat";
 import { todayIso } from "../lib/data/usePlanData";
-import { fonts, type } from "../lib/theme";
+import { fonts, type, text } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "./ui/Card";
 import { PressTooltip } from "./ui/PressTooltip";
@@ -165,7 +165,7 @@ export function TrendsView({ activities, unit }: TrendsViewProps) {
 function createStyles(colors: Colors) {
   return StyleSheet.create({
     cardTitleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 },
-    cardTitleMain: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: colors.textPrimary },
+    cardTitleMain: { fontFamily: fonts.bodyBold, ...text("small"), color: colors.textPrimary },
     cardTitleValue: { fontFamily: fonts.mono, fontSize: type.pFaint, color: colors.textDim },
     emptyChartText: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint },
     barRow: { flexDirection: "row", alignItems: "flex-end", height: BAR_ROW_HEIGHT, gap: 5 },
@@ -177,6 +177,6 @@ function createStyles(colors: Colors) {
     prTitle: { marginBottom: 8 },
     prRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 5 },
     prLabel: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim },
-    prValue: { fontFamily: fonts.mono, fontSize: 13, color: colors.textPrimary },
+    prValue: { fontFamily: fonts.mono, ...text("small"), color: colors.textPrimary },
   });
 }

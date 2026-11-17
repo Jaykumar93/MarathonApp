@@ -12,9 +12,11 @@ import {
   markNotificationRead,
   type NotificationRow,
 } from "../lib/data/notifications";
-import { fonts, spacing, type } from "../lib/theme";
+import { fonts, spacing, type, text, fs, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
+import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
+import { SectionLabel } from "../components/ui/SectionLabel";
 
 type Group = "Today" | "This week" | "Earlier";
 const GROUP_ORDER: Group[] = ["Today", "This week", "Earlier"];
@@ -75,18 +77,18 @@ export default function Notifications() {
   const grouped = useMemo(() => groupByRecency(notifications), [notifications]);
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: 24 + insets.top }]}>
-      <View style={styles.topRow}>
-        <Pressable onPress={goBack} hitSlop={10}>
-          <Text style={styles.backLink}>‹ Back</Text>
-        </Pressable>
-        {hasUnread && (
-          <Pressable onPress={handleMarkAllRead} hitSlop={10} style={styles.markPill}>
-            <Text style={styles.markPillText}>Mark all read</Text>
-          </Pressable>
-        )}
-      </View>
-      <Text style={styles.header}>Notifications</Text>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top }]}>
+      <ScreenHeader
+        title="Notifications"
+        onBack={goBack}
+        right={
+          hasUnread ? (
+            <Pressable onPress={handleMarkAllRead} hitSlop={10} style={styles.markPill}>
+              <Text style={styles.markPillText}>Mark all read</Text>
+            </Pressable>
+          ) : undefined
+        }
+      />
 
       {!loading && notifications.length === 0 && (
         <View style={styles.emptyState}>
@@ -100,7 +102,7 @@ export default function Notifications() {
 
       {GROUP_ORDER.filter((g) => grouped[g].length > 0).map((group) => (
         <View key={group}>
-          <Text style={styles.groupLabel}>{group}</Text>
+          <SectionLabel style={{ marginTop: 16 }}>{group}</SectionLabel>
           {grouped[group].map((notification) => (
             <Pressable key={notification.id} onPress={() => handlePress(notification)}>
               <Card
@@ -155,40 +157,28 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.screenBg },
     container: { padding: spacing.screenPadding, paddingBottom: 40 },
-    topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-    backLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
     markPill: {
       backgroundColor: `${colors.accent}1A`,
       borderWidth: 1,
       borderColor: `${colors.accent}40`,
-      borderRadius: 100,
+      borderRadius: radius.pill,
       paddingVertical: 5,
       paddingHorizontal: 11,
     },
-    markPillText: { fontFamily: fonts.bodySemiBold, fontSize: 11.5, color: colors.accent },
-    header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary, marginBottom: 18 },
+    markPillText: { fontFamily: fonts.bodySemiBold, ...text("caption"), color: colors.accent },
     emptyState: { alignItems: "center", paddingTop: 50, gap: 10 },
     emptyIconCircle: {
       width: 52,
       height: 52,
-      borderRadius: 26,
+      borderRadius: radius.pill,
       backgroundColor: colors.cardBg,
       borderWidth: 1,
       borderColor: colors.cardLine,
       alignItems: "center",
       justifyContent: "center",
     },
-    emptyTitle: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.textPrimary },
+    emptyTitle: { fontFamily: fonts.bodyBold, ...text("body"), color: colors.textPrimary },
     emptySub: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, textAlign: "center" },
-    groupLabel: {
-      fontFamily: fonts.mono,
-      fontSize: type.sectionLabel,
-      letterSpacing: 0.5,
-      textTransform: "uppercase",
-      color: colors.textFaint,
-      marginTop: 16,
-      marginBottom: 8,
-    },
     card: { flexDirection: "row", gap: 11, alignItems: "flex-start" },
     unreadCard: { backgroundColor: colors.warningBg },
     readCard: { opacity: 0.55 },
@@ -204,7 +194,7 @@ function createStyles(colors: Colors) {
     iconWrap: {
       width: 34,
       height: 34,
-      borderRadius: 10,
+      borderRadius: radius.md,
       backgroundColor: `${colors.warning}1F`,
       alignItems: "center",
       justifyContent: "center",
@@ -212,9 +202,9 @@ function createStyles(colors: Colors) {
     },
     cardBody: { flex: 1 },
     rowTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 2 },
-    title: { fontFamily: fonts.bodyBold, fontSize: 14.5, color: colors.textPrimary, flexShrink: 1 },
-    timestamp: { fontFamily: fonts.mono, fontSize: 10.5, color: colors.textFaint, flexShrink: 0 },
-    body: { fontFamily: fonts.body, fontSize: 13.5, color: colors.textDim, lineHeight: 19 },
+    title: { fontFamily: fonts.bodyBold, ...text("body"), color: colors.textPrimary, flexShrink: 1 },
+    timestamp: { fontFamily: fonts.mono, ...text("micro"), color: colors.textFaint, flexShrink: 0 },
+    body: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: colors.textDim, lineHeight: 19 },
     readText: { color: colors.textFaint },
   });
 }

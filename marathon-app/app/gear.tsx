@@ -6,11 +6,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../lib/auth/AuthContext";
 import { createShoe, getShoes, retireShoe, type ShoeRow } from "../lib/data/shoes";
 import { formatDistance } from "../lib/units";
-import { fonts, spacing, type } from "../lib/theme";
+import { fonts, spacing, type, text } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { TextField } from "../components/ui/TextField";
+import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
 
 /**
  * Never wireframed in the PRD/design docs beyond "reuse generic list/card
@@ -74,13 +75,8 @@ export default function Gear() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: 24 + insets.top }]}>
-      <View style={styles.topRow}>
-        <Pressable onPress={goBack} hitSlop={10}>
-          <Text style={styles.backLink}>‹ Back</Text>
-        </Pressable>
-      </View>
-      <Text style={styles.header}>Gear</Text>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top }]}>
+      <ScreenHeader title="Gear" onBack={goBack} />
       <Text style={styles.subtitle}>Track shoe mileage - a nudge shows once a shoe passes its retirement distance.</Text>
 
       {!loading &&
@@ -154,16 +150,13 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.screenBg },
     container: { padding: spacing.screenPadding, paddingTop: 24, paddingBottom: 40 },
-    topRow: { marginBottom: 10 },
-    backLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
-    header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary, marginBottom: 6 },
     subtitle: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim, marginBottom: 18 },
     retiredCard: { opacity: 0.55 },
     shoeRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 10 },
-    shoeName: { fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.textPrimary },
+    shoeName: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: colors.textPrimary },
     shoeBrand: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
     retiredText: { color: colors.textFaint },
-    retireLink: { fontFamily: fonts.bodySemiBold, fontSize: 12.5, color: colors.secondaryAccent },
+    retireLink: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.secondaryAccent },
     progressTrack: { height: 6, borderRadius: 3, backgroundColor: colors.cardLine, overflow: "hidden" },
     progressFill: { height: "100%", backgroundColor: colors.contour, borderRadius: 3 },
     progressFillOver: { backgroundColor: colors.warning },
@@ -173,6 +166,6 @@ function createStyles(colors: Colors) {
     fieldGap: { marginTop: 12 },
     addActions: { flexDirection: "row", gap: 10, marginTop: 16 },
     addRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10 },
-    addRowText: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.accent },
+    addRowText: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accent },
   });
 }

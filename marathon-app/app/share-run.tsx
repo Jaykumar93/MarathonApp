@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ViewShot, { type ViewShotRef } from "react-native-view-shot";
@@ -10,9 +10,11 @@ import { useAuth } from "../lib/auth/AuthContext";
 import { getActivityById, type ActivityRow } from "../lib/data/activities";
 import { formatDistance, formatPace } from "../lib/units";
 import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
-import { fonts, spacing, type } from "../lib/theme";
+import { fonts, spacing, type, text, fs, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
+import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
+import { SectionLabel } from "../components/ui/SectionLabel";
 import {
   ShareRouteCard,
   SHARE_TEMPLATES,
@@ -27,6 +29,7 @@ import { serializeGpx } from "../lib/export/gpx";
 import { serializeTcx } from "../lib/export/tcx";
 import { saveImageToDevice } from "../lib/export/saveImage";
 import type { ExportActivity } from "../lib/export/types";
+import { Toggle } from "../components/ui/Toggle";
 
 type ExportFormat = "gpx" | "tcx";
 
@@ -210,11 +213,9 @@ export default function ShareRun() {
   }
 
   return (
-    <View style={[styles.screen, { paddingTop: 20 + insets.top }]}>
+    <View style={[styles.screen, { paddingTop: SCREEN_TOP_GAP + insets.top }]}>
       <View style={styles.topRow}>
-        <Pressable onPress={goBack} hitSlop={10}>
-          <Text style={styles.backLink}>‹ Back</Text>
-        </Pressable>
+        <ScreenHeader onBack={goBack} />
       </View>
 
       <ScrollView
@@ -280,25 +281,23 @@ export default function ShareRun() {
         {photos.length > 0 && (
           <View style={styles.toggleRow}>
             <Text style={styles.toggleLabel}>Use photo as background</Text>
-            <Switch
+            <Toggle
               value={usePhotoBackground}
               onValueChange={setUsePhotoBackground}
-              trackColor={{ false: colors.cardLine, true: colors.accent }}
-              thumbColor="#fff"
             />
           </View>
         )}
 
         {activity.notes && (
           <View style={styles.descriptionBlock}>
-            <Text style={styles.descriptionLabel}>Description</Text>
+            <SectionLabel>Description</SectionLabel>
             <Text style={styles.descriptionText}>{activity.notes}</Text>
           </View>
         )}
 
         {route.length >= 2 && (
           <View style={styles.exportBlock}>
-            <Text style={styles.descriptionLabel}>Export run data</Text>
+            <SectionLabel>Export run data</SectionLabel>
             <View style={styles.exportRow}>
               <Pressable
                 style={styles.exportButton}
@@ -353,12 +352,11 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.screenBg, paddingTop: 20 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
-  body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
+  body: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
   topRow: { marginBottom: 14, paddingHorizontal: spacing.screenPadding },
-  backLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
   scrollFlex: { flex: 1 },
   scrollContent: { paddingHorizontal: spacing.screenPadding },
-  previewWrap: { alignSelf: "center", width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT, marginTop: 6, borderRadius: 16, overflow: "hidden" },
+  previewWrap: { alignSelf: "center", width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT, marginTop: 6, borderRadius: radius.lg, overflow: "hidden" },
   checkerboard: { position: "absolute", top: 0, left: 0 },
   // No borderRadius/background here - the capture must stay a plain,
   // transparent rectangle (previewWrap's own rounding only clips the
@@ -368,9 +366,9 @@ function createStyles(colors: Colors) {
   dotsRow: { flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 14 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.cardLine },
   dotActive: { backgroundColor: colors.accent, width: 16 },
-  templateName: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.textPrimary, textAlign: "center", marginTop: 8 },
-  swipeHint: { fontFamily: fonts.body, fontSize: 11.5, color: colors.textFaint, textAlign: "center", marginTop: 2 },
-  transparentHint: { fontFamily: fonts.body, fontSize: 11.5, color: colors.textFaint, textAlign: "center", marginTop: 8, paddingHorizontal: 12 },
+  templateName: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary, textAlign: "center", marginTop: 8 },
+  swipeHint: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint, textAlign: "center", marginTop: 2 },
+  transparentHint: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint, textAlign: "center", marginTop: 8, paddingHorizontal: 12 },
   toggleRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -381,10 +379,9 @@ function createStyles(colors: Colors) {
     paddingVertical: 12,
     marginTop: 20,
   },
-  toggleLabel: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textPrimary },
+  toggleLabel: { fontFamily: fonts.bodyMedium, ...text("body"), color: colors.textPrimary },
   descriptionBlock: { marginTop: 18 },
-  descriptionLabel: { fontFamily: fonts.monoMedium, fontSize: 10, letterSpacing: 1, color: colors.textFaint, marginBottom: 6, textTransform: "uppercase" },
-  descriptionText: { fontFamily: fonts.body, fontSize: 13.5, color: colors.textDim, lineHeight: 19 },
+  descriptionText: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: colors.textDim, lineHeight: 19 },
   exportBlock: { marginTop: 18 },
   exportRow: { flexDirection: "row", gap: 10 },
   exportButton: {
@@ -397,7 +394,7 @@ function createStyles(colors: Colors) {
     borderColor: colors.cardLine,
     backgroundColor: colors.cardBg,
   },
-  exportButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.textPrimary },
+  exportButtonText: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
   unavailableNote: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, textAlign: "center", marginTop: 16 },
   shareButtonWrap: {
     position: "absolute",
@@ -408,11 +405,11 @@ function createStyles(colors: Colors) {
   buttonSlot: { flex: 1 },
   notice: {
     fontFamily: fonts.bodyMedium,
-    fontSize: 12.5,
+    ...text("small"),
     color: colors.textPrimary,
     textAlign: "center",
     backgroundColor: colors.cardBg,
-    borderRadius: 10,
+    borderRadius: radius.md,
     paddingVertical: 8,
     paddingHorizontal: 12,
     marginBottom: 10,

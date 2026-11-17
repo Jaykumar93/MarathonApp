@@ -17,7 +17,7 @@ import { getActivitiesInRange, groupActivitiesByDate, type ActivityRow } from ".
 import { getShoes, type ShoeRow } from "../../lib/data/shoes";
 import { healthConnectProvider } from "../../lib/health/healthConnectProvider";
 import { syncHealthActivities } from "../../lib/health/syncHealthData";
-import { fonts, noSelectStyle, spacing, type } from "../../lib/theme";
+import { fonts, noSelectStyle, spacing, type, text } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Card } from "../../components/ui/Card";
 import { CountdownArc } from "../../components/CountdownArc";
@@ -26,6 +26,7 @@ import { PlanCalendarScroller } from "../../components/PlanCalendarScroller";
 import { DayDetailPanel } from "../../components/DayDetailPanel";
 import { NoPlanPrompt } from "../../components/NoPlanPrompt";
 import { formatDistance } from "../../lib/units";
+import { SectionLabel } from "../../components/ui/SectionLabel";
 
 function monthRange(year: number, month: number): [string, string] {
   const start = `${year}-${String(month).padStart(2, "0")}-01`;
@@ -183,7 +184,7 @@ export default function Home() {
           </Pressable>
         )}
 
-        <Text style={styles.sectionLabel}>CALENDAR</Text>
+        <SectionLabel>CALENDAR</SectionLabel>
         <Card>
           <PlanCalendarScroller days={allDays} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
           <View style={styles.divider} />
@@ -192,7 +193,7 @@ export default function Home() {
           </View>
         </Card>
 
-        <Text style={styles.sectionLabel}>ACTIVITY</Text>
+        <SectionLabel>ACTIVITY</SectionLabel>
         <Card>
           <MonthActivityChart
             year={viewedYear}
@@ -226,17 +227,8 @@ function createStyles(colors: Colors) {
   scroll: { flex: 1 },
   container: { padding: spacing.screenPadding, paddingTop: 0 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
-  body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
+  body: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
   countdownBlock: { alignItems: "center", marginBottom: 0 },
-  sectionLabel: {
-    fontFamily: fonts.monoMedium,
-    fontSize: type.sectionLabel,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    color: colors.textFaint,
-    marginTop: 4,
-    marginBottom: 7,
-  },
   divider: { height: 1, backgroundColor: colors.cardLine, marginVertical: 12 },
   shoeBanner: {
     flexDirection: "row",
@@ -249,10 +241,10 @@ function createStyles(colors: Colors) {
     padding: 12,
     marginBottom: 14,
   },
-  shoeBannerText: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.warningText },
+  shoeBannerText: { flex: 1, fontFamily: fonts.bodyMedium, ...text("small"), color: colors.warningText },
   cardTitleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 },
-  cardTitleMain: { fontFamily: fonts.bodyBold, fontSize: 11.5, color: colors.textPrimary },
-  cardTitleValue: { fontFamily: fonts.mono, fontSize: 10, color: colors.textDim },
+  cardTitleMain: { fontFamily: fonts.bodyBold, ...text("caption"), color: colors.textPrimary },
+  cardTitleValue: { fontFamily: fonts.mono, ...text("micro"), color: colors.textDim },
   progressBarTrack: { height: 7, backgroundColor: colors.cardLine, borderRadius: 4, overflow: "hidden" },
   progressBarFill: { height: "100%", backgroundColor: colors.accent, borderRadius: 4 },
   });

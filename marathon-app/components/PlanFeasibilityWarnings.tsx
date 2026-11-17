@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { GenerateResult } from "../lib/planEngine";
 import { formatHms } from "../lib/timeFormat";
-import { fonts, palette } from "../lib/theme";
+import { fonts, palette, text, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 
 /**
@@ -56,15 +56,15 @@ export function PlanFeasibilityWarnings({ preview }: { preview: GenerateResult }
 
 function createStyles(colors: Colors) {
   return StyleSheet.create({
-    errorText: { fontFamily: fonts.body, fontSize: 13, color: palette.danger },
+    errorText: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
     banner: {
       backgroundColor: colors.warningBg,
       borderWidth: 1,
       borderColor: colors.warningBorder,
-      borderRadius: 10,
+      borderRadius: radius.md,
       padding: 12,
     },
-    bannerTitle: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.warningText },
-    bannerBody: { fontFamily: fonts.body, fontSize: 12.5, color: colors.warningText, marginTop: 2 },
+    bannerTitle: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.warningText },
+    bannerBody: { fontFamily: fonts.body, ...text("small"), color: colors.warningText, marginTop: 2 },
   });
 }

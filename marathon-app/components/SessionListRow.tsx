@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { fonts, type } from "../lib/theme";
+import { fonts, type, text, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import type { PlanSessionRow } from "../lib/data/plans";
 import { useAuth } from "../lib/auth/AuthContext";
@@ -92,20 +92,20 @@ function createStyles(colors: Colors) {
     },
     edge: { width: 5, height: 28, borderRadius: 3 },
     body: { flex: 1 },
-    title: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.textPrimary },
+    title: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.textPrimary },
     detail: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
     prepLine: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
     trailing: { alignItems: "flex-end" },
-    doneLabel: { fontFamily: fonts.mono, fontSize: 10, color: colors.textDim },
-    upcomingLabel: { fontFamily: fonts.mono, fontSize: 10, color: colors.textFaint },
+    doneLabel: { fontFamily: fonts.mono, ...text("micro"), color: colors.textDim },
+    upcomingLabel: { fontFamily: fonts.mono, ...text("micro"), color: colors.textFaint },
     actionRow: { flexDirection: "row", gap: 6 },
     actionBtn: {
       borderWidth: 1,
       borderColor: colors.cardLine,
-      borderRadius: 8,
+      borderRadius: radius.sm,
       paddingHorizontal: 8,
       paddingVertical: 4,
     },
-    actionText: { fontFamily: fonts.bodyMedium, fontSize: 10.5, color: colors.secondaryAccent },
+    actionText: { fontFamily: fonts.bodyMedium, ...text("micro"), color: colors.secondaryAccent },
   });
 }

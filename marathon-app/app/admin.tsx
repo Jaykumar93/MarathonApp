@@ -4,11 +4,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../lib/auth/AuthContext";
 import { getAllProfiles, setUserApproval, type AdminProfileRow } from "../lib/data/admin";
-import { fonts, spacing, type } from "../lib/theme";
+import { fonts, spacing, type, text, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { TextField } from "../components/ui/TextField";
+import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
+import { SectionLabel } from "../components/ui/SectionLabel";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -116,13 +118,8 @@ export default function Admin() {
   const approved = otherRows.filter((r) => r.status === "approved");
 
   return (
-    <View style={[styles.screen, { paddingTop: 20 + insets.top }]}>
-      <View style={styles.topRow}>
-        <Pressable onPress={goBack} hitSlop={10}>
-          <Text style={styles.backLink}>‹ Back</Text>
-        </Pressable>
-      </View>
-      <Text style={styles.header}>Admin</Text>
+    <View style={[styles.screen, { paddingTop: SCREEN_TOP_GAP + insets.top }]}>
+      <ScreenHeader title="Admin" onBack={goBack} />
 
       <ScrollView
         style={styles.scrollFlex}
@@ -131,7 +128,7 @@ export default function Admin() {
       >
         {loadError && <Text style={styles.errorText}>{loadError}</Text>}
 
-        <Text style={styles.sectionLabel}>PENDING ({pending.length})</Text>
+        <SectionLabel style={{ marginTop: 16 }}>PENDING ({pending.length})</SectionLabel>
         <Card>
           {pending.length === 0 ? (
             <Text style={styles.emptyText}>No pending requests.</Text>
@@ -145,7 +142,7 @@ export default function Admin() {
           )}
         </Card>
 
-        <Text style={styles.sectionLabel}>APPROVED ({approved.length})</Text>
+        <SectionLabel style={{ marginTop: 16 }}>APPROVED ({approved.length})</SectionLabel>
         <Card>
           {approved.length === 0 ? (
             <Text style={styles.emptyText}>No approved users yet.</Text>
@@ -195,22 +192,10 @@ export default function Admin() {
 function createStyles(colors: Colors) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.screenBg, paddingHorizontal: spacing.screenPadding },
-    topRow: { marginBottom: 10 },
-    backLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
-    header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary, marginBottom: 16 },
     scrollFlex: { flex: 1 },
     scrollContent: { paddingBottom: 24 },
-    sectionLabel: {
-      fontFamily: fonts.monoMedium,
-      fontSize: type.sectionLabel,
-      textTransform: "uppercase",
-      letterSpacing: 1,
-      color: colors.textFaint,
-      marginTop: 16,
-      marginBottom: 7,
-    },
     emptyText: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, paddingVertical: 4 },
-    errorText: { fontFamily: fonts.body, fontSize: 12.5, color: colors.danger, marginBottom: 8 },
+    errorText: { fontFamily: fonts.body, ...text("small"), color: colors.danger, marginBottom: 8 },
     divider: { height: 1, backgroundColor: colors.cardLine, marginVertical: 10 },
     userRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     userInfo: { flex: 1 },
@@ -220,18 +205,18 @@ function createStyles(colors: Colors) {
     approveChip: {
       paddingHorizontal: 14,
       paddingVertical: 8,
-      borderRadius: 10,
+      borderRadius: radius.md,
       backgroundColor: colors.accent,
     },
-    approveChipText: { fontFamily: fonts.bodySemiBold, fontSize: 12.5, color: "#fff" },
+    approveChipText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: "#fff" },
     revokeChip: {
       paddingHorizontal: 14,
       paddingVertical: 8,
-      borderRadius: 10,
+      borderRadius: radius.md,
       borderWidth: 1.5,
       borderColor: colors.danger,
     },
-    revokeChipText: { fontFamily: fonts.bodySemiBold, fontSize: 12.5, color: colors.danger },
+    revokeChipText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.danger },
     confirmOverlay: {
       position: "absolute",
       top: 0,
@@ -256,7 +241,7 @@ function createStyles(colors: Colors) {
       backgroundColor: colors.sheetBg,
       borderWidth: 0,
     },
-    confirmTitle: { fontFamily: fonts.bodyBold, fontSize: 16, color: colors.textPrimary },
+    confirmTitle: { fontFamily: fonts.bodyBold, ...text("emphasis"), color: colors.textPrimary },
     confirmBody: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textDim, marginBottom: 4 },
     confirmButtons: { gap: 8, marginTop: 6 },
   });

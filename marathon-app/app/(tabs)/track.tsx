@@ -12,10 +12,11 @@ import { prefetchVoiceScript } from "../../lib/runTracking/voiceScript";
 import { computeRouteDistanceMeters, type RoutePoint } from "../../lib/gpsStats";
 import { formatDistance } from "../../lib/units";
 import { SESSION_TYPE_COLOR, SESSION_TYPE_LABEL } from "../../lib/sessionTypes";
-import { fonts, palette, spacing } from "../../lib/theme";
+import { fonts, palette, spacing, text, radius, darkSurface } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { RunMap } from "../../components/RunMap";
+import { StatusBar } from "expo-status-bar";
 
 function formatElapsedShort(totalSeconds: number): string {
   const h = Math.floor(totalSeconds / 3600);
@@ -24,7 +25,7 @@ function formatElapsedShort(totalSeconds: number): string {
   return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`;
 }
 
-export default function Track() {
+function TrackScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { session, profile } = useAuth();
@@ -214,7 +215,7 @@ export default function Track() {
         accessibilityRole="button"
         accessibilityLabel="Back"
       >
-        <Ionicons name="chevron-back" size={22} color="#fff" />
+        <Ionicons name="chevron-back" size={22} color={darkSurface.text} />
       </Pressable>
 
       {pendingCount > 0 && (
@@ -250,7 +251,7 @@ export default function Track() {
 
             <Pressable style={styles.choiceRow} onPress={startPlanned} accessibilityRole="button">
               <View style={[styles.choiceIcon, { backgroundColor: SESSION_TYPE_COLOR[todaySession?.session_type ?? ""] ?? colors.contour }]}>
-                <Ionicons name="flag" size={17} color="#fff" />
+                <Ionicons name="flag" size={17} color={darkSurface.text} />
               </View>
               <View style={styles.choiceTextWrap}>
                 <Text style={styles.choiceTitle}>
@@ -264,7 +265,7 @@ export default function Track() {
 
             <Pressable style={styles.choiceRow} onPress={startFree} accessibilityRole="button">
               <View style={[styles.choiceIcon, { backgroundColor: colors.textFaint }]}>
-                <Ionicons name="shuffle" size={17} color="#fff" />
+                <Ionicons name="shuffle" size={17} color={darkSurface.text} />
               </View>
               <View style={styles.choiceTextWrap}>
                 <Text style={styles.choiceTitle}>Free run</Text>
@@ -301,8 +302,8 @@ function createStyles(colors: Colors) {
     left: spacing.screenPadding,
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: radius.pill,
+    backgroundColor: darkSurface.line,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -315,7 +316,7 @@ function createStyles(colors: Colors) {
     padding: 14,
     gap: 10,
   },
-  pendingText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textPrimary },
+  pendingText: { fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textPrimary },
   startButtonWrap: {
     position: "absolute",
     left: spacing.screenPadding,
@@ -325,27 +326,27 @@ function createStyles(colors: Colors) {
     position: "absolute",
     left: spacing.screenPadding,
     right: spacing.screenPadding,
-    backgroundColor: "rgba(20,22,26,0.85)",
+    backgroundColor: darkSurface.floating,
     borderRadius: spacing.cardRadius,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderColor: darkSurface.line,
     padding: 14,
     gap: 10,
   },
   trackingBannerText: { flexDirection: "row", alignItems: "center", gap: 8 },
-  trackingBannerLabel: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: "#fff", flexShrink: 1 },
+  trackingBannerLabel: { fontFamily: fonts.bodySemiBold, ...text("body"), color: darkSurface.text, flexShrink: 1 },
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success },
   modalWrap: { flex: 1, justifyContent: "flex-end" },
   modalBackdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(20,22,26,0.45)" },
   modalSheet: {
     backgroundColor: colors.sheetBg,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
     padding: 20,
     paddingBottom: 28,
     gap: 10,
   },
-  modalTitle: { fontFamily: fonts.dataBold, fontSize: 17, color: colors.textPrimary, marginBottom: 6 },
+  modalTitle: { fontFamily: fonts.dataBold, ...text("emphasis"), color: colors.textPrimary, marginBottom: 6 },
   choiceRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -353,12 +354,24 @@ function createStyles(colors: Colors) {
     backgroundColor: colors.screenBg,
     borderWidth: 1.5,
     borderColor: colors.cardLine,
-    borderRadius: 12,
+    borderRadius: radius.md,
     padding: 14,
   },
-  choiceIcon: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  choiceIcon: { width: 34, height: 34, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
   choiceTextWrap: { flex: 1 },
-  choiceTitle: { fontFamily: fonts.bodySemiBold, fontSize: 14.5, color: colors.textPrimary },
-  choiceDetail: { fontFamily: fonts.body, fontSize: 12.5, color: colors.textDim, marginTop: 2 },
+  choiceTitle: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
+  choiceDetail: { fontFamily: fonts.body, ...text("small"), color: colors.textDim, marginTop: 2 },
   });
+}
+
+// These screens stay dark regardless of the app's light/dark setting, so
+// their status-bar icons stay light too - the app-wide ThemedStatusBar would
+// otherwise switch them to dark icons on a near-black map in light mode.
+export default function Track() {
+  return (
+    <>
+      <StatusBar style="light" />
+      <TrackScreen />
+    </>
+  );
 }

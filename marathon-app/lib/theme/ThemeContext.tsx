@@ -97,13 +97,18 @@ interface CardShadow {
   elevation?: number;
 }
 
+// elevation 1, not 2: Android draws elevation as a noticeably harder shadow
+// than iOS's shadow* props at the same nominal depth, so 2 read as a heavy
+// card edge on Android next to iOS's soft one. Card also adds a hairline
+// border in light mode now (see Card.tsx), so the edge doesn't depend on the
+// shadow alone rendering identically on both platforms.
 const lightShadows: { card: CardShadow } = {
   card: {
     shadowColor: "#14161A",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.06,
     shadowRadius: 14,
-    elevation: 2,
+    elevation: 1,
   },
 };
 

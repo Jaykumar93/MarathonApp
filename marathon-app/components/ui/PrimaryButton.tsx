@@ -1,6 +1,6 @@
 import React, { useMemo, useRef } from "react";
 import { ActivityIndicator, Animated, Pressable, StyleSheet, Text } from "react-native";
-import { fonts, palette } from "../../lib/theme";
+import { fonts, palette, text, radius } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 
 interface ButtonProps {
@@ -69,7 +69,7 @@ function createStyles(colors: Colors) {
     hitArea: { width: "100%" },
     base: {
       height: 52,
-      borderRadius: 14,
+      borderRadius: radius.md,
       alignItems: "center",
       justifyContent: "center",
       width: "100%",
@@ -79,7 +79,7 @@ function createStyles(colors: Colors) {
     danger: { backgroundColor: colors.danger },
     dangerOutline: { backgroundColor: "transparent", borderWidth: 1.5, borderColor: colors.danger },
     disabled: { opacity: 0.5 },
-    label: { fontFamily: fonts.bodySemiBold, fontSize: 15.5 },
+    label: { fontFamily: fonts.bodySemiBold, ...text("emphasis") },
     primaryLabel: { color: "#fff" },
     secondaryLabel: { color: colors.secondaryAccent },
     dangerOutlineLabel: { color: colors.danger },

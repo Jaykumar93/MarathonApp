@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { StyleSheet, Text, TextInput, TextInputProps, View } from "react-native";
-import { fonts } from "../../lib/theme";
+import { fonts, text, inputText, radius } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 
 interface TextFieldProps extends TextInputProps {
@@ -24,6 +24,9 @@ export function TextField({ label, style, rightElement, required, ...props }: Te
         <TextInput
           style={[styles.input, !!rightElement && styles.inputWithRight, style]}
           placeholderTextColor={colors.textFaint}
+          selectionColor={colors.accent}
+          cursorColor={colors.accent}
+          underlineColorAndroid="transparent"
           autoCapitalize="none"
           spellCheck={false}
           {...props}
@@ -39,12 +42,12 @@ function createStyles(colors: Colors) {
     wrap: { gap: 6 },
     label: {
       fontFamily: fonts.bodyMedium,
-      fontSize: 12.5,
+      ...text("small"),
       color: colors.textDim,
     },
     required: {
       fontFamily: fonts.bodyMedium,
-      fontSize: 12.5,
+      ...text("small"),
       color: colors.danger,
     },
     inputRow: { justifyContent: "center" },
@@ -52,10 +55,12 @@ function createStyles(colors: Colors) {
       height: 50,
       borderWidth: 1,
       borderColor: colors.cardLine,
-      borderRadius: 12,
+      borderRadius: radius.md,
       paddingHorizontal: 14,
+      paddingVertical: 0,
+      textAlignVertical: "center",
       fontFamily: fonts.body,
-      fontSize: 15,
+      ...inputText("emphasis"),
       color: colors.textPrimary,
       backgroundColor: colors.inputBg,
     },

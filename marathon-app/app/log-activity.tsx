@@ -8,7 +8,7 @@ import { getShoes, type ShoeRow } from "../lib/data/shoes";
 import { getPlanSessionById, type PlanSessionRow } from "../lib/data/plans";
 import { formatHms, parseHms } from "../lib/timeFormat";
 import { ACTIVITY_TYPE_OPTIONS } from "../lib/sessionTypes";
-import { fonts, palette, spacing, type } from "../lib/theme";
+import { fonts, palette, spacing, type, text, inputText } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { ChipSelect } from "../components/ui/ChipSelect";
@@ -17,6 +17,7 @@ import { DateField } from "../components/ui/DateField";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PhotoPicker } from "../components/ui/PhotoPicker";
 import { todayIso } from "../lib/data/usePlanData";
+import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
 
 const RPE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({ value: n, label: String(n) }));
 
@@ -111,13 +112,8 @@ export default function LogActivity() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: 24 + insets.top }]}>
-      <View style={styles.topRow}>
-        <Text style={styles.backLink} onPress={goBack}>
-          ‹ Back
-        </Text>
-      </View>
-      <Text style={styles.header}>Log a run</Text>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top }]}>
+      <ScreenHeader title="Log a run" onBack={goBack} />
       {linkedSession && linkedSession.session_type !== "rest" && (
         <Text style={styles.subtitle}>Logging this fulfills your planned session for this day.</Text>
       )}
@@ -219,16 +215,13 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.screenBg },
   container: { padding: spacing.screenPadding, paddingTop: 24, gap: 4 },
-  topRow: { marginBottom: 10 },
-  backLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
-  header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary },
-  subtitle: { fontFamily: fonts.body, fontSize: 13, color: colors.textDim, marginBottom: 12 },
-  fieldLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textDim, marginBottom: 8 },
+  subtitle: { fontFamily: fonts.body, ...text("small"), color: colors.textDim, marginBottom: 12 },
+  fieldLabel: { fontFamily: fonts.bodyMedium, ...inputText("small"), color: colors.textDim, marginBottom: 8 },
   fieldGap: { marginTop: 14 },
-  errorText: { fontFamily: fonts.body, fontSize: 12.5, color: palette.danger, marginTop: 6 },
+  errorText: { fontFamily: fonts.body, ...text("small"), color: palette.danger, marginTop: 6 },
   moreLink: {
     fontFamily: fonts.bodySemiBold,
-    fontSize: 13,
+    ...text("small"),
     color: colors.secondaryAccent,
     textDecorationLine: "underline",
     marginBottom: 14,

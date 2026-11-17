@@ -1,9 +1,9 @@
 import React, { useMemo, useRef, useState } from "react";
-import { Animated, Dimensions, PanResponder, Pressable, StyleSheet, Text, View, type PanResponderGestureState } from "react-native";
+import { Animated, Dimensions, PanResponder, Pressable, StyleSheet, Text, View, type PanResponderGestureState, type StyleProp, type ViewStyle } from "react-native";
 import type { RunLeg } from "../lib/intervalProgress";
 import type { PlanSessionRow } from "../lib/data/plans";
 import { formatDistance, formatMeters, formatPace } from "../lib/units";
-import { fonts, palette } from "../lib/theme";
+import { fonts, palette, text, fs, radius, darkSurface } from "../lib/theme";
 import { RunProgressBar } from "./RunProgressBar";
 
 const LEG_KIND_LABEL: Record<RunLeg["kind"], string> = {
@@ -41,6 +41,32 @@ function formatElapsed(totalSeconds: number): string {
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = Math.floor(totalSeconds % 60);
   return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`;
+}
+
+/** Pause/Resume + Stop - shown in both the collapsed bar and the expanded panel. */
+function RunControls({
+  phase,
+  onPause,
+  onResume,
+  onStop,
+  style,
+}: {
+  phase: "running" | "paused";
+  onPause: () => void;
+  onResume: () => void;
+  onStop: () => void;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View style={[styles.controls, style]}>
+      <Pressable style={styles.pauseBtn} onPress={phase === "paused" ? onResume : onPause} accessibilityRole="button">
+        <Text style={styles.pauseBtnText}>{phase === "paused" ? "Resume" : "Pause"}</Text>
+      </Pressable>
+      <Pressable style={styles.stopBtn} onPress={onStop} accessibilityRole="button">
+        <Text style={styles.stopBtnText}>Stop</Text>
+      </Pressable>
+    </View>
+  );
 }
 
 interface ActiveRunSheetProps {
@@ -202,20 +228,7 @@ export function ActiveRunSheet({
             <Text style={styles.collapsedSideLabel}>TIME</Text>
           </View>
         </View>
-        <View style={[styles.controls, styles.collapsedControls]}>
-          {phase === "paused" ? (
-            <Pressable style={styles.pauseBtn} onPress={onResume} accessibilityRole="button">
-              <Text style={styles.pauseBtnText}>Resume</Text>
-            </Pressable>
-          ) : (
-            <Pressable style={styles.pauseBtn} onPress={onPause} accessibilityRole="button">
-              <Text style={styles.pauseBtnText}>Pause</Text>
-            </Pressable>
-          )}
-          <Pressable style={styles.stopBtn} onPress={onStop} accessibilityRole="button">
-            <Text style={styles.stopBtnText}>Stop</Text>
-          </Pressable>
-        </View>
+        <RunControls phase={phase} onPause={onPause} onResume={onResume} onStop={onStop} style={styles.collapsedControls} />
       </Animated.View>
 
       <Animated.View style={[styles.expandedContent, { opacity: expandedOpacity }]} pointerEvents={isExpanded ? "auto" : "none"}>
@@ -285,20 +298,7 @@ export function ActiveRunSheet({
           )}
         </View>
 
-        <View style={styles.controls}>
-          {phase === "paused" ? (
-            <Pressable style={styles.pauseBtn} onPress={onResume} accessibilityRole="button">
-              <Text style={styles.pauseBtnText}>Resume</Text>
-            </Pressable>
-          ) : (
-            <Pressable style={styles.pauseBtn} onPress={onPause} accessibilityRole="button">
-              <Text style={styles.pauseBtnText}>Pause</Text>
-            </Pressable>
-          )}
-          <Pressable style={styles.stopBtn} onPress={onStop} accessibilityRole="button">
-            <Text style={styles.stopBtnText}>Stop</Text>
-          </Pressable>
-        </View>
+        <RunControls phase={phase} onPause={onPause} onResume={onResume} onStop={onStop} />
       </Animated.View>
     </Animated.View>
   );
@@ -311,8 +311,8 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: palette.predawn,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -8 },
@@ -321,49 +321,49 @@ const styles = StyleSheet.create({
     elevation: 20,
   },
   handleArea: { alignItems: "center", paddingVertical: 10 },
-  handleBar: { width: 40, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.28)" },
+  handleBar: { width: 40, height: 4, borderRadius: 2, backgroundColor: darkSurface.handle },
 
   collapsedContent: { position: "absolute", left: 0, right: 0, top: 24, paddingHorizontal: 20 },
   collapsedStatsRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 14 },
   collapsedSideLeft: { alignItems: "flex-start" },
   collapsedSideRight: { alignItems: "flex-end" },
-  collapsedSideValue: { fontFamily: fonts.dataBold, fontSize: 24, color: "#fff" },
-  collapsedSideLabel: { fontFamily: fonts.monoMedium, fontSize: 10, letterSpacing: 1, color: "#8a8d92", marginTop: 3 },
+  collapsedSideValue: { fontFamily: fonts.dataBold, ...text("headline"), color: darkSurface.text },
+  collapsedSideLabel: { fontFamily: fonts.monoMedium, ...text("micro"), letterSpacing: 1, color: darkSurface.textFaint, marginTop: 3 },
   collapsedPaceCenter: { alignItems: "center" },
-  collapsedPaceValue: { fontFamily: fonts.dataBold, fontSize: 40, color: "#fff", lineHeight: 44 },
-  collapsedPaceLabel: { fontFamily: fonts.monoMedium, fontSize: 10.5, letterSpacing: 1, color: "#8a8d92", marginTop: 4 },
+  collapsedPaceValue: { fontFamily: fonts.dataBold, fontSize: fs.hero, includeFontPadding: false, color: darkSurface.text, lineHeight: 44 },
+  collapsedPaceLabel: { fontFamily: fonts.monoMedium, ...text("micro"), letterSpacing: 1, color: darkSurface.textFaint, marginTop: 4 },
 
   expandedContent: { position: "absolute", left: 0, right: 0, top: 20, bottom: 20, paddingHorizontal: 20 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 16 },
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: palette.success },
   liveDotPaused: { backgroundColor: palette.warning },
-  headerText: { fontFamily: fonts.monoSemiBold, fontSize: 11, letterSpacing: 1.5, color: "#c7c9cb" },
+  headerText: { fontFamily: fonts.monoSemiBold, ...text("micro"), letterSpacing: 1.5, color: darkSurface.textDim },
 
   intervalBox: {
     backgroundColor: "rgba(255,90,31,0.14)",
     borderWidth: 1,
     borderColor: "rgba(255,90,31,0.35)",
-    borderRadius: 14,
+    borderRadius: radius.md,
     paddingVertical: 12,
     alignItems: "center",
     marginBottom: 14,
   },
   intervalBoxRecovery: { backgroundColor: "rgba(62,142,126,0.14)", borderColor: "rgba(62,142,126,0.35)" },
-  intervalKind: { fontFamily: fonts.monoSemiBold, fontSize: 11, letterSpacing: 1, color: "#fff", marginBottom: 4 },
-  intervalMessage: { fontFamily: fonts.bodySemiBold, fontSize: 14.5, color: "#fff" },
+  intervalKind: { fontFamily: fonts.monoSemiBold, ...text("micro"), letterSpacing: 1, color: darkSurface.text, marginBottom: 4 },
+  intervalMessage: { fontFamily: fonts.bodySemiBold, ...text("body"), color: darkSurface.text },
 
   statRow: { flexDirection: "row", gap: 8, marginBottom: 14 },
-  statCard: { flex: 1, backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 12, paddingVertical: 15, alignItems: "center" },
-  statLabel: { fontFamily: fonts.monoMedium, fontSize: 11.5, letterSpacing: 1, color: "#8a8d92", marginBottom: 5 },
-  statValue: { fontFamily: fonts.dataBold, fontSize: 24, color: "#fff" },
+  statCard: { flex: 1, backgroundColor: darkSurface.card, borderRadius: radius.md, paddingVertical: 15, alignItems: "center" },
+  statLabel: { fontFamily: fonts.monoMedium, ...text("caption"), letterSpacing: 1, color: darkSurface.textFaint, marginBottom: 5 },
+  statValue: { fontFamily: fonts.dataBold, ...text("headline"), color: darkSurface.text },
 
   plannedNote: { marginBottom: 8, alignItems: "center" },
-  plannedNoteText: { fontFamily: fonts.body, fontSize: 12, color: "#8a8d92", textAlign: "center" },
+  plannedNoteText: { fontFamily: fonts.body, ...text("caption"), color: darkSurface.textFaint, textAlign: "center" },
 
   centerPaceWrap: { flex: 1, alignItems: "center", justifyContent: "center" },
-  paceValue: { fontFamily: fonts.dataBold, fontSize: 60, color: "#fff", lineHeight: 66 },
-  paceLabel: { fontFamily: fonts.monoMedium, fontSize: 12, letterSpacing: 1.5, color: "#8a8d92", marginTop: 6 },
-  paceTarget: { fontFamily: fonts.body, fontSize: 13, color: "#c7c9cb", marginTop: 10 },
+  paceValue: { fontFamily: fonts.dataBold, fontSize: fs.numeral, includeFontPadding: false, color: darkSurface.text, lineHeight: 66 },
+  paceLabel: { fontFamily: fonts.monoMedium, ...text("caption"), letterSpacing: 1.5, color: darkSurface.textFaint, marginTop: 6 },
+  paceTarget: { fontFamily: fonts.body, ...text("small"), color: darkSurface.textDim, marginTop: 10 },
   paceAhead: { color: palette.success, fontFamily: fonts.bodySemiBold },
   paceBehind: { color: palette.warning, fontFamily: fonts.bodySemiBold },
 
@@ -375,8 +375,8 @@ const styles = StyleSheet.create({
   // is what read as the stats row and Pause/Stop sitting right on top of
   // each other. An explicit gap instead.
   collapsedControls: { marginTop: 18 },
-  pauseBtn: { flex: 1, height: 52, borderRadius: 14, borderWidth: 1.5, borderColor: "rgba(255,255,255,0.3)", alignItems: "center", justifyContent: "center" },
-  pauseBtnText: { fontFamily: fonts.bodySemiBold, fontSize: 15.5, color: "#fff" },
-  stopBtn: { flex: 1, height: 52, borderRadius: 14, backgroundColor: palette.accent, alignItems: "center", justifyContent: "center" },
-  stopBtnText: { fontFamily: fonts.bodySemiBold, fontSize: 15.5, color: "#fff" },
+  pauseBtn: { flex: 1, height: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: darkSurface.outline, alignItems: "center", justifyContent: "center" },
+  pauseBtnText: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: darkSurface.text },
+  stopBtn: { flex: 1, height: 52, borderRadius: radius.md, backgroundColor: palette.accent, alignItems: "center", justifyContent: "center" },
+  stopBtnText: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: darkSurface.text },
 });

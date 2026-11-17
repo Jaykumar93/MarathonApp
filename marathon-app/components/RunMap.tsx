@@ -5,7 +5,7 @@ import Svg, { Circle, Path } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import type { RoutePoint } from "../lib/gpsStats";
-import { palette } from "../lib/theme";
+import { palette, radius, darkSurface } from "../lib/theme";
 
 interface RunMapProps {
   /** Recorded so far (live tracking) or the full saved route (a finished run) - accuracy-filtered, so this can legitimately be empty for a stretch in poor GPS conditions even while the device's position is known (see currentCoordinate). */
@@ -50,8 +50,8 @@ function HeadingPuck({ headingDegrees }: { headingDegrees: number | null | undef
   return (
     <View style={{ transform: [{ rotate: `${headingDegrees ?? 0}deg` }] }}>
       <Svg width={26} height={26} viewBox="0 0 26 26">
-        <Path d="M13 2 L18.5 12 L13 9 L7.5 12 Z" fill="#fff" />
-        <Circle cx={13} cy={15} r={6} fill={palette.accent} stroke="#fff" strokeWidth={2} />
+        <Path d="M13 2 L18.5 12 L13 9 L7.5 12 Z" fill={darkSurface.text} />
+        <Circle cx={13} cy={15} r={6} fill={palette.accent} stroke={darkSurface.text} strokeWidth={2} />
       </Svg>
     </View>
   );
@@ -170,6 +170,11 @@ export function RunMap({ points, live = false, currentCoordinate, recenterBottom
         ref={mapRef}
         style={styles.fill}
         customMapStyle={MAP_DARK_STYLE}
+        // customMapStyle only applies to Google Maps (Android's default).
+        // On iOS the map is Apple Maps, which ignores it - this is its own
+        // switch for the same dark basemap, so the run screens aren't a
+        // bright map under a dark sheet on iPhones.
+        userInterfaceStyle="dark"
         scrollEnabled
         zoomEnabled
         rotateEnabled={false}
@@ -199,7 +204,7 @@ export function RunMap({ points, live = false, currentCoordinate, recenterBottom
           accessibilityRole="button"
           accessibilityLabel="Recenter on my location"
         >
-          <Ionicons name="locate" size={20} color={following ? palette.accent : "#fff"} />
+          <Ionicons name="locate" size={20} color={following ? palette.accent : darkSurface.text} />
         </Pressable>
       )}
     </View>
@@ -217,8 +222,8 @@ const styles = StyleSheet.create({
     right: 12,
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(20,22,26,0.85)",
+    borderRadius: radius.pill,
+    backgroundColor: darkSurface.floating,
     alignItems: "center",
     justifyContent: "center",
   },

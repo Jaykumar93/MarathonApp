@@ -16,7 +16,7 @@ import { markSessionDone, moveSessionToTomorrow, recordAdjustmentDeclined, type 
 import { getAdjustmentProposal, applyMissedRunAdjustment, recordAdjustmentPrompted } from "../../lib/data/planAdjustment";
 import { getActivitiesInRange, type ActivityRow } from "../../lib/data/activities";
 import { deleteGoal } from "../../lib/data/goals";
-import { fonts, noSelectStyle, palette, spacing, type } from "../../lib/theme";
+import { fonts, noSelectStyle, palette, spacing, type, text } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Card } from "../../components/ui/Card";
 import { BlockProfile } from "../../components/BlockProfile";
@@ -28,6 +28,7 @@ import { NoPlanPrompt } from "../../components/NoPlanPrompt";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { useAuth } from "../../lib/auth/AuthContext";
 import { formatDistance } from "../../lib/units";
+import { SectionLabel } from "../../components/ui/SectionLabel";
 
 export default function Plan() {
   const router = useRouter();
@@ -240,7 +241,7 @@ export default function Plan() {
           </View>
         </Card>
 
-        <Text style={styles.sectionLabel}>CALENDAR</Text>
+        <SectionLabel>CALENDAR</SectionLabel>
         <Card>
           <PlanCalendarScroller days={allDays} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
           <View style={styles.divider} />
@@ -249,7 +250,7 @@ export default function Plan() {
           </View>
         </Card>
 
-        <Text style={styles.sectionLabel}>THIS WEEK'S SESSIONS</Text>
+        <SectionLabel>THIS WEEK'S SESSIONS</SectionLabel>
         {sessionActionError && <Text style={styles.errorText}>{sessionActionError}</Text>}
         <Card style={{ paddingHorizontal: 10 }}>
           {weekSessions.map((s) => (
@@ -273,7 +274,7 @@ function createStyles(colors: Colors) {
   scroll: { flex: 1 },
   container: { padding: spacing.screenPadding, paddingTop: 10 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
-  body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
+  body: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -282,25 +283,16 @@ function createStyles(colors: Colors) {
   },
   header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary },
   headerActions: { flexDirection: "row", gap: 16 },
-  headerActionText: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.textDim },
+  headerActionText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.textDim },
   headerActionDanger: { color: palette.danger },
   confirmText: { fontFamily: fonts.bodyMedium, fontSize: type.pDim, color: colors.textPrimary, marginBottom: 12 },
   confirmActions: { flexDirection: "row", gap: 10 },
   metaLine: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginBottom: 6 },
-  sectionLabel: {
-    fontFamily: fonts.monoMedium,
-    fontSize: type.sectionLabel,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    color: colors.textFaint,
-    marginTop: 4,
-    marginBottom: 7,
-  },
-  errorText: { fontFamily: fonts.body, fontSize: 12.5, color: colors.danger, marginBottom: 8 },
+  errorText: { fontFamily: fonts.body, ...text("small"), color: colors.danger, marginBottom: 8 },
   divider: { height: 1, backgroundColor: colors.cardLine, marginVertical: 12 },
   cardTitleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 },
-  cardTitleMain: { fontFamily: fonts.bodyBold, fontSize: 11.5, color: colors.textPrimary },
-  cardTitleValue: { fontFamily: fonts.mono, fontSize: 10, color: colors.textDim },
+  cardTitleMain: { fontFamily: fonts.bodyBold, ...text("caption"), color: colors.textPrimary },
+  cardTitleValue: { fontFamily: fonts.mono, ...text("micro"), color: colors.textDim },
   progressBarTrack: { height: 7, backgroundColor: colors.cardLine, borderRadius: 4, overflow: "hidden" },
   progressBarFill: { height: "100%", backgroundColor: colors.accent, borderRadius: 4 },
   });

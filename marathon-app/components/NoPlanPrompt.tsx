@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { fonts, spacing } from "./../lib/theme";
+import { fonts, spacing, text } from "./../lib/theme";
 import { useTheme, type Colors } from "./../lib/theme/ThemeContext";
 import { PrimaryButton } from "./ui/PrimaryButton";
 
@@ -35,8 +35,8 @@ function createStyles(colors: Colors) {
       padding: spacing.screenPadding,
       gap: 8,
     },
-    title: { fontFamily: fonts.dataBold, fontSize: 20, color: colors.textPrimary },
-    body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim, textAlign: "center", marginBottom: 8 },
+    title: { fontFamily: fonts.dataBold, ...text("stat"), color: colors.textPrimary },
+    body: { fontFamily: fonts.body, ...text("body"), color: colors.textDim, textAlign: "center", marginBottom: 8 },
     button: { width: "100%", maxWidth: 280 },
   });
 }

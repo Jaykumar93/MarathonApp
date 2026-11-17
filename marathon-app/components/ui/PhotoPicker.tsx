@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
-import { fonts } from "../../lib/theme";
+import { fonts, text, radius } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { MAX_ACTIVITY_PHOTOS, uploadActivityPhoto, deleteActivityPhoto } from "../../lib/data/activityPhotos";
 
@@ -108,7 +108,7 @@ const SLOT_SIZE = 72;
 function createStyles(colors: Colors) {
   return StyleSheet.create({
     row: { flexDirection: "row", gap: 10 },
-    slot: { width: SLOT_SIZE, height: SLOT_SIZE, borderRadius: 12, overflow: "hidden" },
+    slot: { width: SLOT_SIZE, height: SLOT_SIZE, borderRadius: radius.md, overflow: "hidden" },
     slotImage: { width: "100%", height: "100%" },
     removeBtn: {
       position: "absolute",
@@ -116,7 +116,7 @@ function createStyles(colors: Colors) {
       right: 4,
       width: 18,
       height: 18,
-      borderRadius: 9,
+      borderRadius: radius.pill,
       backgroundColor: "rgba(20,22,26,0.65)",
       alignItems: "center",
       justifyContent: "center",
@@ -130,7 +130,7 @@ function createStyles(colors: Colors) {
       backgroundColor: colors.cardBg,
     },
     addSlotDark: { borderColor: "rgba(255,255,255,0.25)", backgroundColor: "rgba(255,255,255,0.06)" },
-    errorText: { fontFamily: fonts.body, fontSize: 11.5, color: colors.danger, marginTop: 6 },
+    errorText: { fontFamily: fonts.body, ...text("caption"), color: colors.danger, marginTop: 6 },
     errorTextDark: { color: "#f0a89e" },
   });
 }

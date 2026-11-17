@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { fonts } from "../lib/theme";
+import { fonts, text, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { PrimaryButton } from "./ui/PrimaryButton";
 import type { AdjustmentProposal } from "../lib/data/planAdjustment";
@@ -61,13 +61,13 @@ function createStyles(colors: Colors) {
       backgroundColor: colors.warningBg,
       borderWidth: 1,
       borderColor: colors.warningBorder,
-      borderRadius: 10,
+      borderRadius: radius.md,
       padding: 12,
       marginBottom: 14,
     },
-    title: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.warningText },
-    body: { fontFamily: fonts.body, fontSize: 12.5, color: colors.warningText, marginTop: 4 },
-    error: { fontFamily: fonts.body, fontSize: 12, color: colors.warningText, marginTop: 8 },
+    title: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.warningText },
+    body: { fontFamily: fonts.body, ...text("small"), color: colors.warningText, marginTop: 4 },
+    error: { fontFamily: fonts.body, ...text("caption"), color: colors.warningText, marginTop: 8 },
     actions: { flexDirection: "row", gap: 8, marginTop: 10 },
   });
 }

@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Modal, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { fonts, spacing, type } from "../lib/theme";
+import { fonts, spacing, type, radius, darkSurface } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { PrimaryButton } from "./ui/PrimaryButton";
 
@@ -52,7 +52,7 @@ export function BackgroundLocationDisclosure({
 
 function createStyles(colors: Colors) {
   return StyleSheet.create({
-    backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", alignItems: "center", justifyContent: "center", padding: 24 },
+    backdrop: { flex: 1, backgroundColor: darkSurface.scrim, alignItems: "center", justifyContent: "center", padding: 24 },
     sheet: {
       width: "100%",
       maxWidth: 400,
@@ -64,7 +64,7 @@ function createStyles(colors: Colors) {
     iconCircle: {
       width: 52,
       height: 52,
-      borderRadius: 26,
+      borderRadius: radius.pill,
       backgroundColor: `${colors.accent}1A`,
       alignItems: "center",
       justifyContent: "center",

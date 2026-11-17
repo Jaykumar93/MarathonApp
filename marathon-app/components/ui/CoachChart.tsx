@@ -5,7 +5,7 @@ import type { ActivityRow } from "../../lib/data/activities";
 import { computePaceSeries, computeWeeklyMileageSeries } from "../../lib/trendsStats";
 import { todayIso } from "../../lib/data/usePlanData";
 import { formatDistance, formatPace } from "../../lib/units";
-import { fonts } from "../../lib/theme";
+import { fonts, text, radius } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { PressTooltip } from "./PressTooltip";
 
@@ -166,7 +166,7 @@ function createStyles(colors: Colors) {
     wrap: {
       marginTop: 2,
       padding: 10,
-      borderRadius: 12,
+      borderRadius: radius.md,
       backgroundColor: colors.cardBg,
       borderWidth: 1,
       borderColor: colors.cardLine,
@@ -174,7 +174,7 @@ function createStyles(colors: Colors) {
       maxWidth: "90%",
       alignSelf: "flex-start",
     },
-    label: { fontFamily: fonts.bodyMedium, fontSize: 10.5, color: colors.textFaint },
+    label: { fontFamily: fonts.bodyMedium, ...text("micro"), color: colors.textFaint },
     chartArea: { position: "relative" },
     pointHit: { position: "absolute", width: POINT_HIT_SIZE, height: POINT_HIT_SIZE },
     barRow: { flexDirection: "row", alignItems: "flex-end", height: BAR_ROW_HEIGHT, gap: 4 },
@@ -182,6 +182,6 @@ function createStyles(colors: Colors) {
     barFill: { width: "100%", borderRadius: 2, minHeight: 2 },
     barFillEmpty: { opacity: 0.35 },
     barFillActive: { opacity: 1, borderWidth: 1.5, borderColor: colors.textPrimary },
-    axisNote: { fontFamily: fonts.mono, fontSize: 9.5, color: colors.textFaint },
+    axisNote: { fontFamily: fonts.mono, ...text("micro"), color: colors.textFaint },
   });
 }

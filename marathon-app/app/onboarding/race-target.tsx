@@ -7,7 +7,7 @@ import { TextField } from "../../components/ui/TextField";
 import { DateField } from "../../components/ui/DateField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
 import { computeAvailableWeeks, getMinWeeks, resolveStartDate, STRUCTURAL_MIN_WEEKS } from "../../lib/planEngine";
-import { fonts, palette } from "../../lib/theme";
+import { fonts, palette, text } from "../../lib/theme";
 import { useTheme } from "../../lib/theme/ThemeContext";
 import { todayIso } from "../../lib/data/usePlanData";
 
@@ -70,7 +70,7 @@ export default function RaceTarget() {
       nextDisabled={!canContinue}
     >
       <View>
-        <Text style={{ fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textDim, marginBottom: 8 }}>
+        <Text style={{ fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textDim, marginBottom: 8 }}>
           Distance
         </Text>
         <ChipSelect
@@ -95,12 +95,12 @@ export default function RaceTarget() {
       />
       <DateField label="Race date" value={goalDate} onChange={setGoalDate} />
       {isPastDate && (
-        <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: palette.danger }}>
+        <Text style={{ fontFamily: fonts.body, ...text("small"), color: palette.danger }}>
           Race date must be in the future - pick a date after today.
         </Text>
       )}
       {!isPastDate && scheduleWarning && (
-        <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: palette.danger }}>
+        <Text style={{ fontFamily: fonts.body, ...text("small"), color: palette.danger }}>
           {scheduleWarning.tooTight
             ? `Only ${scheduleWarning.availableWeeks} week${scheduleWarning.availableWeeks === 1 ? "" : "s"} until race day - that's not enough time to build a safe plan for this distance (needs at least ${STRUCTURAL_MIN_WEEKS}). Pick a later date.`
             : `Only ${scheduleWarning.availableWeeks} weeks until race day - typical plans for this distance use ${scheduleWarning.minWeeksRecommended}+. We can still build you a plan, but it'll be a compressed, higher-effort ramp-up than we'd normally recommend.`}

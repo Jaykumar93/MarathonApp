@@ -3,6 +3,7 @@ import { Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTheme, type Colors, type ThemeShadows } from "../../lib/theme/ThemeContext";
+import { radius } from "../../lib/theme";
 
 /**
  * Persistent floating "+ " - bottom-right on Home, Plan and Activity,
@@ -37,7 +38,7 @@ function createStyles(colors: Colors, shadows: ThemeShadows) {
       bottom: 18,
       width: 54,
       height: 54,
-      borderRadius: 16,
+      borderRadius: radius.lg,
       backgroundColor: colors.accent,
       alignItems: "center",
       justifyContent: "center",

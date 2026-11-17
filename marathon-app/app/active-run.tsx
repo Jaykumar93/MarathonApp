@@ -11,12 +11,13 @@ import { buildFallbackVoiceScript, type RunVoiceScript } from "../lib/runTrackin
 import { getOrGenerateVoiceScript } from "../lib/runTracking/voiceScript";
 import { formatDistance, formatPace } from "../lib/units";
 import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
-import { fonts, palette } from "../lib/theme";
+import { fonts, palette, text, inputText, fs, radius, darkSurface } from "../lib/theme";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PhotoPicker } from "../components/ui/PhotoPicker";
 import { RunMap } from "../components/RunMap";
 import { ActiveRunSheet, COLLAPSED_HEIGHT } from "../components/ActiveRunSheet";
 import { useAuth } from "../lib/auth/AuthContext";
+import { StatusBar } from "expo-status-bar";
 
 function formatDateShort(iso: string): string {
   const d = new Date(iso + "T00:00:00Z");
@@ -42,7 +43,7 @@ function BackButton({ onPress, top }: { onPress: () => void; top: number }) {
       accessibilityRole="button"
       accessibilityLabel="Back"
     >
-      <Ionicons name="chevron-back" size={22} color="#fff" />
+      <Ionicons name="chevron-back" size={22} color={darkSurface.text} />
     </Pressable>
   );
 }
@@ -63,7 +64,7 @@ function MuteButton({ muted, onPress, top }: { muted: boolean; onPress: () => vo
       accessibilityRole="button"
       accessibilityLabel={muted ? "Unmute coach" : "Mute coach"}
     >
-      <Ionicons name={muted ? "volume-mute" : "volume-high"} size={20} color="#fff" />
+      <Ionicons name={muted ? "volume-mute" : "volume-high"} size={20} color={darkSurface.text} />
     </Pressable>
   );
 }
@@ -85,7 +86,7 @@ function MuteButton({ muted, onPress, top }: { muted: boolean; onPress: () => vo
  * mile-marker Pace Band is still just the current-pace readout above, not
  * a mile-by-mile breakdown - that stays deferred.
  */
-export default function ActiveRun() {
+function ActiveRunScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { session, profile } = useAuth();
@@ -278,7 +279,7 @@ export default function ActiveRun() {
                   value={runName}
                   onChangeText={setRunName}
                   placeholder="e.g. Sunday long run"
-                  placeholderTextColor="#6b6e73"
+                  placeholderTextColor={darkSurface.textFaint}
                 />
               </View>
               <View style={styles.formSection}>
@@ -288,7 +289,7 @@ export default function ActiveRun() {
                   value={runDescription}
                   onChangeText={setRunDescription}
                   placeholder="How it went, anything worth remembering"
-                  placeholderTextColor="#6b6e73"
+                  placeholderTextColor={darkSurface.textFaint}
                   multiline
                 />
               </View>
@@ -395,17 +396,17 @@ const styles = StyleSheet.create({
   scrollFlex: { flex: 1 },
   finishedContainer: { flexGrow: 1, alignItems: "center", padding: 32, paddingTop: 64, gap: 10 },
   formSection: { width: "100%", maxWidth: 340, marginTop: 4 },
-  formLabel: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: "#c7c9cb", marginBottom: 6 },
+  formLabel: { fontFamily: fonts.bodyMedium, ...text("small"), color: darkSurface.textDim, marginBottom: 6 },
   darkInput: {
     height: 46,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
-    borderRadius: 12,
+    borderColor: darkSurface.line,
+    borderRadius: radius.md,
     paddingHorizontal: 14,
     fontFamily: fonts.body,
-    fontSize: 14.5,
-    color: "#fff",
-    backgroundColor: "rgba(255,255,255,0.06)",
+    ...inputText("body"),
+    color: darkSurface.text,
+    backgroundColor: darkSurface.card,
   },
   darkInputMultiline: { height: 72, paddingTop: 12, textAlignVertical: "top" },
   backButton: {
@@ -413,8 +414,8 @@ const styles = StyleSheet.create({
     left: 16,
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: radius.pill,
+    backgroundColor: darkSurface.line,
     alignItems: "center",
     justifyContent: "center",
     zIndex: 10,
@@ -424,8 +425,8 @@ const styles = StyleSheet.create({
     right: 16,
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: radius.pill,
+    backgroundColor: darkSurface.line,
     alignItems: "center",
     justifyContent: "center",
     zIndex: 10,
@@ -433,26 +434,38 @@ const styles = StyleSheet.create({
   breakdownBox: {
     marginTop: 4,
     padding: 14,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: radius.md,
+    backgroundColor: darkSurface.card,
     width: "100%",
     maxWidth: 340,
   },
-  breakdownText: { fontFamily: fonts.body, fontSize: 13.5, color: "#c7c9cb", textAlign: "left", lineHeight: 19 },
-  centerTitle: { fontFamily: fonts.dataBold, fontSize: 19, color: "#fff", textAlign: "center" },
-  centerText: { fontFamily: fonts.body, fontSize: 14, color: "#c7c9cb", textAlign: "center" },
+  breakdownText: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: darkSurface.textDim, textAlign: "left", lineHeight: 19 },
+  centerTitle: { fontFamily: fonts.dataBold, ...text("title"), color: darkSurface.text, textAlign: "center" },
+  centerText: { fontFamily: fonts.body, ...text("body"), color: darkSurface.textDim, textAlign: "center" },
   centerButton: { marginTop: 12, width: "100%", maxWidth: 280 },
-  countdownNumber: { fontFamily: fonts.dataBold, fontSize: 96, color: "#fff", lineHeight: 104, marginTop: 16 },
+  countdownNumber: { fontFamily: fonts.dataBold, fontSize: fs.countdown, includeFontPadding: false, color: darkSurface.text, lineHeight: 104, marginTop: 16 },
   confirmBox: { alignItems: "center", marginTop: 20, width: "100%" },
-  confirmText: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: palette.danger, textAlign: "center", marginBottom: 4 },
+  confirmText: { fontFamily: fonts.bodySemiBold, ...text("body"), color: palette.danger, textAlign: "center", marginBottom: 4 },
   finishedStatRow: { flexDirection: "row", gap: 8, marginVertical: 20, width: "100%", maxWidth: 340 },
   finishedStat: {
     flex: 1,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderRadius: 12,
+    backgroundColor: darkSurface.card,
+    borderRadius: radius.md,
     paddingVertical: 14,
     alignItems: "center",
   },
-  finishedStatValue: { fontFamily: fonts.dataBold, fontSize: 17, color: "#fff" },
-  paceLabel: { fontFamily: fonts.monoMedium, fontSize: 11, letterSpacing: 1, color: "#8a8d92", marginTop: 4 },
+  finishedStatValue: { fontFamily: fonts.dataBold, ...text("emphasis"), color: darkSurface.text },
+  paceLabel: { fontFamily: fonts.monoMedium, ...text("micro"), letterSpacing: 1, color: darkSurface.textFaint, marginTop: 4 },
 });
+
+// These screens stay dark regardless of the app's light/dark setting, so
+// their status-bar icons stay light too - the app-wide ThemedStatusBar would
+// otherwise switch them to dark icons on a near-black map in light mode.
+export default function ActiveRun() {
+  return (
+    <>
+      <StatusBar style="light" />
+      <ActiveRunScreen />
+    </>
+  );
+}

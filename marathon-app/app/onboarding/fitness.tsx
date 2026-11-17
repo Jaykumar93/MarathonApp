@@ -5,7 +5,7 @@ import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
 import { ChipSelect } from "../../components/ui/ChipSelect";
 import { TextField } from "../../components/ui/TextField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
-import { fonts } from "../../lib/theme";
+import { fonts, text } from "../../lib/theme";
 import { useTheme } from "../../lib/theme/ThemeContext";
 
 const EXPERIENCE_OPTIONS = [
@@ -35,7 +35,7 @@ export default function Fitness() {
       nextDisabled={!answers.experienceLevel}
     >
       <View>
-        <Text style={{ fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textDim, marginBottom: 8 }}>
+        <Text style={{ fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textDim, marginBottom: 8 }}>
           Experience level
         </Text>
         <ChipSelect

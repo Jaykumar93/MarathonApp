@@ -1,6 +1,6 @@
 import React, { useMemo, useRef } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
-import { fonts } from "../../lib/theme";
+import { fonts, text, radius } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 
 interface ChipOption<T> {
@@ -85,14 +85,14 @@ function createStyles(colors: Colors) {
     chip: {
       paddingHorizontal: 14,
       paddingVertical: 10,
-      borderRadius: 12,
+      borderRadius: radius.md,
       borderWidth: 1.5,
       borderColor: colors.cardLine,
       backgroundColor: colors.cardBg,
     },
     chipSelected: { borderColor: colors.accent, backgroundColor: colors.accent },
     chipDisabled: { opacity: 0.45 },
-    label: { fontFamily: fonts.bodyMedium, fontSize: 13.5, color: colors.textPrimary },
+    label: { fontFamily: fonts.bodyMedium, ...text("body"), color: colors.textPrimary },
     labelSelected: { color: "#fff" },
   });
 }

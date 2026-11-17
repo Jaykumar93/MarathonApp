@@ -1,13 +1,14 @@
 import React, { useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Link } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
-import { fonts, palette, spacing } from "../../lib/theme";
+import { fonts, palette, spacing, text, fs } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { BrandMark } from "../../components/ui/BrandMark";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { TextField } from "../../components/ui/TextField";
+import { KeyboardAvoider } from "../../components/ui/KeyboardAvoider";
 
 const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
 
@@ -96,7 +97,7 @@ export default function SignUp() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+    <KeyboardAvoider style={styles.flex}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.markRow}>
           <BrandMark size={72} />
@@ -162,7 +163,7 @@ export default function SignUp() {
           </Link>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAvoider>
   );
 }
 
@@ -171,16 +172,16 @@ function createStyles(colors: Colors) {
     flex: { flex: 1, backgroundColor: colors.screenBg },
     container: { flexGrow: 1, padding: spacing.screenPadding, justifyContent: "center", gap: 22 },
     markRow: { alignItems: "center", gap: 6, marginBottom: 10 },
-    brandName: { fontFamily: fonts.dataBold, fontSize: 30, color: colors.textPrimary, letterSpacing: -0.6, marginTop: 2 },
-    brandKicker: { fontFamily: fonts.mono, fontSize: 11, color: colors.textFaint, letterSpacing: 2.5, textTransform: "uppercase" },
-    title: { fontFamily: fonts.dataBold, fontSize: 28, color: colors.textPrimary },
-    subtitle: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
+    brandName: { fontFamily: fonts.dataBold, ...text("display"), color: colors.textPrimary, letterSpacing: -0.6, marginTop: 2 },
+    brandKicker: { fontFamily: fonts.mono, ...text("micro"), color: colors.textFaint, letterSpacing: 2.5, textTransform: "uppercase" },
+    title: { fontFamily: fonts.dataBold, ...text("display"), color: colors.textPrimary },
+    subtitle: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
     form: { gap: 14 },
-    error: { fontFamily: fonts.body, fontSize: 13, color: palette.danger },
+    error: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
     footerRow: { flexDirection: "row", justifyContent: "center" },
-    footerText: { fontFamily: fonts.body, fontSize: 13.5, color: colors.textDim },
-    footerLink: { fontFamily: fonts.bodySemiBold, fontSize: 13.5, color: colors.accent },
-    consentText: { fontFamily: fonts.body, fontSize: 12, color: colors.textFaint, lineHeight: 16 },
+    footerText: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
+    footerLink: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accent },
+    consentText: { fontFamily: fonts.body, fontSize: fs.caption, includeFontPadding: false, color: colors.textFaint, lineHeight: 16 },
     consentLink: { fontFamily: fonts.bodySemiBold, color: colors.accent },
   });
 }

@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
-import { fonts, type } from "../lib/theme";
+import { fonts, type, fs, text } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 
 interface CountdownArcProps {
@@ -92,8 +92,8 @@ function createStyles(colors: Colors) {
     // using the mono family for numeric/data readouts (paces, distances,
     // day numbers), and its metrics don't have the ascender-clipping issue
     // Space Grotesk's bold weight had at this size.
-    number: { fontFamily: fonts.monoSemiBold, fontSize: 34, lineHeight: 40, color: colors.textPrimary },
-    suffix: { fontFamily: fonts.monoMedium, fontSize: 13, lineHeight: 16, color: colors.textDim },
+    number: { fontFamily: fonts.monoSemiBold, fontSize: fs.display, includeFontPadding: false, lineHeight: 40, color: colors.textPrimary },
+    suffix: { fontFamily: fonts.monoMedium, fontSize: fs.small, includeFontPadding: false, lineHeight: 16, color: colors.textDim },
     sub: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim, marginTop: 3 },
     endpointLabelBox: {
       position: "absolute",
@@ -103,7 +103,7 @@ function createStyles(colors: Colors) {
     },
     endpointLabel: {
       fontFamily: fonts.monoMedium,
-      fontSize: 8.5,
+      ...text("micro"),
       letterSpacing: 0.6,
       color: colors.textFaint,
     },

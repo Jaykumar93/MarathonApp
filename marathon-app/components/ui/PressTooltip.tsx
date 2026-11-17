@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
-import { fonts } from "../../lib/theme";
+import { fonts, text, radius } from "../../lib/theme";
 import { useTheme } from "../../lib/theme/ThemeContext";
 
 interface PressTooltipProps {
@@ -85,6 +85,6 @@ const styles = StyleSheet.create({
   // taller bubble to still clear the bar/point it's anchored to instead of
   // covering it.
   anchor: { position: "absolute", top: -38, left: -60, right: -60, alignItems: "center", zIndex: 10 },
-  bubble: { borderRadius: 7, paddingVertical: 4, paddingHorizontal: 8, maxWidth: 150 },
-  label: { fontFamily: fonts.dataBold, fontSize: 10.5, color: "#fff", textAlign: "center" },
+  bubble: { borderRadius: radius.sm, paddingVertical: 4, paddingHorizontal: 8, maxWidth: 150 },
+  label: { fontFamily: fonts.dataBold, ...text("micro"), color: "#fff", textAlign: "center" },
 });

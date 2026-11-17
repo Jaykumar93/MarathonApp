@@ -13,11 +13,12 @@ import { getRaceDayWeather, isWithinForecastRange, type RaceDayWeather } from ".
 import { formatDistance } from "../lib/units";
 import { formatHms } from "../lib/timeFormat";
 import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
-import { fonts, palette, spacing, type } from "../lib/theme";
+import { fonts, palette, spacing, type, text, fs, inputText } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { CoachMessageBody } from "../components/ui/CoachMessageBody";
+import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
 
 function formatDateHeading(iso: string): string {
   const d = new Date(iso + "T00:00:00Z");
@@ -155,13 +156,8 @@ export default function RaceDay() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={[styles.container, { paddingTop: 20 + insets.top, paddingBottom: 96 + insets.bottom }]}>
-        <View style={styles.topRow}>
-          <Pressable onPress={goBack} hitSlop={10}>
-            <Text style={styles.backLink}>‹ Back</Text>
-          </Pressable>
-        </View>
-        <Text style={styles.header}>{SESSION_TYPE_LABEL.race}</Text>
+      <ScrollView contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: 96 + insets.bottom }]}>
+        <ScreenHeader title={SESSION_TYPE_LABEL.race} onBack={goBack} />
         <Text style={styles.dateLine}>{formatDateHeading(goal.goal_date)}</Text>
 
         <Card style={styles.readinessCard}>
@@ -272,13 +268,10 @@ function createStyles(colors: Colors) {
     screen: { flex: 1, backgroundColor: colors.screenBg },
     container: { padding: spacing.screenPadding, paddingTop: 20, gap: 4 },
     center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
-    body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
-    topRow: { marginBottom: 14 },
-    backLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
-    header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary, textAlign: "center" },
-    dateLine: { fontFamily: fonts.body, fontSize: 13, color: colors.textDim, textAlign: "center", marginBottom: 18 },
+    body: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
+    dateLine: { fontFamily: fonts.body, ...text("small"), color: colors.textDim, textAlign: "center", marginBottom: 18 },
     cardHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
-    cardTitle: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: colors.textPrimary, marginBottom: 6 },
+    cardTitle: { fontFamily: fonts.bodyBold, ...text("small"), color: colors.textPrimary, marginBottom: 6 },
     cardTitleValue: { fontFamily: fonts.mono, fontSize: type.pFaint, color: colors.textDim },
     detailLine: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim, marginTop: 2 },
     // One-off literal colors, not new shared theme tokens - only this card
@@ -286,15 +279,15 @@ function createStyles(colors: Colors) {
     readinessCard: { backgroundColor: "rgba(62,142,126,0.1)", borderColor: "rgba(62,142,126,0.3)", borderWidth: 1 },
     readinessKicker: {
       fontFamily: fonts.bodyBold,
-      fontSize: 11,
+      ...text("micro"),
       color: palette.success,
       textTransform: "uppercase",
       letterSpacing: 0.5,
       marginBottom: 6,
     },
-    readinessBody: { fontFamily: fonts.body, fontSize: 14, color: colors.textPrimary, lineHeight: 20 },
-    weatherPrompt: { fontFamily: fonts.bodyMedium, fontSize: 13.5, color: colors.secondaryAccent },
-    weatherTemp: { fontFamily: fonts.dataBold, fontSize: 28, color: colors.textPrimary },
+    readinessBody: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: colors.textPrimary, lineHeight: 20 },
+    weatherPrompt: { fontFamily: fonts.bodyMedium, ...text("body"), color: colors.secondaryAccent },
+    weatherTemp: { fontFamily: fonts.dataBold, ...text("display"), color: colors.textPrimary },
     // Matches the mockup's dark pace-band bracelet look regardless of the
     // app's own light/dark theme - a one-off literal, same reasoning as
     // readinessCard above.
@@ -315,11 +308,11 @@ function createStyles(colors: Colors) {
       borderBottomWidth: 1,
       borderBottomColor: "rgba(238,239,234,0.08)",
     },
-    paceBandUnit: { fontFamily: fonts.mono, fontSize: 13, color: palette.frost },
-    paceBandTime: { fontFamily: fonts.monoSemiBold, fontSize: 13, color: palette.frost },
+    paceBandUnit: { fontFamily: fonts.mono, ...text("small"), color: palette.frost },
+    paceBandTime: { fontFamily: fonts.monoSemiBold, ...text("small"), color: palette.frost },
     checklistRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8 },
     checklistToggle: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
-    checklistLabel: { fontFamily: fonts.body, fontSize: 14, color: colors.textPrimary, flexShrink: 1 },
+    checklistLabel: { fontFamily: fonts.body, ...text("body"), color: colors.textPrimary, flexShrink: 1 },
     checklistLabelDone: { color: colors.textFaint, textDecorationLine: "line-through" },
     addItemRow: {
       flexDirection: "row",
@@ -333,7 +326,7 @@ function createStyles(colors: Colors) {
     addItemInput: {
       flex: 1,
       fontFamily: fonts.body,
-      fontSize: 14,
+      ...inputText("body"),
       color: colors.textPrimary,
       paddingVertical: 6,
     },

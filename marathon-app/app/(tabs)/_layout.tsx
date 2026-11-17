@@ -1,9 +1,10 @@
 import { useMemo, useRef, type ReactNode } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Animated, ColorValue, Pressable, StyleSheet, Text, View, type GestureResponderEvent, type StyleProp, type ViewStyle } from "react-native";
 import { useAuth } from "../../lib/auth/AuthContext";
-import { fonts, type } from "../../lib/theme";
+import { fonts, type, text, radius } from "../../lib/theme";
 import { useTheme, type Colors, type ThemeShadows } from "../../lib/theme/ThemeContext";
 import { HealthSyncButton } from "../../components/HealthSyncButton";
 import { NotificationBell } from "../../components/NotificationBell";
@@ -125,13 +126,19 @@ function HomeGreeting() {
 
 export default function TabsLayout() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  // Sized from the real bottom inset instead of a flat 74: a fixed height
+  // gave the icons and labels less room on phones with a home indicator or
+  // gesture bar than on ones with none, and the same header came out a
+  // different height by default on iOS (44pt) and Android (56dp).
+  const tabBarBottom = Math.max(insets.bottom, 8);
   return (
     <Tabs
       screenOptions={{
         headerShown: true,
         headerTitle: "",
         headerShadowVisible: false,
-        headerStyle: { backgroundColor: colors.screenBg },
+        headerStyle: { backgroundColor: colors.screenBg, height: insets.top + 52 },
         headerRight: () => (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             <HealthSyncButton />
@@ -142,8 +149,8 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textFaint,
         tabBarButton: (props) => <AnimatedTabButton {...props} />,
-        tabBarStyle: { height: 74, paddingTop: 9, backgroundColor: colors.tabBarBg, borderTopColor: colors.cardLine },
-        tabBarLabelStyle: { fontFamily: fonts.bodyMedium, fontSize: 11 },
+        tabBarStyle: { height: 58 + tabBarBottom, paddingTop: 9, paddingBottom: tabBarBottom, backgroundColor: colors.tabBarBg, borderTopColor: colors.cardLine },
+        tabBarLabelStyle: { fontFamily: fonts.bodyMedium, ...text("micro") },
       }}
     >
       <Tabs.Screen
@@ -199,7 +206,7 @@ function createRaisedStyles(colors: Colors, shadows: ThemeShadows) {
     circle: {
       width: 50,
       height: 50,
-      borderRadius: 25,
+      borderRadius: radius.pill,
       alignItems: "center",
       justifyContent: "center",
       marginTop: -32, // lifts it well clear of the bar's top edge
@@ -209,7 +216,7 @@ function createRaisedStyles(colors: Colors, shadows: ThemeShadows) {
     ring: {
       width: 22,
       height: 22,
-      borderRadius: 11,
+      borderRadius: radius.pill,
       borderWidth: 3,
       borderColor: "#fff",
     },
@@ -221,7 +228,7 @@ function createStyles(colors: Colors) {
     avatar: {
       width: 28,
       height: 28,
-      borderRadius: 14,
+      borderRadius: radius.pill,
       // Was colors.predawn - identical hex to dark mode's screenBg
       // ("#14161A" both), so the circle vanished entirely against the dark
       // header. Accent is the same bright orange in both themes, so it
@@ -231,7 +238,7 @@ function createStyles(colors: Colors) {
       justifyContent: "center",
       marginRight: 16,
     },
-    avatarInitial: { fontFamily: fonts.bodyBold, fontSize: 12, color: "#fff" },
+    avatarInitial: { fontFamily: fonts.bodyBold, ...text("caption"), color: "#fff" },
     greeting: {
       fontFamily: fonts.bodyMedium,
       fontSize: type.pDim,

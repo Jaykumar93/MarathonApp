@@ -9,7 +9,7 @@ import { supersedePlan, createPlanWithSessions } from "../lib/data/plans";
 import { generatePlan, type DayOfWeek, type ExperienceLevel, type GoalInput } from "../lib/planEngine";
 import { geocodeCity } from "../lib/weather/openMeteo";
 import { parseHms, formatHms } from "../lib/timeFormat";
-import { fonts, palette, spacing, type } from "../lib/theme";
+import { fonts, palette, spacing, type, text, inputText } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { ChipSelect } from "../components/ui/ChipSelect";
@@ -17,6 +17,8 @@ import { TextField } from "../components/ui/TextField";
 import { DateField } from "../components/ui/DateField";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PlanFeasibilityWarnings } from "../components/PlanFeasibilityWarnings";
+import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
+import { SectionLabel } from "../components/ui/SectionLabel";
 
 function isValidDate(s: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(new Date(s).getTime());
@@ -226,18 +228,13 @@ export default function EditPlan() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: 24 + insets.top }]}>
-      <View style={styles.topRow}>
-        <Text style={styles.backLink} onPress={goBack}>
-          ‹ Back
-        </Text>
-      </View>
-      <Text style={styles.header}>Edit Plan</Text>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top }]}>
+      <ScreenHeader title="Edit Plan" onBack={goBack} />
       <Text style={styles.subtitle}>
         Changing any of this regenerates your plan from today - your training history stays intact.
       </Text>
 
-      <Text style={styles.sectionLabel}>RACE</Text>
+      <SectionLabel>RACE</SectionLabel>
       <Card>
         <Text style={styles.fieldLabel}>Distance</Text>
         <ChipSelect
@@ -267,7 +264,7 @@ export default function EditPlan() {
         </View>
       </Card>
 
-      <Text style={styles.sectionLabel}>RACE LOCATION</Text>
+      <SectionLabel>RACE LOCATION</SectionLabel>
       <Card>
         <Text style={styles.fieldLabel}>Only used to show a race-day weather forecast - saved separately, doesn't regenerate your plan.</Text>
         <View style={styles.fieldGap}>
@@ -293,7 +290,7 @@ export default function EditPlan() {
         </View>
       </Card>
 
-      <Text style={styles.sectionLabel}>FITNESS</Text>
+      <SectionLabel>FITNESS</SectionLabel>
       <Card>
         <Text style={styles.fieldLabel}>Experience level</Text>
         <ChipSelect options={EXPERIENCE_OPTIONS} value={experienceLevel} onChange={setExperienceLevel} />
@@ -308,7 +305,7 @@ export default function EditPlan() {
         </View>
       </Card>
 
-      <Text style={styles.sectionLabel}>GOAL TIME & RECENT RACE</Text>
+      <SectionLabel>GOAL TIME & RECENT RACE</SectionLabel>
       <Card>
         <TextField
           label="Goal finish time (HH:MM:SS, optional)"
@@ -358,7 +355,7 @@ export default function EditPlan() {
         </View>
       </Card>
 
-      <Text style={styles.sectionLabel}>SCHEDULE</Text>
+      <SectionLabel>SCHEDULE</SectionLabel>
       <Card>
         <Text style={styles.fieldLabel}>Days per week</Text>
         <ChipSelect options={DAYS_OPTIONS} value={trainingDaysPerWeek} onChange={setTrainingDaysPerWeek} />
@@ -388,23 +385,11 @@ function createStyles(colors: Colors) {
     screen: { flex: 1, backgroundColor: colors.screenBg },
     container: { padding: spacing.screenPadding, paddingTop: 24, gap: 4 },
     center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
-    body: { fontFamily: fonts.body, fontSize: 14, color: colors.textDim },
-    topRow: { marginBottom: 10 },
-    backLink: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textDim },
-    header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary },
-    subtitle: { fontFamily: fonts.body, fontSize: 13, color: colors.textDim, marginBottom: 16 },
-    sectionLabel: {
-      fontFamily: fonts.monoMedium,
-      fontSize: type.sectionLabel,
-      textTransform: "uppercase",
-      letterSpacing: 1,
-      color: colors.textFaint,
-      marginTop: 4,
-      marginBottom: 7,
-    },
-    fieldLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textDim, marginBottom: 8 },
+    body: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
+    subtitle: { fontFamily: fonts.body, ...text("small"), color: colors.textDim, marginBottom: 16 },
+    fieldLabel: { fontFamily: fonts.bodyMedium, ...inputText("small"), color: colors.textDim, marginBottom: 8 },
     fieldGap: { marginTop: 14 },
-    errorText: { fontFamily: fonts.body, fontSize: 12.5, color: palette.danger },
+    errorText: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
     saveButton: { marginTop: 8, marginBottom: 12 },
   });
 }

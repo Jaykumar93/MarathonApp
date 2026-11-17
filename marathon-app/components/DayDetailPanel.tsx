@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { fonts, type } from "../lib/theme";
+import { fonts, type, text, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { useSlideTransition } from "../lib/useSlideTransition";
 import type { PlanSessionRow } from "../lib/data/plans";
@@ -198,15 +198,15 @@ export function DayDetailPanel({ date, session, activities }: DayDetailPanelProp
 
 function createStyles(colors: Colors) {
   return StyleSheet.create({
-    heading: { fontFamily: fonts.bodyBold, fontSize: 13, color: colors.textPrimary, marginBottom: 8 },
+    heading: { fontFamily: fonts.bodyBold, ...text("small"), color: colors.textPrimary, marginBottom: 8 },
     block: { marginBottom: 10 },
-    kicker: { fontFamily: fonts.monoMedium, fontSize: 10, color: colors.textFaint, marginBottom: 6, textTransform: "uppercase" },
+    kicker: { fontFamily: fonts.monoMedium, ...text("micro"), color: colors.textFaint, marginBottom: 6, textTransform: "uppercase" },
     subLine: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 8 },
     intervalLine: { fontFamily: fonts.bodyMedium, fontSize: type.pFaint, color: colors.textDim, marginTop: 6 },
     emptyLine: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginBottom: 10 },
     loggedRow: {
       backgroundColor: colors.screenBg,
-      borderRadius: 12,
+      borderRadius: radius.md,
       padding: 10,
       marginBottom: 8,
     },
@@ -215,7 +215,7 @@ function createStyles(colors: Colors) {
       alignItems: "center",
       gap: 10,
       backgroundColor: colors.cardBg,
-      borderRadius: 12,
+      borderRadius: radius.md,
       borderWidth: 1.5,
       padding: 10,
     },
@@ -223,7 +223,7 @@ function createStyles(colors: Colors) {
     startRunIcon: {
       width: 26,
       height: 26,
-      borderRadius: 13,
+      borderRadius: radius.pill,
       backgroundColor: colors.accent,
       alignItems: "center",
       justifyContent: "center",
@@ -231,7 +231,7 @@ function createStyles(colors: Colors) {
     doneBadge: {
       width: 26,
       height: 26,
-      borderRadius: 13,
+      borderRadius: radius.pill,
       backgroundColor: colors.success,
       alignItems: "center",
       justifyContent: "center",
@@ -247,6 +247,6 @@ function createStyles(colors: Colors) {
     loggedStatsRow: { flexDirection: "row" },
     loggedStat: { flex: 1 },
     loggedStatLabel: { fontFamily: fonts.monoMedium, fontSize: type.statLabel, color: colors.textFaint, marginBottom: 2 },
-    loggedStatValue: { fontFamily: fonts.dataBold, fontSize: 13, color: colors.textPrimary },
+    loggedStatValue: { fontFamily: fonts.dataBold, ...text("small"), color: colors.textPrimary },
   });
 }
