@@ -5,9 +5,9 @@
 
 ## What this project is
 
-**App name: Stryde.** A free, cross-platform marathon training app — a Runna alternative built entirely on free-tier infrastructure. Generates personalized training plans, tracks running activity in rich detail (auto-synced or manual), and layers an AI coach on top, grounded in the user's own training data. This is a personal/small-early-access project, not a commercial launch — no monetization, no public store listing planned yet.
+**App name: Cursus** (renamed from Stryde in Task 9; the Android package id `com.jaykumar093.stryde` is kept on purpose). A free, cross-platform marathon training app — a Runna alternative built entirely on free-tier infrastructure. Generates personalized training plans, tracks running activity in rich detail (auto-synced or manual), and layers an AI coach on top, grounded in the user's own training data. This is a personal/small-early-access project, not a commercial launch — no monetization, no public store listing planned yet.
 
-**Current stage: spec and design are complete; build in progress (Tasks 1-3 done — environment/accounts, Supabase backend, plan-generator engine).** Everything below reflects finished decisions, not open questions, unless marked otherwise. Branding: logo/app-icon source files live in `docs/brand/` (`stryde-mark.svg` icon-only, `stryde-logo-full.svg` wordmark lockup) — see design.md's Pre-Dawn Run palette for the colors used.
+**Current stage: spec and design are complete; build in progress (Tasks 1-3 done — environment/accounts, Supabase backend, plan-generator engine).** Everything below reflects finished decisions, not open questions, unless marked otherwise. Branding: the Cursus mark, wordmark and Pika mascot sources live in `docs/brand/cursus-final/` (the old `stryde-*.svg` files in `docs/brand/` are retired) — see design.md for the palette and the full mockup in `docs/cursus-design.html`.
 
 ---
 
@@ -40,12 +40,12 @@ Pre-tab-bar flow: Splash → Auth (Google/Apple/email via Supabase Auth) → Wai
 
 ## Design system (see `design.md` for full detail)
 
-- **Palette confirmed: Pre-Dawn Run** — `#14161A` Predawn (dark), `#EEEFEA` Frost (light), `#FF5A1F` Course Marking (accent), `#2B4C43` Contour Ink, `#3E8E7E` Negative Split (success/easy-run color), `#F2B705` Caution Flare (warning). Three alternates (Race Bib, Trail & Elevation, Track Meet) were explored and explicitly set aside.
-- **Typography:** Space Grotesk (data/numbers), Plus Jakarta Sans (body), JetBrains Mono (splits/utility) — three roles, never mixed.
+- **Palette confirmed: Cursus (the profile line)** — `#0F1220` Ink (dark), `#F4F1EA` Bone (light), `#6C4DFF` Ultraviolet (accent, tempo), `#1F6F8B` Glacier (long runs, secondary), `#4FB286` Moss (easy, on-target), `#C23B87` Rose (intervals), `#F2B705` Marigold (warning, race day). Replaces the earlier Pre-Dawn Run orange palette, which sat too close to a competitor's colour.
+- **Typography:** Bricolage Grotesque (titles, wordmark), Figtree (body), Martian Mono (all numbers and uppercase labels) — three roles, never mixed. **Mascot:** Pika, a mountain goat, only at calm or good moments (never during a run, on errors, pain flags, missed runs or the paywall).
 - **Two signature elements:**
   - **Block Profile** — the whole training block rendered as a terrain silhouette (base→build→peak→taper as rising/falling hills). Appears on Plan (hero) and Home (mini slice, tappable → jumps into Plan).
   - **Pace Band** — Active Run's live pacing UI, styled like a physical race-day pace bracelet. Green ahead of goal pace, amber behind.
-- **Weekly calendar strip** (emerged during refinement, now load-bearing): 7 day cells with real dates, colored by run type (green=easy, orange=tempo, teal=long, dashed=rest, grey strikethrough=missed), today marked with a ring independent of type color. Used on Home and Plan.
+- **Weekly calendar strip** (emerged during refinement, now load-bearing): 7 day cells with real dates, colored by run type (green=easy, violet=tempo, rose=interval, teal=long, dashed=rest, grey strikethrough=missed), today marked with a ring independent of type color. Used on Home and Plan.
 - **Dark mode: full user-toggleable theme, app-wide, via Settings.** Light is default. Dark mode is a genuine reskin (translucent cards, dedicated dark text scale), not an inversion — see `design.md` §3 for the full component table. **One deliberate exception: Active Run stays permanently dark regardless of the toggle** (outdoor legibility, same pattern as camera apps).
 - **Usability rules:** one primary action per screen; quick-log before detailed-log always; post-run Save is instant with RPE/notes as a separate skippable follow-up; missed sessions get inline recovery actions ("Move to tomorrow"/"Mark done anyway"), never passive/guilt-toned display.
 
@@ -105,7 +105,7 @@ Nothing has been built yet. Build in this order (see `marathon-app-prd.md` §12 
 | `marathon-app-wireframes.html` | Low-fidelity structural wireframes, all 14 screens |
 | `marathon-app-full-screens-v2.html` | Full-fidelity light-mode screens, data-rich |
 | `marathon-app-final.html` | All screens with a working light/dark toggle |
-| `theme-variations.html` | Palette comparison (for reference only — Pre-Dawn Run is final) |
+| `theme-variations.html` | Palette comparison (historical reference only — superseded by the Cursus identity) |
 
 ---
 

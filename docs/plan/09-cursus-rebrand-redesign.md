@@ -144,11 +144,12 @@ Everything below that touches a live service is a **runbook for you to approve s
 - [ ] **iOS bundle id:** still `com.jaykumar093.stryde` — never built, so it can change freely; waiting on your confirmation of the recommended `com.jaykumar093.cursus`.
 - **Done when:** the three live steps above are done and verified (a Google sign-in and a password reset both land back in a build with the new scheme; a reflection saves its chips; the coach and a test push use the new name).
 
-### Phase 7 — Docs (½ day)
-- [ ] `PRODUCT.md` Brand Commitments: replace the "Pre-Dawn Run is binding" paragraph (this is the user's own change of direction; it would otherwise make Impeccable keep steering back to orange).
-- [ ] `DESIGN.md` + `.impeccable/design.json`: regenerate with the Impeccable `document` command from the finished build, not from intentions.
-- [ ] `docs/design.md`: new palette, type, mascot rules, time-of-day language removed; `docs/AppContext.md` and `docs/marathon-app-prd.md` name references.
-- [ ] Write `implementation/09-cursus-rebrand-redesign.md` when Done (workflow rule), and flip MAIN_PLAN.
+### Phase 7 — Docs (½ day) — **Done 2026-11-17 (uncommitted)**
+- [x] `PRODUCT.md`: product name Cursus; Brand Commitments rewritten (palette, fonts, profile-line mark, Pika rules; Pre-Dawn Run retired).
+- [x] `DESIGN.md` rewritten from the shipped tokens (`lib/theme.ts`, `lib/theme/colors.ts`) and `.impeccable/design.json` regenerated (13 colour ramps, 8 components, new narrative). Written by hand from the code, not with the Impeccable `document` command; run that command later if a canonical regeneration is wanted.
+- [x] `docs/design.md`: Cursus palette, type, Pika rules and mockup file; time-of-day language removed. `docs/AppContext.md` and `docs/marathon-app-prd.md` name and palette references updated.
+- Left as historical on purpose: `docs/stryde-docs-updated.html`, `docs/marathon-app-final.html`, wireframes and `theme-variations.html` (old design artefacts), and the old `docs/brand/stryde-*.svg`.
+- [ ] Write `implementation/09-cursus-rebrand-redesign.md` when Task 9 is Done, and flip MAIN_PLAN.
 
 ### Phase 8 — QA and release (2–3 days)
 - [ ] `npm test`, `npx tsc --noEmit`, contrast test, `design:check`.
