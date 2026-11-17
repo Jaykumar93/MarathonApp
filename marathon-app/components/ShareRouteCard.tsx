@@ -65,10 +65,17 @@ function PhotoBackground({ uri }: { uri: string }) {
   );
 }
 
-function StatBlock({ value, label, large }: { value: string; label: string; large?: boolean }) {
+function StatBlock({ value, label, large, equalWidth }: { value: string; label: string; large?: boolean; equalWidth?: boolean }) {
   return (
-    <View style={styles.statCol}>
-      <Text style={[styles.statValue, large && styles.statValueLarge]}>{value}</Text>
+    <View style={[styles.statCol, equalWidth && styles.statColEqual]}>
+      <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+        style={[styles.statValue, large && styles.statValueLarge, equalWidth && styles.statValueCompact]}
+      >
+        {value}
+      </Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
@@ -169,9 +176,9 @@ export function ShareRouteCard({
         <RouteLine points={routePoints} width={SHARE_CARD_WIDTH - 48} height={320} />
       </View>
       <View style={styles.statRow}>
-        <StatBlock value={distanceLabel} label="DISTANCE" />
-        <StatBlock value={durationLabel} label="TIME" />
-        <StatBlock value={paceLabel} label="PACE" />
+        <StatBlock value={distanceLabel} label="DISTANCE" equalWidth />
+        <StatBlock value={durationLabel} label="TIME" equalWidth />
+        <StatBlock value={paceLabel} label="PACE" equalWidth />
       </View>
     </View>
   );
@@ -194,8 +201,12 @@ const styles = StyleSheet.create({
 
   statRow: { flexDirection: "row", justifyContent: "space-around", width: "100%" },
   statCol: { alignItems: "center" },
+  // Three values in a 240pt row: equal columns that shrink their text to fit
+  // instead of letting "12.4 km" run into the time beside it.
+  statColEqual: { flex: 1, paddingHorizontal: 2 },
   statValue: { fontFamily: fonts.dataBold, fontSize: 22, color: "#fff", ...shadow },
   statValueLarge: { fontSize: 26 },
+  statValueCompact: { fontSize: 18, lineHeight: 24 },
   statLabel: { fontFamily: fonts.monoMedium, fontSize: 9.5, letterSpacing: 1.2, color: "rgba(255,255,255,0.8)", marginTop: 3, ...shadow },
 
   // Classic: wordmark/meta top, route center, three stats bottom

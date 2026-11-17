@@ -21,6 +21,7 @@ export const palette = {
   danger: "#D9483A", // destructive actions - delete, discard
   dangerBg: "rgba(217,72,58,0.1)",
   dangerBorder: "rgba(217,72,58,0.35)",
+  scrim: "rgba(20,22,26,0.45)", // behind bottom sheets and modals
 } as const;
 
 export const fonts = {

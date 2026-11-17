@@ -19,6 +19,8 @@ import { LogFab } from "../../components/ui/LogFab";
 import { ChipSelect } from "../../components/ui/ChipSelect";
 import { TrendsView } from "../../components/TrendsView";
 import { ActivityThumbnail } from "../../components/ActivityThumbnail";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
 const SUBVIEW_OPTIONS = [
   { value: "history" as const, label: "History" },
@@ -93,6 +95,7 @@ interface MonthGroup {
 }
 
 export default function Activity() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { session, profile } = useAuth();
   const { colors } = useTheme();
@@ -238,11 +241,11 @@ export default function Activity() {
           <Pressable style={styles.filtersButton} onPress={() => setFiltersOpen(true)} accessibilityRole="button">
             <Text style={styles.filtersButtonText}>Filters</Text>
             {activeFilterCount > 0 && <Badge count={activeFilterCount} />}
-            <Text style={styles.caret}>▾</Text>
+            <Ionicons name="chevron-down" size={12} color={colors.textFaint} />
           </Pressable>
         </View>
 
-        <Modal visible={filtersOpen} transparent animationType="slide" onRequestClose={() => setFiltersOpen(false)}>
+        <Modal visible={filtersOpen} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setFiltersOpen(false)}>
           <View style={styles.modalWrap}>
             {/* Backdrop is a sibling of the sheet, not its parent - a
                 TextInput nested inside a Pressable's own subtree on web
@@ -254,7 +257,7 @@ export default function Activity() {
                 backdrop's tap-to-close area completely separate from the
                 sheet's own content sidesteps that entirely. */}
             <Pressable style={styles.modalBackdrop} onPress={() => setFiltersOpen(false)} />
-            <View style={styles.modalSheet}>
+            <View style={[styles.modalSheet, { paddingBottom: Math.max(28, insets.bottom + 16) }]}>
               <ScrollView>
                 <Text style={styles.modalTitle}>Filters</Text>
 
@@ -386,9 +389,8 @@ function createStyles(colors: Colors) {
     backgroundColor: colors.cardBg,
   },
   filtersButtonText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.textPrimary },
-  caret: { fontFamily: fonts.body, ...text("micro"), color: colors.textFaint },
   modalWrap: { flex: 1, justifyContent: "flex-end" },
-  modalBackdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(20,22,26,0.45)" },
+  modalBackdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.scrim },
   modalSheet: {
     backgroundColor: colors.sheetBg,
     borderTopLeftRadius: radius.xl,

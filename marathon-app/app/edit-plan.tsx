@@ -17,7 +17,7 @@ import { TextField } from "../components/ui/TextField";
 import { DateField } from "../components/ui/DateField";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PlanFeasibilityWarnings } from "../components/PlanFeasibilityWarnings";
-import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
+import { ScreenHeader, SCREEN_TOP_GAP, SCREEN_BOTTOM_GAP } from "../components/ui/ScreenHeader";
 import { SectionLabel } from "../components/ui/SectionLabel";
 
 function isValidDate(s: string): boolean {
@@ -228,7 +228,7 @@ export default function EditPlan() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top }]}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: SCREEN_BOTTOM_GAP + insets.bottom }]}>
       <ScreenHeader title="Edit Plan" onBack={goBack} />
       <Text style={styles.subtitle}>
         Changing any of this regenerates your plan from today - your training history stays intact.

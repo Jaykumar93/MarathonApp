@@ -28,7 +28,7 @@ export function BackgroundLocationDisclosure({
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onDecline}>
+    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={onDecline}>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <View style={styles.iconCircle}>

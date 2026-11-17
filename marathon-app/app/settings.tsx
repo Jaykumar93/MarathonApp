@@ -16,6 +16,8 @@ import { healthConnectProvider } from "../lib/health/healthConnectProvider";
 import { syncHealthActivities } from "../lib/health/syncHealthData";
 import { SectionLabel } from "../components/ui/SectionLabel";
 import { Toggle } from "../components/ui/Toggle";
+import { ScreenHeader, SCREEN_TOP_GAP, SCREEN_BOTTOM_GAP } from "../components/ui/ScreenHeader";
+import { Ionicons } from "@expo/vector-icons";
 
 const UNIT_OPTIONS = [
   { value: "km" as const, label: "Kilometers" },
@@ -224,13 +226,8 @@ export default function Settings() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: 24 + insets.top }]}>
-      <View style={styles.topRow}>
-        <Pressable onPress={() => router.replace("/(tabs)")} hitSlop={10}>
-          <Text style={styles.homeLink}>‹ Home</Text>
-        </Pressable>
-      </View>
-      <Text style={styles.header}>Profile & Settings</Text>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: SCREEN_BOTTOM_GAP + insets.bottom }]}>
+      <ScreenHeader title="Profile & Settings" onBack={() => router.replace("/(tabs)")} backLabel="Home" />
 
       <SectionLabel>PROFILE</SectionLabel>
       <Card>
@@ -313,7 +310,7 @@ export default function Settings() {
       <Card>
         <Pressable style={styles.row} onPress={() => router.push("/gear")}>
           <Text style={styles.label}>Shoes</Text>
-          <Text style={styles.connectLink}>Manage ›</Text>
+          <Text style={styles.connectLink}>Manage <Ionicons name="chevron-forward" size={12} color={colors.accent} /></Text>
         </Pressable>
       </Card>
 
@@ -424,7 +421,7 @@ export default function Settings() {
         <View style={styles.divider} />
         <Pressable style={styles.row} onPress={() => router.push("/privacy-policy")}>
           <Text style={styles.label}>Privacy Policy</Text>
-          <Text style={styles.connectLink}>View ›</Text>
+          <Text style={styles.connectLink}>View <Ionicons name="chevron-forward" size={12} color={colors.accent} /></Text>
         </Pressable>
       </Card>
 
@@ -439,9 +436,6 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.screenBg },
   container: { padding: spacing.screenPadding, paddingTop: 24 },
-  topRow: { marginBottom: 10 },
-  homeLink: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textDim },
-  header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary, marginBottom: 16 },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6 },
   label: { fontFamily: fonts.bodyMedium, fontSize: type.pDim, color: colors.textDim },
   subLabel: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },

@@ -22,6 +22,7 @@ import { ReferenceChip } from "../../components/ui/ReferenceChip";
 import { CoachChart } from "../../components/ui/CoachChart";
 import { CoachMessageBody } from "../../components/ui/CoachMessageBody";
 import { KeyboardAvoider } from "../../components/ui/KeyboardAvoider";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -96,6 +97,7 @@ function formatConversationDate(iso: string): string {
 }
 
 export default function Coach() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { session, profile } = useAuth();
   const { colors } = useTheme();
@@ -465,10 +467,10 @@ export default function Coach() {
         </Pressable>
       </View>
 
-      <Modal visible={historyOpen} transparent animationType="fade" onRequestClose={() => setHistoryOpen(false)}>
+      <Modal visible={historyOpen} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setHistoryOpen(false)}>
         <View style={styles.modalWrap}>
           <Pressable style={styles.modalBackdrop} onPress={() => setHistoryOpen(false)} />
-          <View style={styles.historySheet}>
+          <View style={[styles.historySheet, { paddingBottom: Math.max(28, insets.bottom + 16) }]}>
             <Text style={styles.historyTitle}>Past conversations</Text>
             {conversations.length === 0 ? (
               <Text style={styles.historyEmpty}>No past conversations yet.</Text>
@@ -590,7 +592,7 @@ function createStyles(colors: Colors) {
     },
     sendButtonDisabled: { opacity: 0.4 },
     modalWrap: { flex: 1, justifyContent: "flex-end" },
-    modalBackdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(20,22,26,0.45)" },
+    modalBackdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.scrim },
     historySheet: {
       backgroundColor: colors.sheetBg,
       borderTopLeftRadius: radius.xl,

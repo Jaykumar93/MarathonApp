@@ -7,6 +7,7 @@ import { todayIso } from "../lib/data/usePlanData";
 import { useHorizontalSwipe } from "../lib/useHorizontalSwipe";
 import { useSlideTransition } from "../lib/useSlideTransition";
 import { PressTooltip } from "./ui/PressTooltip";
+import { Ionicons } from "@expo/vector-icons";
 
 interface MonthActivityChartProps {
   year: number;
@@ -66,7 +67,7 @@ export function MonthActivityChart({
           accessibilityRole="button"
           accessibilityLabel="Previous month"
         >
-          <Text style={styles.navArrow}>‹</Text>
+          <Ionicons name="chevron-back" size={22} color={colors.textDim} style={styles.navIcon} />
         </Pressable>
         <Text style={styles.monthLabel}>
           {MONTH_NAMES[month - 1]} {year}
@@ -77,7 +78,7 @@ export function MonthActivityChart({
           accessibilityRole="button"
           accessibilityLabel="Next month"
         >
-          <Text style={styles.navArrow}>›</Text>
+          <Ionicons name="chevron-forward" size={22} color={colors.textDim} style={styles.navIcon} />
         </Pressable>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.barRow}>
@@ -114,7 +115,7 @@ export function MonthActivityChart({
 function createStyles(colors: Colors) {
   return StyleSheet.create({
     header: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 10 },
-    navArrow: { fontFamily: fonts.dataBold, ...text("stat"), color: colors.textDim, paddingHorizontal: 6 },
+    navIcon: { paddingHorizontal: 6 },
     monthLabel: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
     // paddingTop needs to clear PressTooltip's bubble (anchored `top: -38`
     // above the bar it's attached to, ~21px tall) - 26 wasn't enough

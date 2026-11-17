@@ -11,7 +11,7 @@ import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { TextField } from "../components/ui/TextField";
-import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
+import { ScreenHeader, SCREEN_TOP_GAP, SCREEN_BOTTOM_GAP } from "../components/ui/ScreenHeader";
 
 /**
  * Never wireframed in the PRD/design docs beyond "reuse generic list/card
@@ -75,7 +75,7 @@ export default function Gear() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top }]}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: SCREEN_BOTTOM_GAP + insets.bottom }]}>
       <ScreenHeader title="Gear" onBack={goBack} />
       <Text style={styles.subtitle}>Track shoe mileage - a nudge shows once a shoe passes its retirement distance.</Text>
 

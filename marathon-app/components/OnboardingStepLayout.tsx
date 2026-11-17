@@ -6,6 +6,7 @@ import { fonts, spacing, text } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { PrimaryButton } from "./ui/PrimaryButton";
 import { KeyboardAvoider } from "../components/ui/KeyboardAvoider";
+import { BackLink } from "./ui/ScreenHeader";
 
 interface OnboardingStepLayoutProps {
   step: number; // 1-6
@@ -40,9 +41,7 @@ export function OnboardingStepLayout({
       <ScrollView contentContainerStyle={[styles.container, { paddingTop: spacing.screenPadding + insets.top }]}>
         <View style={styles.topRow}>
           {step > 1 ? (
-            <Pressable onPress={() => router.back()} hitSlop={10}>
-              <Text style={styles.backLink}>‹ Back</Text>
-            </Pressable>
+            <BackLink onPress={() => router.back()} />
           ) : (
             <View />
           )}
@@ -82,7 +81,6 @@ function createStyles(colors: Colors) {
     flex: { flex: 1, backgroundColor: colors.screenBg },
     container: { flexGrow: 1, padding: spacing.screenPadding, gap: 18 },
     topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-    backLink: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textDim },
     exitLink: { fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textFaint },
     progressRow: { flexDirection: "row", gap: 6 },
     progressDot: { flex: 1, height: 4, borderRadius: 2, backgroundColor: colors.cardLine },

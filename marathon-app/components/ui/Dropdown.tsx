@@ -3,6 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View, ViewStyle } from 
 import { fonts, text, radius } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Badge } from "./Badge";
+import { Ionicons } from "@expo/vector-icons";
 
 export interface DropdownOption<T> {
   value: T;
@@ -44,9 +45,9 @@ export function Dropdown<T extends string | number>({ options, value, onSelect, 
           {selectedLabel}
         </Text>
         {!!badge && <Badge count={badge} />}
-        <Text style={styles.caret}>▾</Text>
+        <Ionicons name="chevron-down" size={14} color={colors.textFaint} />
       </Pressable>
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+      <Modal visible={open} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setOpen(false)}>
         <View style={styles.overlayWrap}>
           {/* Backdrop is a sibling of the sheet, not its parent - keeps
               this immune to the same focus-stealing issue a TextInput
@@ -94,7 +95,6 @@ function createStyles(colors: Colors) {
     boxCompact: { height: 34, paddingHorizontal: 10, borderRadius: radius.pill },
     value: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary, flex: 1 },
     valueCompact: { fontFamily: fonts.bodyMedium, ...text("small") },
-    caret: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint },
     overlayWrap: { flex: 1, justifyContent: "center", alignItems: "center", padding: 32 },
     backdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(20,22,26,0.45)" },
     sheet: {

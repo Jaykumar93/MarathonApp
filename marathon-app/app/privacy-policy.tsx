@@ -6,7 +6,7 @@ import { useAuth } from "../lib/auth/AuthContext";
 import { fonts, spacing, type, text, fs } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
-import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
+import { ScreenHeader, SCREEN_TOP_GAP, SCREEN_BOTTOM_GAP } from "../components/ui/ScreenHeader";
 import { SectionLabel } from "../components/ui/SectionLabel";
 
 const THIRD_PARTIES: { name: string; gets: string; why: string }[] = [
@@ -45,7 +45,7 @@ export default function PrivacyPolicy() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top }]}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: SCREEN_BOTTOM_GAP + insets.bottom }]}>
       <ScreenHeader title="Privacy Policy" onBack={goBack} />
       <Text style={styles.effectiveDate}>Effective date: September 21, 2026</Text>
       <Text style={styles.intro}>

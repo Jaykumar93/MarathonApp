@@ -5,6 +5,7 @@ import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { useHorizontalSwipe } from "../lib/useHorizontalSwipe";
 import { useSlideTransition } from "../lib/useSlideTransition";
 import { todayIso } from "../lib/data/usePlanData";
+import { Ionicons } from "@expo/vector-icons";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -176,7 +177,7 @@ export function PlanCalendarScroller({ days, selectedDate, onSelectDate }: PlanC
           accessibilityRole="button"
           accessibilityLabel="Previous month"
         >
-          <Text style={[styles.navArrow, !canGoPrev && styles.navArrowDisabled]}>‹</Text>
+          <Ionicons name="chevron-back" size={22} color={colors.textDim} style={[styles.navIcon, !canGoPrev && styles.navArrowDisabled]} />
         </Pressable>
         <Text style={styles.monthLabel}>
           {MONTH_NAMES[viewedMonth - 1]} {viewedYear}
@@ -188,7 +189,7 @@ export function PlanCalendarScroller({ days, selectedDate, onSelectDate }: PlanC
           accessibilityRole="button"
           accessibilityLabel="Next month"
         >
-          <Text style={[styles.navArrow, !canGoNext && styles.navArrowDisabled]}>›</Text>
+          <Ionicons name="chevron-forward" size={22} color={colors.textDim} style={[styles.navIcon, !canGoNext && styles.navArrowDisabled]} />
         </Pressable>
       </View>
       <FlatList
@@ -261,14 +262,14 @@ export function PlanCalendarScroller({ days, selectedDate, onSelectDate }: PlanC
 function createStyles(colors: Colors) {
   return StyleSheet.create({
     header: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 8 },
-    navArrow: { fontFamily: fonts.dataBold, ...text("stat"), color: colors.textDim, paddingHorizontal: 6 },
+    navIcon: { paddingHorizontal: 6 },
     navArrowDisabled: { opacity: 0.3 },
     monthLabel: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
     list: { gap: 0, paddingVertical: 2 },
     dayCol: { width: CELL_WIDTH, alignItems: "center", gap: 5 },
-    dayName: { ...text("micro"), color: colors.textFaint, fontWeight: "600" },
+    dayName: { fontFamily: fonts.bodySemiBold, ...text("micro"), color: colors.textFaint },
     cell: { width: 32, height: 32, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
     todayRing: { borderWidth: 2.5, borderColor: colors.textPrimary },
-    cellText: { fontFamily: fonts.data, ...text("caption"), fontWeight: "600" },
+    cellText: { fontFamily: fonts.data, ...text("caption") },
   });
 }

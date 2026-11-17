@@ -17,7 +17,7 @@ import { DateField } from "../components/ui/DateField";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PhotoPicker } from "../components/ui/PhotoPicker";
 import { todayIso } from "../lib/data/usePlanData";
-import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
+import { ScreenHeader, SCREEN_TOP_GAP, SCREEN_BOTTOM_GAP } from "../components/ui/ScreenHeader";
 
 const RPE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({ value: n, label: String(n) }));
 
@@ -112,7 +112,7 @@ export default function LogActivity() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top }]}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: SCREEN_BOTTOM_GAP + insets.bottom }]}>
       <ScreenHeader title="Log a run" onBack={goBack} />
       {linkedSession && linkedSession.session_type !== "rest" && (
         <Text style={styles.subtitle}>Logging this fulfills your planned session for this day.</Text>

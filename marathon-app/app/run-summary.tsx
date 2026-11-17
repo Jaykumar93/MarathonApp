@@ -405,10 +405,10 @@ export default function RunSummary() {
         </View>
       )}
 
-      <Modal visible={confirmingDelete} transparent animationType="fade" onRequestClose={() => setConfirmingDelete(false)}>
+      <Modal visible={confirmingDelete} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setConfirmingDelete(false)}>
         <View style={styles.modalWrap}>
           <Pressable style={styles.modalBackdrop} onPress={() => setConfirmingDelete(false)} />
-          <View style={styles.confirmSheet}>
+          <View style={[styles.confirmSheet, { paddingBottom: Math.max(28, insets.bottom + 16) }]}>
             <View style={styles.alertIcon}>
               <Ionicons name="warning" size={22} color={colors.danger} />
             </View>
@@ -511,7 +511,7 @@ function createStyles(colors: Colors) {
   // buttons within easy thumb reach regardless of screen size, same
   // reasoning as Track's "what are you running?" choice sheet.
   modalWrap: { flex: 1, justifyContent: "flex-end" },
-  modalBackdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(20,22,26,0.45)" },
+  modalBackdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.scrim },
   confirmSheet: {
     backgroundColor: colors.sheetBg,
     borderTopLeftRadius: radius.xl,

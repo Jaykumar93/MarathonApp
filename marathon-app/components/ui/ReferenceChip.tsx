@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { fonts, text, radius } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
 
 interface ReferenceChipProps {
   label: string;
@@ -25,7 +26,7 @@ export function ReferenceChip({ label, onPress }: ReferenceChipProps) {
   return (
     <Pressable style={styles.chip} onPress={onPress} hitSlop={4} accessibilityRole="button" accessibilityLabel={label}>
       <Text style={styles.text}>{label}</Text>
-      <Text style={styles.arrow}>›</Text>
+      <Ionicons name="chevron-forward" size={14} color={colors.secondaryAccent} />
     </Pressable>
   );
 }
@@ -44,6 +45,5 @@ function createStyles(colors: Colors) {
       paddingHorizontal: 10,
     },
     text: { fontFamily: fonts.bodyMedium, ...text("micro"), color: colors.textDim },
-    arrow: { fontFamily: fonts.bodySemiBold, ...text("caption"), color: colors.secondaryAccent },
   });
 }

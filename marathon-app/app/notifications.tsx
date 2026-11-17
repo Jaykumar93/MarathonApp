@@ -15,7 +15,7 @@ import {
 import { fonts, spacing, type, text, fs, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
-import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
+import { ScreenHeader, SCREEN_TOP_GAP, SCREEN_BOTTOM_GAP } from "../components/ui/ScreenHeader";
 import { SectionLabel } from "../components/ui/SectionLabel";
 
 type Group = "Today" | "This week" | "Earlier";
@@ -77,7 +77,7 @@ export default function Notifications() {
   const grouped = useMemo(() => groupByRecency(notifications), [notifications]);
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top }]}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: SCREEN_BOTTOM_GAP + insets.bottom }]}>
       <ScreenHeader
         title="Notifications"
         onBack={goBack}

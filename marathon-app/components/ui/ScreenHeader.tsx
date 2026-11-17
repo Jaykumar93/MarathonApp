@@ -7,6 +7,21 @@ import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 /** Space between the top safe-area inset and a pushed screen's back row - one value, where screens used 20 or 24 depending on who wrote them. */
 export const SCREEN_TOP_GAP = 24;
 
+/** Space below the last item of a scrolling pushed screen, on top of the bottom safe-area inset - a flat 40 left less clearance on phones with a home indicator. */
+export const SCREEN_BOTTOM_GAP = 40;
+
+/** "< Back" with a drawn chevron - shared by ScreenHeader and the onboarding steps' own top row. */
+export function BackLink({ onPress, label = "Back" }: { onPress: () => void; label?: string }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  return (
+    <Pressable onPress={onPress} hitSlop={12} style={styles.back} accessibilityRole="button" accessibilityLabel={label === "Back" ? "Go back" : `Go to ${label}`}>
+      <Ionicons name="chevron-back" size={18} color={colors.textDim} />
+      <Text style={styles.backLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
 /**
  * The back row + title every pushed screen (settings, gear, edit-plan,
  * run-summary, ...) opens with. The chevron is an icon rather than the "‹"
@@ -16,10 +31,13 @@ export const SCREEN_TOP_GAP = 24;
 export function ScreenHeader({
   title,
   onBack,
+  backLabel,
   right,
 }: {
   title?: string;
   onBack: () => void;
+  /** Defaults to "Back" - Settings goes to Home, so it says so. */
+  backLabel?: string;
   /** Optional action aligned to the right of the back row (Mark all read, Edit, ...). */
   right?: React.ReactNode;
 }) {
@@ -28,10 +46,7 @@ export function ScreenHeader({
   return (
     <View>
       <View style={styles.topRow}>
-        <Pressable onPress={onBack} hitSlop={12} style={styles.back} accessibilityRole="button" accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={18} color={colors.textDim} />
-          <Text style={styles.backLabel}>Back</Text>
-        </Pressable>
+        <BackLink onPress={onBack} label={backLabel} />
         {right}
       </View>
       {title ? <Text style={styles.title}>{title}</Text> : null}

@@ -243,10 +243,10 @@ function TrackScreen() {
         </View>
       )}
 
-      <Modal visible={choiceOpen} transparent animationType="slide" onRequestClose={() => setChoiceOpen(false)}>
+      <Modal visible={choiceOpen} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setChoiceOpen(false)}>
         <View style={styles.modalWrap}>
           <Pressable style={styles.modalBackdrop} onPress={() => setChoiceOpen(false)} />
-          <View style={styles.modalSheet}>
+          <View style={[styles.modalSheet, { paddingBottom: Math.max(28, insets.bottom + 16) }]}>
             <Text style={styles.modalTitle}>What are you running?</Text>
 
             <Pressable style={styles.choiceRow} onPress={startPlanned} accessibilityRole="button">
@@ -337,7 +337,7 @@ function createStyles(colors: Colors) {
   trackingBannerLabel: { fontFamily: fonts.bodySemiBold, ...text("body"), color: darkSurface.text, flexShrink: 1 },
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success },
   modalWrap: { flex: 1, justifyContent: "flex-end" },
-  modalBackdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(20,22,26,0.45)" },
+  modalBackdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.scrim },
   modalSheet: {
     backgroundColor: colors.sheetBg,
     borderTopLeftRadius: radius.xl,

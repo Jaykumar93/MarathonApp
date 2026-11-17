@@ -176,7 +176,7 @@ export default function RaceDay() {
           </View>
           {!goal.race_lat || !goal.race_lon ? (
             <Pressable onPress={() => router.push("/edit-plan")}>
-              <Text style={styles.weatherPrompt}>Add a race location in Edit Plan to see the forecast ›</Text>
+              <Text style={styles.weatherPrompt}>Add a race location in Edit Plan to see the forecast <Ionicons name="chevron-forward" size={12} color={colors.accent} /></Text>
             </Pressable>
           ) : !isWithinForecastRange(goal.goal_date, today) ? (
             <Text style={styles.detailLine}>Forecast opens up 16 days before race day.</Text>
