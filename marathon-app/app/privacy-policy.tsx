@@ -141,7 +141,7 @@ function createStyles(colors: Colors) {
     screen: { flex: 1, backgroundColor: colors.screenBg },
     container: { padding: spacing.screenPadding, paddingBottom: 40 },
     effectiveDate: { fontFamily: fonts.mono, ...text("caption"), color: colors.textFaint, marginBottom: 12 },
-    intro: { fontFamily: fonts.body, ...text("body"), color: colors.textDim, marginBottom: 20, lineHeight: 17 },
+    intro: { fontFamily: fonts.body, ...text("body"), color: colors.textDim, marginBottom: 20 },
     body: { fontFamily: fonts.body, ...text("emphasis"), color: colors.textDim },
     flat: { backgroundColor: "transparent", borderWidth: 0, padding: 0, marginBottom: 6 },
     providerRow: { marginBottom: 12 },
