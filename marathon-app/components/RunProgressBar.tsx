@@ -22,7 +22,7 @@ function buildSegments(structure: IntervalStructure): Segment[] {
 
 const SEGMENT_COLOR: Record<Segment["kind"], string> = {
   warmup: "rgba(255,255,255,0.5)",
-  rep: palette.accent,
+  rep: palette.interval,
   recovery: "rgba(62,142,126,0.9)",
   cooldown: "rgba(255,255,255,0.5)",
 };

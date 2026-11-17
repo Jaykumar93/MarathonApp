@@ -29,9 +29,9 @@ const CELL_WIDTH = 44;
 const TYPE_COLOR: Record<string, string> = {
   easy: palette.success,
   tempo: palette.accent,
-  interval: palette.accent,
+  interval: palette.interval,
   long: palette.contour,
-  race: palette.accent,
+  race: palette.race,
 };
 
 interface CellStyle {

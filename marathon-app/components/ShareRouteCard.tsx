@@ -114,8 +114,8 @@ export function ShareRouteCard({
           <Svg width={SHARE_CARD_WIDTH} height={200} style={styles.bottomScrim}>
             <Defs>
               <LinearGradient id="scrim" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor={palette.predawn} stopOpacity={0} />
-                <Stop offset="1" stopColor={palette.predawn} stopOpacity={0.75} />
+                <Stop offset="0" stopColor={palette.ink} stopOpacity={0} />
+                <Stop offset="1" stopColor={palette.ink} stopOpacity={0.75} />
               </LinearGradient>
             </Defs>
             <Rect x={0} y={0} width={SHARE_CARD_WIDTH} height={200} fill="url(#scrim)" />

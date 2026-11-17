@@ -297,7 +297,7 @@ function createStyles(colors: Colors) {
     // Matches the mockup's dark pace-band bracelet look regardless of the
     // app's own light/dark theme - a one-off literal, same reasoning as
     // readinessCard above.
-    paceBandCard: { backgroundColor: palette.predawn, borderWidth: 0 },
+    paceBandCard: { backgroundColor: palette.ink, borderWidth: 0 },
     paceBandScroll: { maxHeight: 320 },
     paceBandLabel: {
       fontFamily: fonts.monoMedium,
@@ -314,8 +314,8 @@ function createStyles(colors: Colors) {
       borderBottomWidth: 1,
       borderBottomColor: "rgba(238,239,234,0.08)",
     },
-    paceBandUnit: { fontFamily: fonts.mono, ...text("small"), color: palette.frost },
-    paceBandTime: { fontFamily: fonts.monoSemiBold, ...text("small"), color: palette.frost },
+    paceBandUnit: { fontFamily: fonts.mono, ...text("small"), color: palette.bone },
+    paceBandTime: { fontFamily: fonts.monoSemiBold, ...text("small"), color: palette.bone },
     checklistRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8 },
     checklistToggle: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
     checklistLabel: { fontFamily: fonts.body, ...text("body"), color: colors.textPrimary, flexShrink: 1 },

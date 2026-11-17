@@ -1,10 +1,9 @@
 import type { ViewStyle } from "react-native";
 
-// Pre-Dawn Run design system tokens (design.md). See lib/theme/ThemeContext.tsx
-// for the live light/dark theme hook - this file only holds the palette
-// values that stay the same in both modes ("semantic colors... were chosen
-// to hold sufficient contrast on both --predawn and --frost", design.md §3)
-// plus the two raw surface bases themselves. Anything that actually differs
+// Cursus design system tokens (docs/cursus-design.html, docs/brand/cursus-final/).
+// See lib/theme/ThemeContext.tsx for the live light/dark theme hook - this file
+// only holds the palette values that stay the same in both modes, plus the two
+// raw surface bases (ink and bone) themselves. Anything that actually differs
 // between light and dark (screen/card backgrounds, text tiers, borders,
 // input fields, tab bar, calendar cell states) lives in ThemeContext's
 // lightColors/darkColors instead - useTheme() merges this palette with
@@ -12,22 +11,24 @@ import type { ViewStyle } from "react-native";
 // still just do `colors.accent` / `colors.textPrimary` uniformly without
 // needing to know which tokens are static vs. mode-dependent.
 export const palette = {
-  predawn: "#14161A",
-  frost: "#EEEFEA",
-  accent: "#FF5A1F", // Course Marking - CTAs, tempo runs
-  // Orange as the FILL behind a white label (buttons, selected chips, badges):
-  // white on #FF5A1F is only 3.1:1, below the 4.5:1 AA bar for normal text; this
-  // deeper orange is 4.7:1. Marks with no text (route lines, rings, bars, icons)
-  // keep the brand orange above.
-  accentFill: "#D14210",
+  ink: "#0F1220", // dark ground; also the ink for text on light fills
+  bone: "#F4F1EA", // light ground
+  accent: "#6C4DFF", // Ultraviolet - CTAs, tempo runs. Also the FILL behind a white label (5.1:1)
+  accentLift: "#8A72FF", // the same violet lightened for marks and rings on dark surfaces
+  accentGlow: "#C9B8FF", // pale violet - accent text on dark surfaces, snow cap on the mascot
+  accentFill: "#6C4DFF", // kept as its own name so call sites that mean "fill behind a white label" stay explicit
   onAccent: "#FFFFFF", // text and glyphs drawn on an accent or semantic fill
-  contour: "#2B4C43", // Contour Ink - long runs, secondary/planned data
-  success: "#3E8E7E", // Negative Split - easy runs, on-target/completed
-  warning: "#F2B705", // Caution Flare - plan-adjustment, near-threshold
-  danger: "#D9483A", // destructive actions - delete, discard
+  contour: "#1F6F8B", // Glacier - long runs, secondary/planned data
+  success: "#4FB286", // Moss - easy runs, on-target/completed (a fill: use colors.successText for text)
+  warning: "#F2B705", // Marigold - plan adjustments, near-threshold
+  danger: "#D9483A", // destructive actions - marks and borders (use colors.dangerText for text, dangerFill behind a white label)
+  dangerFill: "#C73C2F", // danger as the FILL behind a white label (5.1:1; plain danger is 4.25:1)
+  interval: "#C23B87", // Rose - interval sessions (a fill, 4.9:1 under white; use colors.intervalText for text)
+  intervalLift: "#F07AB6", // interval rose for marks on dark surfaces
+  race: "#F2B705", // Gold - race day
   dangerBg: "rgba(217,72,58,0.1)",
   dangerBorder: "rgba(217,72,58,0.35)",
-  scrim: "rgba(20,22,26,0.45)", // behind bottom sheets and modals
+  scrim: "rgba(15,18,32,0.45)", // behind bottom sheets and modals
 } as const;
 
 function relativeLuminance(hex: string): number {
@@ -38,7 +39,7 @@ function relativeLuminance(hex: string): number {
 }
 
 /**
- * Whichever of white or Pre-Dawn ink reads better on a solid `#RRGGBB` fill.
+ * Whichever of white or ink reads better on a solid `#RRGGBB` fill.
  * White on the easy-run green is 3.9:1 and on tempo orange 3.1:1 (both below
  * the 4.5:1 AA bar for small text); dark text on those is 4.8:1 and 5.8:1.
  * Dark fills such as Contour still get white.
@@ -46,21 +47,24 @@ function relativeLuminance(hex: string): number {
 export function readableOn(bg: string): string {
   const L = relativeLuminance(bg);
   const white = 1.05 / (L + 0.05);
-  const ink = (L + 0.05) / (relativeLuminance(palette.predawn) + 0.05);
-  return white >= ink ? palette.onAccent : palette.predawn;
+  const ink = (L + 0.05) / (relativeLuminance(palette.ink) + 0.05);
+  return white >= ink ? palette.onAccent : palette.ink;
 }
 
 export const fonts = {
-  data: "SpaceGrotesk_600SemiBold",
-  dataBold: "SpaceGrotesk_700Bold",
-  dataMedium: "SpaceGrotesk_500Medium",
-  body: "PlusJakartaSans_400Regular",
-  bodyMedium: "PlusJakartaSans_500Medium",
-  bodySemiBold: "PlusJakartaSans_600SemiBold",
-  bodyBold: "PlusJakartaSans_700Bold",
-  mono: "JetBrainsMono_400Regular",
-  monoMedium: "JetBrainsMono_500Medium",
-  monoSemiBold: "JetBrainsMono_600SemiBold",
+  // "data*" is the display face (titles, headlines, the wordmark): Bricolage
+  // Grotesque. The name is kept so ~37 call sites don't churn; numbers that
+  // should be tabular use "mono*" instead (Martian Mono).
+  data: "BricolageGrotesque_600SemiBold",
+  dataBold: "BricolageGrotesque_700Bold",
+  dataMedium: "BricolageGrotesque_500Medium",
+  body: "Figtree_400Regular",
+  bodyMedium: "Figtree_500Medium",
+  bodySemiBold: "Figtree_600SemiBold",
+  bodyBold: "Figtree_700Bold",
+  mono: "MartianMono_400Regular",
+  monoMedium: "MartianMono_500Medium",
+  monoSemiBold: "MartianMono_600SemiBold",
 } as const;
 
 // The one font-size scale. Eight text steps plus four display steps - every
@@ -168,7 +172,7 @@ export const radius = {
 // ThemeContext - their colors live here instead of as raw hex/rgba literals
 // scattered through each file.
 export const darkSurface = {
-  bg: palette.predawn,
+  bg: palette.ink,
   text: "#FFFFFF",
   textDim: "#C7C9CB",
   textFaint: "#8A8D92",
@@ -177,7 +181,7 @@ export const darkSurface = {
   line: "rgba(255,255,255,0.12)",
   handle: "rgba(255,255,255,0.28)",
   scrim: "rgba(0,0,0,0.5)",
-  floating: "rgba(20,22,26,0.85)",
+  floating: "rgba(15,18,32,0.85)",
 } as const;
 
 /**

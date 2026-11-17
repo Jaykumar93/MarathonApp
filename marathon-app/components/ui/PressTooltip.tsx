@@ -61,7 +61,7 @@ export function PressTooltip({ label, accessibilityLabel, style, children, onPre
     >
       {(pressed || hovered) && (
         <View style={styles.anchor} pointerEvents="none">
-          <View style={[styles.bubble, { backgroundColor: colors.predawn }]}>
+          <View style={[styles.bubble, { backgroundColor: colors.ink }]}>
             <Text style={styles.label} numberOfLines={2}>
               {label}
             </Text>

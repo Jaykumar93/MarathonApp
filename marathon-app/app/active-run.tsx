@@ -383,16 +383,16 @@ function ActiveRunScreen() {
 }
 
 const styles = StyleSheet.create({
-  mapScreen: { flex: 1, backgroundColor: palette.predawn },
+  mapScreen: { flex: 1, backgroundColor: palette.ink },
   center: {
     flex: 1,
-    backgroundColor: palette.predawn,
+    backgroundColor: palette.ink,
     alignItems: "center",
     justifyContent: "center",
     padding: 32,
     gap: 10,
   },
-  finishedScreen: { flex: 1, backgroundColor: palette.predawn },
+  finishedScreen: { flex: 1, backgroundColor: palette.ink },
   scrollFlex: { flex: 1 },
   finishedContainer: { flexGrow: 1, alignItems: "center", padding: 32, paddingTop: 64, gap: 10 },
   formSection: { width: "100%", maxWidth: 340, marginTop: 4 },

@@ -234,7 +234,7 @@ function createStyles(colors: Colors) {
       borderRadius: radius.pill,
       // Neutral surface with a hairline edge: orange is reserved for Start and
       // Track, so the avatar no longer competes with them. The card surface
-      // reads against both the light and dark header (predawn would vanish).
+      // reads against both the light and dark header (ink would vanish).
       backgroundColor: colors.cardBg,
       borderWidth: 1,
       borderColor: colors.cardLine,

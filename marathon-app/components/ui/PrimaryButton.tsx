@@ -76,12 +76,12 @@ function createStyles(colors: Colors) {
     },
     primary: { backgroundColor: colors.accentFill },
     secondary: { backgroundColor: "transparent", borderWidth: 1.5, borderColor: colors.secondaryAccent },
-    danger: { backgroundColor: colors.danger },
+    danger: { backgroundColor: colors.dangerFill },
     dangerOutline: { backgroundColor: "transparent", borderWidth: 1.5, borderColor: colors.danger },
     disabled: { opacity: 0.5 },
     label: { fontFamily: fonts.bodySemiBold, ...text("emphasis") },
     primaryLabel: { color: palette.onAccent },
     secondaryLabel: { color: colors.secondaryAccent },
-    dangerOutlineLabel: { color: colors.danger },
+    dangerOutlineLabel: { color: colors.dangerText },
   });
 }

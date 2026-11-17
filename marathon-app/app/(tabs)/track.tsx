@@ -289,13 +289,13 @@ function createStyles(colors: Colors) {
   // regardless of the app theme (matches the map-surface aesthetic this
   // screen was built with), so these two stay on the static palette
   // instead of the themed `colors` object.
-  screen: { flex: 1, backgroundColor: palette.predawn },
+  screen: { flex: 1, backgroundColor: palette.ink },
   // No alignItems/justifyContent, unlike the placeholder text this box used
   // to center - RunMap needs to stretch to the box's full width (the
   // default cross-axis behavior), not just its height.
   mapArea: {
     flex: 1,
-    backgroundColor: palette.predawn,
+    backgroundColor: palette.ink,
   },
   backButton: {
     position: "absolute",
