@@ -5,6 +5,7 @@ import type { PlanSessionRow } from "../lib/data/plans";
 import { formatDistance, formatMeters, formatPace } from "../lib/units";
 import { fonts, palette, text, fs, radius, darkSurface } from "../lib/theme";
 import { RunProgressBar } from "./RunProgressBar";
+import { HoldToStopButton } from "./ui/HoldToStopButton";
 
 const LEG_KIND_LABEL: Record<RunLeg["kind"], string> = {
   warmup: "WARMUP",
@@ -62,9 +63,7 @@ function RunControls({
       <Pressable style={styles.pauseBtn} onPress={phase === "paused" ? onResume : onPause} accessibilityRole="button">
         <Text style={styles.pauseBtnText}>{phase === "paused" ? "Resume" : "Pause"}</Text>
       </Pressable>
-      <Pressable style={styles.stopBtn} onPress={onStop} accessibilityRole="button">
-        <Text style={styles.stopBtnText}>Stop</Text>
-      </Pressable>
+      <HoldToStopButton style={styles.stopBtn} textStyle={styles.stopBtnText} onConfirm={onStop} />
     </View>
   );
 }

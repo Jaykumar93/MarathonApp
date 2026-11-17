@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pika } from "../components/mascot/Pika";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -92,9 +93,7 @@ export default function Notifications() {
 
       {!loading && notifications.length === 0 && (
         <View style={styles.emptyState}>
-          <View style={styles.emptyIconCircle}>
-            <Ionicons name="notifications-outline" size={22} color={colors.textFaint} />
-          </View>
+          <Pika expression="easy" size={110} />
           <Text style={styles.emptyTitle}>You're all caught up</Text>
           <Text style={styles.emptySub}>Missed-run reminders will show up here.</Text>
         </View>

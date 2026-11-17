@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pika } from "../../components/mascot/Pika";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth/AuthContext";
 import { getAllActivities, type ActivityRow } from "../../lib/data/activities";
@@ -309,7 +310,8 @@ export default function Activity() {
         </Modal>
 
         {monthGroups.length === 0 ? (
-          <Card>
+          <Card style={activities.length === 0 ? { alignItems: "center", gap: 8 } : undefined}>
+            {activities.length === 0 ? <Pika expression="rest" size={110} /> : null}
             <Text style={styles.emptyText}>
               {activities.length === 0 ? "No runs logged yet - tap the + button to add your first one." : "No runs match this filter."}
             </Text>

@@ -5,6 +5,8 @@ import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
 import { ChipSelect } from "../../components/ui/ChipSelect";
 import { PlanFeasibilityWarnings } from "../../components/PlanFeasibilityWarnings";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
+import { summarizePlan } from "../../lib/onboarding/planSummary";
+import { BuildingPlan } from "../../components/onboarding/BuildingPlan";
 import { useAuth } from "../../lib/auth/AuthContext";
 import { supabase } from "../../lib/supabase";
 import { createGoal, type CreateGoalInput } from "../../lib/data/goals";
@@ -17,9 +19,11 @@ import { useTheme } from "../../lib/theme/ThemeContext";
 export default function HealthData() {
   const { colors } = useTheme();
   const router = useRouter();
-  const { answers, update } = useOnboarding();
+  const { answers, update, setPlanSummary } = useOnboarding();
   const { session, refreshActiveGoal } = useAuth();
   const [submitting, setSubmitting] = useState(false);
+  // Which "Building your plan" step is in progress - advanced after each real await below.
+  const [buildStage, setBuildStage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   // Driven by the actual HealthDataProvider capability check, not a
   // hardcoded "(coming soon)" label - true once Health Connect is actually
@@ -79,6 +83,7 @@ export default function HealthData() {
     }
 
     setSubmitting(true);
+    setBuildStage(1);
     try {
       const goal = await createGoal(session.user.id, {
         ...(goalInput as CreateGoalInput),
@@ -86,7 +91,9 @@ export default function HealthData() {
         raceLon: answers.raceLon,
         raceLocationName: answers.raceLocationName,
       });
+      setBuildStage(2);
       await createPlanWithSessions(session.user.id, goal.id, preview.plan);
+      setBuildStage(3);
 
       await supabase
         .from("profiles")
@@ -97,11 +104,12 @@ export default function HealthData() {
         .eq("id", session.user.id);
 
       await refreshActiveGoal();
+      setPlanSummary(summarizePlan(preview.plan, answers.targetTimeSeconds ?? null));
       // Onboarding is no longer force-exited by AuthGate once a goal exists
       // (it's an optional flow now, not a mandatory gate) - navigate away
       // explicitly on successful completion instead of relying on the
       // router to notice and redirect.
-      router.replace("/(tabs)");
+      router.replace("/onboarding/plan-ready");
     } catch (e) {
       // Postgrest errors are plain objects, not Error instances - same class
       // of bug as coach-chat's catch-all (see 08-trends-coach-polish.md).
@@ -123,6 +131,8 @@ export default function HealthData() {
       setSubmitting(false);
     }
   }
+
+  if (submitting) return <BuildingPlan stage={buildStage} />;
 
   return (
     <OnboardingStepLayout

@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Circle, Polyline } from "react-native-svg";
 import { useAuth } from "../lib/auth/AuthContext";
-import { deleteActivity, getActivityById, updateActivity, type ActivityRow, type UpdateActivityInput } from "../lib/data/activities";
+import { deleteActivity, getActivityById, getAllActivities, updateActivity, type ActivityRow, type UpdateActivityInput } from "../lib/data/activities";
 import { getShoes, type ShoeRow } from "../lib/data/shoes";
 import { getPlanSessionById, type PlanSessionRow } from "../lib/data/plans";
 import { formatDistance, formatPace } from "../lib/units";
@@ -20,6 +20,10 @@ import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
 import { ChipSelect } from "../components/ui/ChipSelect";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PhotoPicker } from "../components/ui/PhotoPicker";
+import { FeelFace } from "../components/reflection/FeelFace";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { detectPersonalBests } from "../lib/personalBests";
+import { FEEL_LABEL, feelToRpe, type Feel } from "../lib/reflection/insight";
 
 const ROUTE_VIEW_WIDTH = 300;
 const ROUTE_VIEW_HEIGHT = 170;
@@ -87,6 +91,31 @@ export default function RunSummary() {
     if (!session?.user?.id) return;
     getShoes(session.user.id).then(setShoes);
   }, [session?.user?.id]);
+
+  // A run saved in the last day and a half that sets a record opens the celebration, once
+  // per run (the flag is kept on the device so re-opening it from history never re-fires).
+  useEffect(() => {
+    if (!activity || !session?.user?.id) return;
+    if (Date.now() - new Date(activity.start_time).getTime() > 36 * 3600 * 1000) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const key = `cursus:pbShown:${activity.id}`;
+        if (await AsyncStorage.getItem(key)) return;
+        const all = await getAllActivities(session.user.id);
+        const pbs = detectPersonalBests(all, activity);
+        await AsyncStorage.setItem(key, "1");
+        if (cancelled || pbs.length === 0) return;
+        const pb = pbs[0];
+        router.push(`/personal-best?id=${activity.id}&kind=${pb.kind}&value=${pb.value}&previous=${pb.previous}`);
+      } catch {
+        // celebrating is a nicety - never block the summary on it
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activity?.id, session?.user?.id]);
 
   if (loading) {
     return (
@@ -240,6 +269,29 @@ export default function RunSummary() {
         </View>
         {editing && isTracked && (
           <Text style={styles.trackedNote}>Distance and time come from GPS tracking and can't be edited.</Text>
+        )}
+
+        {!editing && activity.rpe == null && activity.reflected_at == null && (
+          <Card style={styles.reflectCard}>
+            <View style={styles.reflectHeader}>
+              <Text style={styles.reflectTitle}>How did it feel?</Text>
+              <Text style={styles.reflectHint}>10 seconds</Text>
+            </View>
+            <View style={styles.reflectFaces}>
+              {([1, 2, 3, 4, 5] as Feel[]).map((f) => (
+                <Pressable
+                  key={f}
+                  onPress={() => router.push(`/reflect?id=${activity.id}&feel=${f}`)}
+                  hitSlop={4}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${FEEL_LABEL[f]}, effort ${feelToRpe(f)} of 10`}
+                  style={styles.reflectFace}
+                >
+                  <FeelFace feel={f} size={38} />
+                </Pressable>
+              ))}
+            </View>
+          </Card>
         )}
 
         {!editing && (
@@ -486,6 +538,12 @@ function createStyles(colors: Colors) {
     minWidth: 50,
   },
   trackedNote: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, textAlign: "center", marginBottom: 10 },
+  reflectCard: { marginBottom: 10, gap: 10 },
+  reflectHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  reflectTitle: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
+  reflectHint: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint },
+  reflectFaces: { flexDirection: "row", justifyContent: "space-between" },
+  reflectFace: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
   askCoachRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, marginBottom: 10 },
   askCoachText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.secondaryAccent },
   cardTitle: { fontFamily: fonts.bodyBold, ...text("small"), color: colors.textPrimary, marginBottom: 6 },

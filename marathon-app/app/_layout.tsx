@@ -186,6 +186,8 @@ function AuthGate() {
     const inNotifications = segments[0] === "notifications";
     // Development-only brand gallery (app/dev-gallery.tsx); a production build redirects it home itself.
     const inDevGallery = __DEV__ && segments[0] === "dev-gallery";
+    const inReflect = segments[0] === "reflect";
+    const inPersonalBest = segments[0] === "personal-best";
     // Reachable at every auth state, not just once signed in - it's linked
     // from sign-up itself ("you agree to our Privacy Policy"), before a
     // session exists at all, so the usual !inAuthGroup redirect below would
@@ -227,6 +229,8 @@ function AuthGate() {
       !inAdmin &&
       !inNotifications &&
       !inDevGallery &&
+      !inReflect &&
+      !inPersonalBest &&
       !inPrivacyPolicy &&
       !inResetPassword
     ) {
