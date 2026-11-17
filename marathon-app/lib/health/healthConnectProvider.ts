@@ -19,7 +19,7 @@ const SYNCED_ACTIVITY_TYPE = "easy";
 
 // Only run-shaped Health Connect sessions come in as activities - this is a
 // marathon-training app, a synced yoga or weights session from the same
-// Health Connect account shouldn't show up in Stryde's run history.
+// Health Connect account shouldn't show up in Cursus's run history.
 const RUNNING_EXERCISE_TYPES: number[] = [ExerciseType.RUNNING, ExerciseType.RUNNING_TREADMILL];
 
 const READ_PERMISSIONS = [

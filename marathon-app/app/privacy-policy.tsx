@@ -49,7 +49,7 @@ export default function PrivacyPolicy() {
       <ScreenHeader title="Privacy Policy" onBack={goBack} />
       <Text style={styles.effectiveDate}>Effective date: September 21, 2026</Text>
       <Text style={styles.intro}>
-        Stryde is built and run by a single independent developer, currently in a manually-approved early-access
+        Cursus is built and run by a single independent developer, currently in a manually-approved early-access
         phase. This describes what the app actually collects and where it goes - not a generic template.
       </Text>
 
@@ -119,7 +119,7 @@ export default function PrivacyPolicy() {
       <SectionLabel>CHILDREN'S PRIVACY</SectionLabel>
       <Card>
         <Text style={styles.body}>
-          Stryde is not directed at, and is not knowingly used by, children under 13. Contact us if you believe a
+          Cursus is not directed at, and is not knowingly used by, children under 13. Contact us if you believe a
           child has created an account and we'll remove it.
         </Text>
       </Card>

@@ -525,7 +525,7 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
           ...LOCATION_OPTIONS,
           showsBackgroundLocationIndicator: true,
           foregroundService: {
-            notificationTitle: "Stryde",
+            notificationTitle: "Cursus",
             notificationBody: "Tracking your run",
           },
         });

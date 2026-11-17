@@ -38,7 +38,7 @@ export function HealthSyncButton() {
       if (!isConnected) {
         const granted = await healthConnectProvider.requestPermissions();
         if (!granted) {
-          Alert.alert("Health Connect", "Permission wasn't granted - allow Stryde access from Health Connect's own app settings.");
+          Alert.alert("Health Connect", "Permission wasn't granted - allow Cursus access from Health Connect's own app settings.");
           return;
         }
       }

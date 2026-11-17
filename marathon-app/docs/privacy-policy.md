@@ -1,8 +1,8 @@
-# Stryde Privacy Policy
+# Cursus Privacy Policy
 
 **Effective date:** September 21, 2026
 
-Stryde is built and run by a single independent developer, currently in a manually-approved early-access phase. This describes what the app actually collects and where it goes - not a generic template.
+Cursus is built and run by a single independent developer, currently in a manually-approved early-access phase. This describes what the app actually collects and where it goes - not a generic template.
 
 This is the canonical copy of this policy, kept in sync with the in-app version at `app/privacy-policy.tsx`. Link to this page (not the in-app screen) anywhere a public, non-authenticated URL is required - the Google Play Data Safety section, for example.
 
@@ -36,7 +36,7 @@ GPS location is collected only while a run is actively being tracked, including 
 
 ## Health Connect data
 
-If you connect Health Connect, Stryde reads your exercise sessions, distance, and total calories burned for running-type activities only, to import them as logged activities. This is opt-in from Settings and can be disconnected at any time.
+If you connect Health Connect, Cursus reads your exercise sessions, distance, and total calories burned for running-type activities only, to import them as logged activities. This is opt-in from Settings and can be disconnected at any time.
 
 ## Photos are stored publicly
 
@@ -52,7 +52,7 @@ Kept for as long as your account is active. There's no self-serve delete button 
 
 ## Children's privacy
 
-Stryde is not directed at, and is not knowingly used by, children under 13. Contact us if you believe a child has created an account and we'll remove it.
+Cursus is not directed at, and is not knowingly used by, children under 13. Contact us if you believe a child has created an account and we'll remove it.
 
 ## Changes & contact
 

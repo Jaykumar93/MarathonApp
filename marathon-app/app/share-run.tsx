@@ -124,7 +124,7 @@ export default function ShareRun() {
     setDownloading(true);
     try {
       const uri = await viewShotRef.current.capture();
-      const filename = `stryde-${template}-${activity.start_time.slice(0, 10)}-${Date.now()}.png`;
+      const filename = `cursus-${template}-${activity.start_time.slice(0, 10)}-${Date.now()}.png`;
       const saved = await saveImageToDevice(uri, filename);
       if (saved) showNotice("Saved - find it in the folder you picked.");
     } catch {

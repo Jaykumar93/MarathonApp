@@ -2,6 +2,7 @@ import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Directory, File } from "expo-file-system";
 
+// Intentionally still "stryde": this is a stored-data key, not a brand string. Renaming it would orphan a runner's unsynced data on update (docs/plan/09-cursus-rebrand-redesign.md, Phase 5).
 const SAVE_DIR_KEY = "stryde.shareSaveDirectoryUri";
 
 /**

@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
         // - the channel itself is created client-side once, on sign-in (see
         // lib/notifications/pushToken.ts's registerForPushNotifications), so
         // it already exists by the time any push referencing it arrives.
-        pushMessages.push({ to: t.token, title: "Stryde", body, color: "#FF5A1F", channelId: "daily-nudge" });
+        pushMessages.push({ to: t.token, title: "Cursus", body, color: "#6C4DFF", channelId: "daily-nudge" });
         tokenIdByIndex.push(t.rowId);
       }
     }

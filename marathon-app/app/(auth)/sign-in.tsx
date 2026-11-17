@@ -51,7 +51,7 @@ export default function SignIn() {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.markRow}>
           <BrandMark size={72} />
-          <Text style={styles.brandName}>Stryde</Text>
+          <Text style={styles.brandName}>cursus</Text>
           <Text style={styles.brandKicker}>PRE-DAWN RUN</Text>
         </View>
         <Text style={styles.title}>Sign in</Text>

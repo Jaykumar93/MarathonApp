@@ -36,7 +36,7 @@ export function BackgroundLocationDisclosure({
           </View>
           <Text style={styles.title}>Track your run in the background</Text>
           <Text style={styles.body}>
-            Stryde uses your location, including while your screen is off or another app is open, to keep tracking
+            Cursus uses your location, including while your screen is off or another app is open, to keep tracking
             your route, distance, and pace for the whole run. It's only used while a run is active.
           </Text>
           <View style={styles.actions}>

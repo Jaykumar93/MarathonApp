@@ -201,7 +201,7 @@ function ActiveRunScreen() {
         <BackButton onPress={goBack} top={backTop} />
         <Text style={styles.centerTitle}>Location access needed</Text>
         <Text style={styles.centerText}>
-          Stryde needs your location while a run is active to track your route, distance, and pace. You can
+          Cursus needs your location while a run is active to track your route, distance, and pace. You can
           allow it from your phone's Settings, then try again.
         </Text>
         <View style={styles.centerButton}>

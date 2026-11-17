@@ -114,7 +114,7 @@ export default function Settings() {
     try {
       const granted = await healthConnectProvider.requestPermissions();
       if (!granted) {
-        setHealthSyncError("Permission wasn't granted - allow Stryde access from Health Connect's own app settings.");
+        setHealthSyncError("Permission wasn't granted - allow Cursus access from Health Connect's own app settings.");
         return;
       }
       const result = await syncHealthActivities(profile.id, healthConnectProvider);
@@ -147,7 +147,7 @@ export default function Settings() {
     if (!profile) return;
     Alert.alert(
       "Disconnect Health Connect?",
-      "Stryde will stop auto-syncing runs from Health Connect. Runs already imported stay in your history. To fully revoke Stryde's access to Health Connect itself, use Health Connect's own app settings.",
+      "Cursus will stop auto-syncing runs from Health Connect. Runs already imported stay in your history. To fully revoke Cursus's access to Health Connect itself, use Health Connect's own app settings.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -415,7 +415,7 @@ export default function Settings() {
       <SectionLabel>ABOUT</SectionLabel>
       <Card>
         <View style={styles.row}>
-          <Text style={styles.label}>Stryde version</Text>
+          <Text style={styles.label}>Cursus version</Text>
           <Text style={styles.value}>{Constants.expoConfig?.version ?? "1.0.0"}</Text>
         </View>
         <View style={styles.divider} />

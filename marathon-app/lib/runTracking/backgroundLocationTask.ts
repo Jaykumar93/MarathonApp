@@ -8,6 +8,7 @@ import type * as Location from "expo-location";
  * startLocationDelivery, which falls back to foreground-only tracking when
  * this isn't available).
  */
+// Intentionally still "stryde": a registered task name, not a brand string - renaming it could leave an in-progress run's task unregistered after an update.
 export const BACKGROUND_LOCATION_TASK = "stryde-background-run-tracking";
 
 type LocationBatchHandler = (locations: Location.LocationObject[]) => void;

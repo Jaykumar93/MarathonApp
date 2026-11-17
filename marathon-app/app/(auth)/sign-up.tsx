@@ -82,7 +82,7 @@ export default function SignUp() {
       <View style={[styles.flex, styles.container]}>
         <View style={styles.markRow}>
           <BrandMark size={72} />
-          <Text style={styles.brandName}>Stryde</Text>
+          <Text style={styles.brandName}>cursus</Text>
           <Text style={styles.brandKicker}>PRE-DAWN RUN</Text>
         </View>
         <Text style={styles.title}>Check your email</Text>
@@ -101,7 +101,7 @@ export default function SignUp() {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.markRow}>
           <BrandMark size={72} />
-          <Text style={styles.brandName}>Stryde</Text>
+          <Text style={styles.brandName}>cursus</Text>
           <Text style={styles.brandKicker}>PRE-DAWN RUN</Text>
         </View>
         <Text style={styles.title}>Create your account</Text>

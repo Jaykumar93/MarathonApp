@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Stryde",
+    "name": "Cursus",
     "slug": "marathonapp",
     "scheme": "stryde",
     "version": "1.0.0",
@@ -51,8 +51,8 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Stryde uses your location, including while your screen is off or another app is open, to keep tracking your route, distance, and pace for the whole run.",
-          "locationWhenInUsePermission": "Stryde uses your location while a run is active to track your route, distance, and pace.",
+          "locationAlwaysAndWhenInUsePermission": "Cursus uses your location, including while your screen is off or another app is open, to keep tracking your route, distance, and pace for the whole run.",
+          "locationWhenInUsePermission": "Cursus uses your location while a run is active to track your route, distance, and pace.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
@@ -62,7 +62,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Stryde uses your photos to attach pictures to a logged run and to build its shareable route card."
+          "photosPermission": "Cursus uses your photos to attach pictures to a logged run and to build its shareable route card."
         }
       ],
       "@sentry/react-native",
