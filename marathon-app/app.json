@@ -15,7 +15,7 @@
       "package": "com.jaykumar093.stryde",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#14161A",
+        "backgroundColor": "#0F1220",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -39,7 +39,15 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#0F1220",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ],
       [
         "expo-location",
         {
@@ -69,7 +77,7 @@
       [
         "expo-notifications",
         {
-          "color": "#FF5A1F",
+          "color": "#6C4DFF",
           "icon": "./assets/android-icon-monochrome.png"
         }
       ],

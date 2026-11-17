@@ -148,7 +148,7 @@ async function updateRunStatusNotification(
           channelId: ACTIVE_RUN_CHANNEL_ID,
           ongoing: true,
           autoCancel: false,
-          color: "#FF5A1F",
+          color: "#6C4DFF",
           smallIcon: "notification_icon", // the drawable expo-notifications' own config plugin generates from app.json's icon
           progress: progressPct != null ? { max: 100, current: progressPct } : undefined,
         },

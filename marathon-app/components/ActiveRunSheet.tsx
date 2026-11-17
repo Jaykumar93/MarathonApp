@@ -340,9 +340,9 @@ const styles = StyleSheet.create({
   headerText: { fontFamily: fonts.monoSemiBold, ...text("micro"), letterSpacing: 1.5, color: darkSurface.textDim },
 
   intervalBox: {
-    backgroundColor: "rgba(255,90,31,0.14)",
+    backgroundColor: "rgba(240,122,182,0.14)",
     borderWidth: 1,
-    borderColor: "rgba(255,90,31,0.35)",
+    borderColor: "rgba(240,122,182,0.4)",
     borderRadius: radius.md,
     paddingVertical: 12,
     alignItems: "center",

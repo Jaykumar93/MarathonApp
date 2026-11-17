@@ -184,6 +184,8 @@ function AuthGate() {
     const inRaceDay = segments[0] === "race-day";
     const inAdmin = segments[0] === "admin";
     const inNotifications = segments[0] === "notifications";
+    // Development-only brand gallery (app/dev-gallery.tsx); a production build redirects it home itself.
+    const inDevGallery = __DEV__ && segments[0] === "dev-gallery";
     // Reachable at every auth state, not just once signed in - it's linked
     // from sign-up itself ("you agree to our Privacy Policy"), before a
     // session exists at all, so the usual !inAuthGroup redirect below would
@@ -224,6 +226,7 @@ function AuthGate() {
       !inRaceDay &&
       !inAdmin &&
       !inNotifications &&
+      !inDevGallery &&
       !inPrivacyPolicy &&
       !inResetPassword
     ) {

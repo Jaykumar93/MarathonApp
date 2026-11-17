@@ -121,7 +121,7 @@ export function ShareRouteCard({
             <Rect x={0} y={0} width={SHARE_CARD_WIDTH} height={200} fill="url(#scrim)" />
           </Svg>
         )}
-        <Text style={[styles.wordmark, styles.overlayWordmark]}>STRYDE</Text>
+        <Text style={[styles.wordmark, styles.overlayWordmark]}>cursus</Text>
         <View style={styles.overlayFooter}>
           <Text style={styles.metaText}>
             {sessionTypeLabel} · {dateLabel}
@@ -142,7 +142,7 @@ export function ShareRouteCard({
     return (
       <View style={[styles.card, styles.padded, styles.boldCard]}>
         {hasPhoto && <PhotoBackground uri={backgroundPhotoUri!} />}
-        <Text style={styles.wordmark}>STRYDE</Text>
+        <Text style={styles.wordmark}>cursus</Text>
         <View style={styles.boldHeroBlock}>
           <Text style={styles.boldHeroValue}>{distanceLabel}</Text>
           <Text style={styles.metaText}>
@@ -167,7 +167,7 @@ export function ShareRouteCard({
     <View style={[styles.card, styles.padded, styles.classicCard]}>
       {hasPhoto && <PhotoBackground uri={backgroundPhotoUri!} />}
       <View style={styles.classicHeader}>
-        <Text style={styles.wordmark}>STRYDE</Text>
+        <Text style={styles.wordmark}>cursus</Text>
         <Text style={[styles.metaText, styles.classicMeta]}>
           {sessionTypeLabel} · {dateLabel}
         </Text>
@@ -192,11 +192,11 @@ const styles = StyleSheet.create({
   card: { width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT },
   padded: { padding: 24 },
   absoluteFill: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
-  photoScrim: { backgroundColor: "rgba(20,22,26,0.4)" },
+  photoScrim: { backgroundColor: "rgba(15,18,32,0.4)" },
   bottomScrim: { position: "absolute", left: 0, bottom: 0 },
   centered: { alignItems: "center", justifyContent: "center" },
 
-  wordmark: { fontFamily: fonts.monoSemiBold, fontSize: 13, letterSpacing: 3, color: palette.accent, ...shadow },
+  wordmark: { fontFamily: fonts.dataBold, fontSize: 20, letterSpacing: -0.6, color: palette.accentGlow, ...shadow },
   metaText: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: "rgba(255,255,255,0.88)", ...shadow },
 
   statRow: { flexDirection: "row", justifyContent: "space-around", width: "100%" },
