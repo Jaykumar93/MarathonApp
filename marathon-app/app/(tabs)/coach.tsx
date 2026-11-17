@@ -15,7 +15,7 @@ import { getPlanSessionById, type PlanSessionRow } from "../../lib/data/plans";
 import { askCoach } from "../../lib/coach/askCoach";
 import { formatDistance, formatPace } from "../../lib/units";
 import { SESSION_TYPE_LABEL } from "../../lib/sessionTypes";
-import { fonts, spacing, text, fs, inputText, radius } from "../../lib/theme";
+import { fonts, spacing, text, fs, inputText, radius, palette } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Card } from "../../components/ui/Card";
 import { ReferenceChip } from "../../components/ui/ReferenceChip";
@@ -463,7 +463,7 @@ export default function Coach() {
           accessibilityRole="button"
           accessibilityLabel="Send"
         >
-          <Ionicons name="arrow-up" size={20} color="#fff" />
+          <Ionicons name="arrow-up" size={20} color={palette.onAccent} />
         </Pressable>
       </View>
 
@@ -544,7 +544,7 @@ function createStyles(colors: Colors) {
       paddingBottom: 2,
     },
     toolbarButton: { flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 6, borderRadius: radius.sm },
-    toolbarButtonText: { fontFamily: fonts.bodyMedium, ...text("micro"), color: colors.textDim },
+    toolbarButtonText: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.textDim },
     listContent: { flexGrow: 1, padding: spacing.screenPadding, gap: 12 },
     emptyState: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, paddingTop: 60, paddingHorizontal: 20 },
     emptyTitle: { fontFamily: fonts.dataBold, ...text("title"), color: colors.textPrimary },
@@ -552,7 +552,7 @@ function createStyles(colors: Colors) {
     rowUser: { alignItems: "flex-end", gap: 6 },
     rowAssistant: { alignItems: "flex-start", gap: 6 },
     bubble: { maxWidth: "85%", borderRadius: radius.lg, paddingVertical: 10, paddingHorizontal: 14 },
-    bubbleUser: { backgroundColor: colors.accent, borderBottomRightRadius: 4 },
+    bubbleUser: { backgroundColor: colors.accentFill, borderBottomRightRadius: 4 },
     bubbleAssistant: { backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.cardLine, borderBottomLeftRadius: 4 },
     thinkingBubble: { flexDirection: "row", alignItems: "center", gap: 8 },
     thinkingText: { fontFamily: fonts.body, ...text("small"), color: colors.textDim },
@@ -586,7 +586,7 @@ function createStyles(colors: Colors) {
       width: 44,
       height: 44,
       borderRadius: radius.pill,
-      backgroundColor: colors.accent,
+      backgroundColor: colors.accentFill,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -618,8 +618,8 @@ function createStyles(colors: Colors) {
     historyRowMain: { flex: 1, gap: 3 },
     historyDeleteButton: { padding: 4 },
     historyPreview: { fontFamily: fonts.bodyMedium, ...text("body"), color: colors.textPrimary },
-    historyPreviewActive: { color: colors.accent },
-    historyMeta: { fontFamily: fonts.mono, ...text("micro"), color: colors.textFaint },
+    historyPreviewActive: { color: colors.accentText },
+    historyMeta: { fontFamily: fonts.mono, ...text("caption"), color: colors.textFaint },
     historyConfirmText: { flex: 1, fontFamily: fonts.body, ...text("small"), color: colors.textDim },
     historyConfirmRow: { flexDirection: "row", gap: 14 },
     historyCancelText: { fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textDim },

@@ -1,6 +1,7 @@
 import React from "react";
-import { View } from "react-native";
+import { Text, View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
+import { fonts, radius, text } from "../lib/theme";
 import { useTheme } from "../lib/theme/ThemeContext";
 
 interface BlockProfileProps {
@@ -35,8 +36,10 @@ function pointsToPath(points: { x: number; y: number }[]): string {
 export function BlockProfile({ weeklyVolumesKm, actualWeeklyVolumesKm, currentWeek, variant }: BlockProfileProps) {
   const { colors } = useTheme();
   const width = variant === "mini" ? 300 : 280;
-  const height = variant === "mini" ? 50 : 66;
-  const padY = variant === "mini" ? 6 : 8;
+  // The hero is taller with more vertical padding so the "Peak" and "Today"
+  // labels have headroom above and below the line.
+  const height = variant === "mini" ? 50 : 92;
+  const padY = variant === "mini" ? 6 : 24;
   const max = Math.max(...weeklyVolumesKm, ...(actualWeeklyVolumesKm ?? []), 0.001);
 
   const points = buildPoints(weeklyVolumesKm, width, height, padY, max);
@@ -71,20 +74,37 @@ export function BlockProfile({ weeklyVolumesKm, actualWeeklyVolumesKm, currentWe
   const actualPoints = buildPoints(actual, width, height, padY, max);
   const revealedPoints = actualPoints.slice(0, revealedThrough + 1);
 
+  // Labels and the "today" marker are native views laid over the SVG: the SVG
+  // is stretched with preserveAspectRatio="none", which would squash text and
+  // turn circles into ellipses. x is a percentage of the width; y is in px
+  // (the SVG's height is fixed, so its y scale is 1:1).
+  const peakIndex = weeklyVolumesKm.indexOf(Math.max(...weeklyVolumesKm));
+  const todayIndex = Math.min(Math.max(currentWeek - 1, 0), points.length - 1);
+  const peak = points[peakIndex];
+  const todayPoint = points[todayIndex];
+  const pct = (x: number) => (x / width) * 100;
+  // Skip the "Today" word when it would sit on top of "Peak" (the marker stays).
+  const showTodayLabel = !!todayPoint && Math.abs(todayIndex - peakIndex) > 2;
+
+  function labelStyle(p: { x: number; y: number }, below: boolean) {
+    const at = pct(p.x);
+    const edge = at > 75 ? { right: `${100 - at}%` as const } : at < 25 ? { left: `${at}%` as const } : { left: `${at}%` as const, marginLeft: -28, width: 56, alignItems: "center" as const };
+    return [{ position: "absolute" as const, top: below ? p.y + 9 : p.y - 21 }, edge];
+  }
+
   return (
-    <View>
+    <View style={{ height }}>
       <Svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
-        {/* Was colors.contour at 25% opacity - a dark green that faint
-            reads fine on a light card but is essentially invisible against
-            a dark one. cardLine is already the app's "faint but visible
-            line, tuned per theme" token (borders, dividers) - the same fit
-            here. */}
+        {/* The planned curve: a clearly visible dashed reference (textFaint
+            clears 3:1 as a graphic on both themes; the old cardLine hairline
+            was nearly invisible). Dashed rather than solid so the whole plan
+            doesn't read as already-covered terrain before a run is logged. */}
         <Path
           d={pointsToPath(points)}
           fill="none"
-          stroke={colors.cardLine}
-          strokeWidth={1.5}
-          strokeDasharray="3,4"
+          stroke={colors.textFaint}
+          strokeWidth={2}
+          strokeDasharray="4,5"
         />
         {revealedPoints.length > 1 && (
           <Path d={pointsToPath(revealedPoints)} fill="none" stroke={colors.accent} strokeWidth={2.8} strokeLinecap="round" />
@@ -93,6 +113,38 @@ export function BlockProfile({ weeklyVolumesKm, actualWeeklyVolumesKm, currentWe
           <Circle key={i} cx={p.x} cy={p.y} r={i === revealedPoints.length - 1 ? 4.5 : 3} fill={colors.accent} />
         ))}
       </Svg>
+
+      {todayPoint && (
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: `${pct(todayPoint.x)}%`,
+            top: todayPoint.y - 6,
+            marginLeft: -6,
+            width: 12,
+            height: 12,
+            borderRadius: radius.pill,
+            borderWidth: 2,
+            borderColor: colors.textPrimary,
+            backgroundColor: colors.cardBg,
+          }}
+        />
+      )}
+      {peak && (
+        <Text style={[labelText(colors), ...labelStyle(peak, false)]} maxFontSizeMultiplier={1.2}>
+          Peak
+        </Text>
+      )}
+      {showTodayLabel && todayPoint && (
+        <Text style={[labelText(colors), { color: colors.textPrimary }, ...labelStyle(todayPoint, true)]} maxFontSizeMultiplier={1.2}>
+          Today
+        </Text>
+      )}
     </View>
   );
+}
+
+function labelText(colors: ReturnType<typeof useTheme>["colors"]) {
+  return { fontFamily: fonts.monoMedium, ...text("micro"), color: colors.textDim } as const;
 }

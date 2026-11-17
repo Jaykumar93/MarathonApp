@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { fonts, type, text, radius } from "../lib/theme";
+import { fonts, text, radius, palette } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { useSlideTransition } from "../lib/useSlideTransition";
 import type { PlanSessionRow } from "../lib/data/plans";
@@ -12,6 +12,7 @@ import { todayIso } from "../lib/data/usePlanData";
 import { formatDistance, formatPace } from "../lib/units";
 import { SESSION_TYPE_COLOR, SESSION_TYPE_LABEL, formatIntervalStructureSummary } from "../lib/sessionTypes";
 import { ActivityThumbnail } from "./ActivityThumbnail";
+import { PrimaryButton } from "./ui/PrimaryButton";
 
 function formatDateHeading(iso: string): string {
   const d = new Date(iso + "T00:00:00Z");
@@ -31,43 +32,26 @@ interface DayDetailPanelProps {
   activities: ActivityRow[];
 }
 
-/**
- * Pinned to the left edge, vertically centered against the whole card (not
- * just its header line) - the side a thumb naturally rests on holding the
- * phone one-handed. Fixed accent color rather than the session-type color
- * it used to take - "easy" sessions use the same green as the completed
- * checkmark badge, so a same-typed session's play button and its own
- * later "done" state were visually identical. A quick-start shortcut
- * straight into Active Run - tapping the card body instead opens the full
- * planned-session detail screen (see PlannedSessionCard), so this stops
- * the tap from bubbling up to that.
- */
-function StartRunIcon({ planSessionId }: { planSessionId?: string }) {
-  const router = useRouter();
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+/** One label-over-value column of a stats row. */
+function Stat({ label, value, styles }: { label: string; value: string; styles: ReturnType<typeof createStyles> }) {
   return (
-    <Pressable
-      style={styles.startRunIcon}
-      onPress={(e) => {
-        e.stopPropagation();
-        router.push(planSessionId ? `/active-run?planSessionId=${planSessionId}` : "/active-run");
-      }}
-      hitSlop={6}
-      // No accessibilityRole="button" here - it's nested inside
-      // PlannedSessionCard's own Pressable (role="button"), and RN Web
-      // renders that role as a literal <button> tag; a <button> can't
-      // legally contain another <button> (invalid nested-interactive HTML,
-      // React warns and the DOM gets silently reparented/broken).
-      accessibilityLabel="Start a GPS run"
-    >
-      <Ionicons name="play" size={13} color="#fff" />
-    </Pressable>
+    <View style={styles.stat}>
+      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={styles.statValue}>{value}</Text>
+    </View>
   );
 }
 
-/** One logged run, styled as a compact three-column stat row rather than a single dense text line - tap through to the full Run Summary/detail screen. No start-run shortcut here - Track and the Planned card above already cover "start another run", repeating it here was redundant. */
-function LoggedActivityRow({ activity, unit }: { activity: ActivityRow; unit: "km" | "mi" }) {
+/** One logged run: a flat, tappable row (thumbnail, title, stats) - tap through to the full Run Summary. */
+function LoggedActivityRow({
+  activity,
+  unit,
+  first,
+}: {
+  activity: ActivityRow;
+  unit: "km" | "mi";
+  first: boolean;
+}) {
   const router = useRouter();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -75,90 +59,89 @@ function LoggedActivityRow({ activity, unit }: { activity: ActivityRow; unit: "k
   const paceSecondsPerKm = distanceKm > 0 ? activity.duration_seconds / distanceKm : null;
 
   return (
-    <Pressable style={styles.loggedRow} onPress={() => router.push(`/run-summary?id=${activity.id}`)} accessibilityRole="button">
+    <Pressable
+      style={[styles.loggedRow, !first && styles.divider]}
+      onPress={() => router.push(`/run-summary?id=${activity.id}`)}
+      accessibilityRole="button"
+    >
       <View style={styles.loggedHeader}>
         <ActivityThumbnail activity={activity} />
-        <Text style={[styles.loggedTitle, styles.loggedTitleFlex]}>
+        <Text style={styles.loggedTitle}>
           {SESSION_TYPE_LABEL[activity.activity_type] ?? activity.activity_type}
           {activity.rpe ? ` · RPE ${activity.rpe}` : ""}
         </Text>
       </View>
-      <View style={styles.loggedStatsRow}>
-        <View style={styles.loggedStat}>
-          <Text style={styles.loggedStatLabel}>DISTANCE</Text>
-          <Text style={styles.loggedStatValue}>{formatDistance(distanceKm, unit)}</Text>
-        </View>
-        <View style={styles.loggedStat}>
-          <Text style={styles.loggedStatLabel}>TIME</Text>
-          <Text style={styles.loggedStatValue}>{formatDuration(activity.duration_seconds)}</Text>
-        </View>
-        <View style={styles.loggedStat}>
-          <Text style={styles.loggedStatLabel}>PACE</Text>
-          <Text style={styles.loggedStatValue}>{formatPace(paceSecondsPerKm, unit)}</Text>
-        </View>
+      <View style={styles.statsRow}>
+        <Stat label="DISTANCE" value={formatDistance(distanceKm, unit)} styles={styles} />
+        <Stat label="TIME" value={formatDuration(activity.duration_seconds)} styles={styles} />
+        <Stat label="PACE" value={formatPace(paceSecondsPerKm, unit)} styles={styles} />
       </View>
     </Pressable>
   );
 }
 
 /**
- * Mirrors LoggedActivityRow's card layout (title + Distance/Duration/Pace
- * columns) so planned and logged read as the same kind of thing at a
- * glance, but stays distinguishable by fill - outlined/white here vs.
- * solid-filled once logged, the same "planned outline, completed fill"
- * convention PlanCalendarScroller's day cells already use. Tapping
- * anywhere on the card opens the full planned-session detail screen
- * (everything about the workout, plus its own Start button); the play
- * icon stays a quick-start shortcut straight into Active Run.
+ * The day's planned session as flat content - no bordered box inside the
+ * card it sits in. The run type is a small colour dot beside its name, the
+ * stats are one row, and on today's unfinished session the one orange thing
+ * on Home appears: a full-width Start run button. "Session details" opens the
+ * full planned-session screen for everything else about the workout.
  */
-function PlannedSessionCard({ session, unit, date }: { session: PlanSessionRow; unit: "km" | "mi"; date: string }) {
+function PlannedSession({ session, unit, date }: { session: PlanSessionRow; unit: "km" | "mi"; date: string }) {
   const router = useRouter();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const prep = session.prep_recovery as { prep?: string; recovery?: string } | null;
   const typeColor = SESSION_TYPE_COLOR[session.session_type] ?? colors.contour;
-  const isToday = date === todayIso();
+  const typeLabel = SESSION_TYPE_LABEL[session.session_type] ?? session.session_type;
   const isCompleted = session.status === "completed";
+  const canStart = date === todayIso() && !isCompleted;
 
   return (
-    <Pressable
-      style={[styles.plannedCard, { borderColor: typeColor }]}
-      onPress={() => router.push(`/planned-session?id=${session.id}`)}
-      accessibilityRole="button"
-    >
-      {isCompleted ? (
-        <View style={styles.doneBadge}>
-          <Ionicons name="checkmark" size={14} color="#fff" />
-        </View>
-      ) : (
-        isToday && <StartRunIcon planSessionId={session.id} />
-      )}
-      <View style={styles.cardContent}>
-        <Text style={styles.loggedTitle}>Planned · {SESSION_TYPE_LABEL[session.session_type] ?? session.session_type}</Text>
-        <View style={styles.loggedStatsRow}>
-          <View style={styles.loggedStat}>
-            <Text style={styles.loggedStatLabel}>DISTANCE</Text>
-            <Text style={styles.loggedStatValue}>
-              {session.planned_distance_meters ? formatDistance(session.planned_distance_meters / 1000, unit) : "—"}
-            </Text>
+    <View>
+      <View style={styles.plannedHeader}>
+        <View style={[styles.typeDot, { backgroundColor: typeColor }]} />
+        <Text style={styles.plannedTitle}>{typeLabel}</Text>
+        {isCompleted && (
+          <View style={styles.doneBadge} accessibilityLabel="Completed">
+            <Ionicons name="checkmark" size={14} color={palette.onAccent} />
           </View>
-          <View style={styles.loggedStat}>
-            <Text style={styles.loggedStatLabel}>DURATION</Text>
-            <Text style={styles.loggedStatValue}>
-              {session.planned_duration_seconds ? formatDuration(session.planned_duration_seconds) : "—"}
-            </Text>
-          </View>
-          <View style={styles.loggedStat}>
-            <Text style={styles.loggedStatLabel}>PACE</Text>
-            <Text style={styles.loggedStatValue}>{formatPace(session.planned_pace_seconds_per_km, unit) || "—"}</Text>
-          </View>
-        </View>
-        {session.interval_structure && (
-          <Text style={styles.intervalLine}>{formatIntervalStructureSummary(session.interval_structure, unit)}</Text>
         )}
-        {prep?.prep && <Text style={styles.subLine}>Prep: {prep.prep}</Text>}
       </View>
-    </Pressable>
+      <View style={styles.statsRow}>
+        <Stat
+          label="DISTANCE"
+          value={session.planned_distance_meters ? formatDistance(session.planned_distance_meters / 1000, unit) : "—"}
+          styles={styles}
+        />
+        <Stat
+          label="DURATION"
+          value={session.planned_duration_seconds ? formatDuration(session.planned_duration_seconds) : "—"}
+          styles={styles}
+        />
+        <Stat label="PACE" value={formatPace(session.planned_pace_seconds_per_km, unit) || "—"} styles={styles} />
+      </View>
+      {session.interval_structure && (
+        <Text style={styles.intervalLine}>{formatIntervalStructureSummary(session.interval_structure, unit)}</Text>
+      )}
+      {prep?.prep && <Text style={styles.subLine}>Prep: {prep.prep}</Text>}
+
+      {canStart && (
+        <View style={styles.startWrap}>
+          <PrimaryButton label="Start run" onPress={() => router.push(`/active-run?planSessionId=${session.id}`)} />
+        </View>
+      )}
+      <Pressable
+        onPress={() => router.push(`/planned-session?id=${session.id}`)}
+        hitSlop={6}
+        style={styles.detailsLink}
+        accessibilityRole="button"
+        accessibilityLabel={`Session details for ${typeLabel}`}
+      >
+        <Text style={styles.detailsText}>Session details</Text>
+        <Ionicons name="chevron-forward" size={14} color={colors.accentText} />
+      </Pressable>
+    </View>
   );
 }
 
@@ -168,29 +151,31 @@ export function DayDetailPanel({ date, session, activities }: DayDetailPanelProp
   const styles = useMemo(() => createStyles(colors), [colors]);
   const unit = profile?.distance_unit ?? "km";
   const slideStyle = useSlideTransition(date);
+  const heading = date === todayIso() ? "Today" : formatDateHeading(date);
 
   return (
     <Animated.View style={slideStyle}>
-      <Text style={styles.heading}>{formatDateHeading(date)}</Text>
+      <Text style={styles.heading} accessibilityRole="header">
+        {heading}
+      </Text>
 
       {session && session.session_type !== "rest" ? (
-        <View style={styles.block}>
-          <Text style={styles.kicker}>Planned</Text>
-          <PlannedSessionCard session={session} unit={unit} date={date} />
-        </View>
+        <PlannedSession session={session} unit={unit} date={date} />
       ) : (
         <Text style={styles.emptyLine}>{session ? "Rest day - nothing planned." : "No session planned this day."}</Text>
       )}
 
       {activities.length > 0 ? (
-        <View>
-          <Text style={styles.kicker}>Logged</Text>
-          {activities.map((a) => (
-            <LoggedActivityRow key={a.id} activity={a} unit={unit} />
+        <View style={styles.loggedBlock}>
+          <Text style={styles.sectionName}>Logged</Text>
+          {activities.map((a, i) => (
+            <LoggedActivityRow key={a.id} activity={a} unit={unit} first={i === 0} />
           ))}
         </View>
       ) : (
-        <Text style={styles.emptyLine}>No run logged for this day yet.</Text>
+        <Text style={[styles.emptyLine, session && session.session_type !== "rest" ? styles.emptyAfterPlan : null]}>
+          No run logged for this day yet.
+        </Text>
       )}
     </Animated.View>
   );
@@ -198,55 +183,41 @@ export function DayDetailPanel({ date, session, activities }: DayDetailPanelProp
 
 function createStyles(colors: Colors) {
   return StyleSheet.create({
-    heading: { fontFamily: fonts.bodyBold, ...text("small"), color: colors.textPrimary, marginBottom: 8 },
-    block: { marginBottom: 10 },
-    kicker: { fontFamily: fonts.monoMedium, ...text("micro"), color: colors.textFaint, marginBottom: 6, textTransform: "uppercase" },
-    subLine: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 8 },
-    intervalLine: { fontFamily: fonts.bodyMedium, fontSize: type.pFaint, color: colors.textDim, marginTop: 6 },
-    emptyLine: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginBottom: 10 },
-    loggedRow: {
-      backgroundColor: colors.screenBg,
-      borderRadius: radius.md,
-      padding: 10,
-      marginBottom: 8,
-    },
-    plannedCard: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-      backgroundColor: colors.cardBg,
-      borderRadius: radius.md,
-      borderWidth: 1.5,
-      padding: 10,
-    },
-    cardContent: { flex: 1 },
-    startRunIcon: {
-      width: 26,
-      height: 26,
-      borderRadius: radius.pill,
-      backgroundColor: colors.accent,
-      alignItems: "center",
-      justifyContent: "center",
-    },
+    heading: { fontFamily: fonts.dataBold, ...text("title"), color: colors.textPrimary, marginBottom: 10 },
+    plannedHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
+    typeDot: { width: 10, height: 10, borderRadius: radius.pill },
+    plannedTitle: { flex: 1, fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: colors.textPrimary },
     doneBadge: {
-      width: 26,
-      height: 26,
+      width: 24,
+      height: 24,
       borderRadius: radius.pill,
       backgroundColor: colors.success,
       alignItems: "center",
       justifyContent: "center",
     },
+    statsRow: { flexDirection: "row" },
+    stat: { flex: 1 },
+    statLabel: { fontFamily: fonts.monoMedium, ...text("micro"), color: colors.textFaint, marginBottom: 2 },
+    statValue: { fontFamily: fonts.dataBold, ...text("emphasis"), color: colors.textPrimary },
+    subLine: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint, marginTop: 10 },
+    intervalLine: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.textDim, marginTop: 10 },
+    startWrap: { marginTop: 14 },
+    detailsLink: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "flex-start",
+      gap: 2,
+      minHeight: 36,
+      marginTop: 4,
+    },
+    detailsText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.accentText },
+    emptyLine: { fontFamily: fonts.body, ...text("small"), color: colors.textFaint },
+    emptyAfterPlan: { marginTop: 8 },
+    loggedBlock: { marginTop: 12 },
+    sectionName: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.textDim, marginBottom: 4 },
+    loggedRow: { paddingVertical: 10 },
+    divider: { borderTopWidth: 1, borderTopColor: colors.cardLine },
     loggedHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-    loggedTitle: { fontFamily: fonts.bodySemiBold, fontSize: type.pDim, color: colors.textPrimary, marginBottom: 8 },
-    // Overrides loggedTitle's own marginBottom - PlannedSessionCard uses
-    // that style standalone and relies on it for spacing above its stats
-    // row, but here the title sits inside loggedHeader (which already has
-    // its own marginBottom) next to a thumbnail, so it would otherwise be
-    // double-spaced.
-    loggedTitleFlex: { flexShrink: 1, marginBottom: 0 },
-    loggedStatsRow: { flexDirection: "row" },
-    loggedStat: { flex: 1 },
-    loggedStatLabel: { fontFamily: fonts.monoMedium, fontSize: type.statLabel, color: colors.textFaint, marginBottom: 2 },
-    loggedStatValue: { fontFamily: fonts.dataBold, ...text("small"), color: colors.textPrimary },
+    loggedTitle: { flexShrink: 1, fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.textPrimary },
   });
 }

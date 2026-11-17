@@ -49,7 +49,7 @@ export function OnboardingStepLayout({
               is a supported state (Home shows a "Create your plan" prompt
               instead), so leaving mid-setup is always available, not just
               a one-time skip. */}
-          <Pressable onPress={() => router.replace("/(tabs)")} hitSlop={10}>
+          <Pressable accessibilityRole="button" onPress={() => router.replace("/(tabs)")} hitSlop={10}>
             <Text style={styles.exitLink}>Exit setup</Text>
           </Pressable>
         </View>

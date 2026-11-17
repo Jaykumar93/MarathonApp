@@ -37,7 +37,7 @@ function SourceBadge({ source }: { source: ActivityRow["source"] }) {
   if (source !== "health_connect" && source !== "healthkit") return null;
   return (
     <View style={badgeStyles.badge}>
-      <Ionicons name="sync-outline" size={10} color="#fff" />
+      <Ionicons name="sync-outline" size={10} color={palette.onAccent} />
     </View>
   );
 }
@@ -55,7 +55,7 @@ const badgeStyles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: palette.accent,
     borderWidth: 1.5,
-    borderColor: "#fff",
+    borderColor: palette.onAccent,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -100,7 +100,7 @@ export function ActivityThumbnail({ activity }: ActivityThumbnailProps) {
 
   return (
     <View style={[styles.wrap, { backgroundColor: typeColor }]}>
-      <Ionicons name={ACTIVITY_ICON[activity.activity_type] ?? "footsteps-outline"} size={18} color="#fff" />
+      <Ionicons name={ACTIVITY_ICON[activity.activity_type] ?? "footsteps-outline"} size={18} color={palette.onAccent} />
       <SourceBadge source={activity.source} />
     </View>
   );

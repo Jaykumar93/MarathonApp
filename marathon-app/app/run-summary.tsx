@@ -174,6 +174,8 @@ export default function RunSummary() {
   return (
     <View style={styles.screen}>
       <ScrollView
+        automaticallyAdjustKeyboardInsets
+        keyboardShouldPersistTaps="handled"
         style={styles.scrollFlex}
         contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: 96 + insets.bottom }]}
       >
@@ -367,7 +369,7 @@ export default function RunSummary() {
           activity.photo_urls.length > 0 && (
             <View style={styles.photoRow}>
               {activity.photo_urls.map((url) => (
-                <Image key={url} source={{ uri: url }} style={styles.photoThumb} />
+                <Image key={url} source={{ uri: url }} style={styles.photoThumb} accessibilityLabel="Photo from this run" />
               ))}
             </View>
           )

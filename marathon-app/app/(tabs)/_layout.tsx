@@ -4,7 +4,7 @@ import { Tabs, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Animated, ColorValue, Pressable, StyleSheet, Text, View, type GestureResponderEvent, type StyleProp, type ViewStyle } from "react-native";
 import { useAuth } from "../../lib/auth/AuthContext";
-import { fonts, type, text, radius } from "../../lib/theme";
+import { fonts, type, text, radius, palette } from "../../lib/theme";
 import { useTheme, type Colors, type ThemeShadows } from "../../lib/theme/ThemeContext";
 import { HealthSyncButton } from "../../components/HealthSyncButton";
 import { NotificationBell } from "../../components/NotificationBell";
@@ -98,7 +98,7 @@ function ProfileButton() {
     <Pressable
       style={styles.avatar}
       onPress={() => router.push("/settings")}
-      hitSlop={8}
+      hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
       accessibilityRole="button"
       accessibilityLabel="Open profile and settings"
     >
@@ -140,7 +140,7 @@ export default function TabsLayout() {
         headerShadowVisible: false,
         headerStyle: { backgroundColor: colors.screenBg, height: insets.top + 52 },
         headerRight: () => (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <HealthSyncButton />
             <NotificationBell />
             <ProfileButton />
@@ -149,8 +149,11 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textFaint,
         tabBarButton: (props) => <AnimatedTabButton {...props} />,
-        tabBarStyle: { height: 58 + tabBarBottom, paddingTop: 9, paddingBottom: tabBarBottom, backgroundColor: colors.tabBarBg, borderTopColor: colors.cardLine },
+        tabBarStyle: { height: 66 + tabBarBottom, paddingTop: 9, paddingBottom: tabBarBottom, backgroundColor: colors.tabBarBg, borderTopColor: colors.cardLine },
         tabBarLabelStyle: { fontFamily: fonts.bodyMedium, ...text("micro") },
+        // The five labels share a fixed-width bar; letting them follow a large system font
+        // pushed them into each other, so they hold their size (icons and names stay legible).
+        tabBarAllowFontScaling: false,
       }}
     >
       <Tabs.Screen
@@ -218,7 +221,7 @@ function createRaisedStyles(colors: Colors, shadows: ThemeShadows) {
       height: 22,
       borderRadius: radius.pill,
       borderWidth: 3,
-      borderColor: "#fff",
+      borderColor: palette.onAccent,
     },
   });
 }
@@ -229,16 +232,17 @@ function createStyles(colors: Colors) {
       width: 28,
       height: 28,
       borderRadius: radius.pill,
-      // Was colors.predawn - identical hex to dark mode's screenBg
-      // ("#14161A" both), so the circle vanished entirely against the dark
-      // header. Accent is the same bright orange in both themes, so it
-      // reads clearly against either background.
-      backgroundColor: colors.accent,
+      // Neutral surface with a hairline edge: orange is reserved for Start and
+      // Track, so the avatar no longer competes with them. The card surface
+      // reads against both the light and dark header (predawn would vanish).
+      backgroundColor: colors.cardBg,
+      borderWidth: 1,
+      borderColor: colors.cardLine,
       alignItems: "center",
       justifyContent: "center",
       marginRight: 16,
     },
-    avatarInitial: { fontFamily: fonts.bodyBold, ...text("caption"), color: "#fff" },
+    avatarInitial: { fontFamily: fonts.bodyBold, ...text("caption"), color: colors.accentText },
     greeting: {
       fontFamily: fonts.bodyMedium,
       fontSize: type.pDim,

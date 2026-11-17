@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { fonts, fs } from "../../lib/theme";
+import { fonts, fs, palette } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 
 interface CoachMessageBodyProps {
@@ -88,7 +88,7 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     wrap: { gap: 8 },
     text: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, lineHeight: 21, color: colors.textPrimary },
-    textUser: { color: "#fff" },
+    textUser: { color: palette.onAccent },
     bold: { fontFamily: fonts.bodyBold },
     bulletList: { gap: 5 },
     bulletRow: { flexDirection: "row", gap: 7 },

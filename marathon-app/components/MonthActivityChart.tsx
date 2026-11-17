@@ -53,6 +53,8 @@ export function MonthActivityChart({
     return { date, day, km: dailyDistanceKm(activitiesByDate.get(date)) };
   });
   const maxKm = Math.max(...values.map((v) => v.km), 1);
+  // A month of 28-31 empty hairline bars says nothing; one line does.
+  const isEmptyMonth = values.every((v) => v.km === 0);
   // Same swipe-left=next/swipe-right=previous convention PlanCalendarScroller's
   // own header uses - lets a drag on this chart change months too, not just
   // the small arrow targets.
@@ -81,6 +83,9 @@ export function MonthActivityChart({
           <Ionicons name="chevron-forward" size={22} color={colors.textDim} style={styles.navIcon} />
         </Pressable>
       </View>
+      {isEmptyMonth ? (
+        <Text style={styles.emptyLine}>No runs logged in {MONTH_NAMES[month - 1]} yet.</Text>
+      ) : (
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.barRow}>
         {values.map((v) => {
           const isToday = v.date === today;
@@ -108,6 +113,7 @@ export function MonthActivityChart({
           );
         })}
       </ScrollView>
+      )}
     </Animated.View>
   );
 }
@@ -116,6 +122,7 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     header: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 10 },
     navIcon: { paddingHorizontal: 6 },
+    emptyLine: { fontFamily: fonts.body, ...text("small"), color: colors.textFaint, textAlign: "center", paddingVertical: 6 },
     monthLabel: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
     // paddingTop needs to clear PressTooltip's bubble (anchored `top: -38`
     // above the bar it's attached to, ~21px tall) - 26 wasn't enough
@@ -128,6 +135,6 @@ function createStyles(colors: Colors) {
     barEmpty: { backgroundColor: colors.cardLine },
     barSelected: { backgroundColor: colors.contour },
     dayLabel: { fontFamily: fonts.mono, ...text("micro"), color: colors.textFaint, marginTop: 4 },
-    dayLabelToday: { color: colors.accent, fontFamily: fonts.monoSemiBold },
+    dayLabelToday: { color: colors.accentText, fontFamily: fonts.monoSemiBold },
   });
 }

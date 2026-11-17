@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { fonts, text, radius } from "../lib/theme";
+import { fonts, text, radius, palette } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { useNotifications } from "../lib/notifications/NotificationsContext";
 
@@ -16,14 +16,14 @@ export function NotificationBell() {
     <Pressable
       style={styles.button}
       onPress={() => router.push("/notifications")}
-      hitSlop={8}
+      hitSlop={4}
       accessibilityRole="button"
       accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
     >
       <Ionicons name="notifications-outline" size={20} color={colors.textPrimary} />
       {unreadCount > 0 && (
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
+          <Text style={styles.badgeText} maxFontSizeMultiplier={1.1}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
         </View>
       )}
     </Pressable>
@@ -32,19 +32,19 @@ export function NotificationBell() {
 
 function createStyles(colors: Colors) {
   return StyleSheet.create({
-    button: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
+    button: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
     badge: {
       position: "absolute",
-      top: -2,
-      right: -4,
+      top: 4,
+      right: 2,
       minWidth: 16,
       height: 16,
       borderRadius: radius.pill,
       paddingHorizontal: 3,
-      backgroundColor: colors.accent,
+      backgroundColor: colors.accentFill,
       alignItems: "center",
       justifyContent: "center",
     },
-    badgeText: { fontFamily: fonts.bodyBold, ...text("micro"), color: "#fff" },
+    badgeText: { fontFamily: fonts.bodyBold, ...text("micro"), color: palette.onAccent },
   });
 }

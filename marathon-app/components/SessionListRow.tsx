@@ -65,10 +65,10 @@ export function SessionListRow({ session, isToday, onMoveToTomorrow, onMarkDoneA
         {isDone && <Text style={styles.doneLabel}>Done</Text>}
         {!isDone && isMissed && (
           <View style={styles.actionRow}>
-            <Pressable style={styles.actionBtn} onPress={() => onMoveToTomorrow(session)}>
+            <Pressable accessibilityRole="button" style={styles.actionBtn} onPress={() => onMoveToTomorrow(session)}>
               <Text style={styles.actionText}>Move</Text>
             </Pressable>
-            <Pressable style={styles.actionBtn} onPress={() => onMarkDoneAnyway(session)}>
+            <Pressable accessibilityRole="button" style={styles.actionBtn} onPress={() => onMarkDoneAnyway(session)}>
               <Text style={styles.actionText}>Done</Text>
             </Pressable>
           </View>
@@ -96,8 +96,8 @@ function createStyles(colors: Colors) {
     detail: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
     prepLine: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
     trailing: { alignItems: "flex-end" },
-    doneLabel: { fontFamily: fonts.mono, ...text("micro"), color: colors.textDim },
-    upcomingLabel: { fontFamily: fonts.mono, ...text("micro"), color: colors.textFaint },
+    doneLabel: { fontFamily: fonts.mono, ...text("caption"), color: colors.textDim },
+    upcomingLabel: { fontFamily: fonts.mono, ...text("caption"), color: colors.textFaint },
     actionRow: { flexDirection: "row", gap: 6 },
     actionBtn: {
       borderWidth: 1,
@@ -106,6 +106,6 @@ function createStyles(colors: Colors) {
       paddingHorizontal: 8,
       paddingVertical: 4,
     },
-    actionText: { fontFamily: fonts.bodyMedium, ...text("micro"), color: colors.secondaryAccent },
+    actionText: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.secondaryAccent },
   });
 }

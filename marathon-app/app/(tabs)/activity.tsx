@@ -256,7 +256,7 @@ export default function Activity() {
                 on web, it's a native-only responder API). Keeping the
                 backdrop's tap-to-close area completely separate from the
                 sheet's own content sidesteps that entirely. */}
-            <Pressable style={styles.modalBackdrop} onPress={() => setFiltersOpen(false)} />
+            <Pressable accessibilityRole="button" style={styles.modalBackdrop} onPress={() => setFiltersOpen(false)} />
             <View style={[styles.modalSheet, { paddingBottom: Math.max(28, insets.bottom + 16) }]}>
               <ScrollView>
                 <Text style={styles.modalTitle}>Filters</Text>

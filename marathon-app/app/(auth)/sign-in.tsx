@@ -126,13 +126,13 @@ function createStyles(colors: Colors) {
     title: { fontFamily: fonts.dataBold, ...text("display"), color: colors.textPrimary },
     subtitle: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
     form: { gap: 14 },
-    forgotLink: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.accent, textAlign: "right", marginTop: -6 },
+    forgotLink: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.accentText, textAlign: "right", marginTop: -6 },
     error: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
     dividerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     dividerLine: { flex: 1, height: 1, backgroundColor: colors.cardLine },
     dividerText: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint },
     footerRow: { flexDirection: "row", justifyContent: "center" },
     footerText: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
-    footerLink: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accent },
+    footerLink: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accentText },
   });
 }

@@ -112,7 +112,7 @@ export default function LogActivity() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: SCREEN_BOTTOM_GAP + insets.bottom }]}>
+    <ScrollView style={styles.screen} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: SCREEN_BOTTOM_GAP + insets.bottom }]}>
       <ScreenHeader title="Log a run" onBack={goBack} />
       {linkedSession && linkedSession.session_type !== "rest" && (
         <Text style={styles.subtitle}>Logging this fulfills your planned session for this day.</Text>

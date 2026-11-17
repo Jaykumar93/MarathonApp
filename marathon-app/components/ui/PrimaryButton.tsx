@@ -28,7 +28,7 @@ export function PrimaryButton({ label, onPress, disabled, loading, variant = "pr
   // (secondaryAccent is theme-adjusted for contrast; danger is a fixed
   // palette semantic color, same in both modes) rather than a module-scope
   // constant, since secondaryAccent now differs between light and dark.
-  const spinnerColor = { primary: "#fff", secondary: colors.secondaryAccent, danger: "#fff", dangerOutline: palette.danger }[variant];
+  const spinnerColor = { primary: palette.onAccent, secondary: colors.secondaryAccent, danger: palette.onAccent, dangerOutline: palette.danger }[variant];
   const isInert = disabled || loading;
 
   function handlePressIn() {
@@ -68,19 +68,19 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     hitArea: { width: "100%" },
     base: {
-      height: 52,
+      minHeight: 52,
       borderRadius: radius.md,
       alignItems: "center",
       justifyContent: "center",
       width: "100%",
     },
-    primary: { backgroundColor: colors.accent },
+    primary: { backgroundColor: colors.accentFill },
     secondary: { backgroundColor: "transparent", borderWidth: 1.5, borderColor: colors.secondaryAccent },
     danger: { backgroundColor: colors.danger },
     dangerOutline: { backgroundColor: "transparent", borderWidth: 1.5, borderColor: colors.danger },
     disabled: { opacity: 0.5 },
     label: { fontFamily: fonts.bodySemiBold, ...text("emphasis") },
-    primaryLabel: { color: "#fff" },
+    primaryLabel: { color: palette.onAccent },
     secondaryLabel: { color: colors.secondaryAccent },
     dangerOutlineLabel: { color: colors.danger },
   });

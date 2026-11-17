@@ -140,13 +140,13 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.screenBg },
     container: { padding: spacing.screenPadding, paddingBottom: 40 },
-    effectiveDate: { fontFamily: fonts.mono, ...text("micro"), color: colors.textFaint, marginBottom: 12 },
+    effectiveDate: { fontFamily: fonts.mono, ...text("caption"), color: colors.textFaint, marginBottom: 12 },
     intro: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim, marginBottom: 20, lineHeight: 17 },
     body: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: colors.textDim, lineHeight: 20 },
     providerRow: { marginBottom: 12 },
     providerName: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
     providerGets: { fontFamily: fonts.body, fontSize: fs.small, includeFontPadding: false, color: colors.textDim, marginTop: 1, lineHeight: 17 },
-    providerWhy: { fontFamily: fonts.mono, ...text("micro"), color: colors.textFaint, marginTop: 3 },
-    emailLink: { fontFamily: fonts.bodySemiBold, color: colors.accent },
+    providerWhy: { fontFamily: fonts.mono, ...text("caption"), color: colors.textFaint, marginTop: 3 },
+    emailLink: { fontFamily: fonts.bodySemiBold, color: colors.accentText },
   });
 }

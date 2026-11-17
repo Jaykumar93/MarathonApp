@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../lib/auth/AuthContext";
 import { getAllProfiles, setUserApproval, type AdminProfileRow } from "../lib/data/admin";
-import { fonts, spacing, type, text, radius } from "../lib/theme";
+import { fonts, spacing, type, text, radius, palette } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
@@ -38,11 +38,11 @@ function UserRow({
         <Text style={styles.userDate}>Joined {formatDate(row.created_at)}</Text>
       </View>
       {row.status === "approved" ? (
-        <Pressable style={styles.revokeChip} onPress={() => onRequestAction(row.id, "revoke")}>
+        <Pressable accessibilityRole="button" style={styles.revokeChip} onPress={() => onRequestAction(row.id, "revoke")}>
           <Text style={styles.revokeChipText}>Revoke</Text>
         </Pressable>
       ) : (
-        <Pressable style={styles.approveChip} onPress={() => onRequestAction(row.id, "approve")}>
+        <Pressable accessibilityRole="button" style={styles.approveChip} onPress={() => onRequestAction(row.id, "approve")}>
           <Text style={styles.approveChipText}>Approve</Text>
         </Pressable>
       )}
@@ -206,9 +206,9 @@ function createStyles(colors: Colors) {
       paddingHorizontal: 14,
       paddingVertical: 8,
       borderRadius: radius.md,
-      backgroundColor: colors.accent,
+      backgroundColor: colors.accentFill,
     },
-    approveChipText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: "#fff" },
+    approveChipText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: palette.onAccent },
     revokeChip: {
       paddingHorizontal: 14,
       paddingVertical: 8,

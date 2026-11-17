@@ -83,7 +83,7 @@ export default function Notifications() {
         onBack={goBack}
         right={
           hasUnread ? (
-            <Pressable onPress={handleMarkAllRead} hitSlop={10} style={styles.markPill}>
+            <Pressable accessibilityRole="button" onPress={handleMarkAllRead} hitSlop={10} style={styles.markPill}>
               <Text style={styles.markPillText}>Mark all read</Text>
             </Pressable>
           ) : undefined
@@ -104,7 +104,12 @@ export default function Notifications() {
         <View key={group}>
           <SectionLabel style={{ marginTop: 16 }}>{group}</SectionLabel>
           {grouped[group].map((notification) => (
-            <Pressable key={notification.id} onPress={() => handlePress(notification)}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${notification.read ? "" : "Unread. "}${notification.title}. ${notification.body} ${formatRelativeTime(notification.created_at)}`}
+              key={notification.id}
+              onPress={() => handlePress(notification)}
+            >
               <Card
                 style={{
                   ...styles.card,
@@ -165,7 +170,7 @@ function createStyles(colors: Colors) {
       paddingVertical: 5,
       paddingHorizontal: 11,
     },
-    markPillText: { fontFamily: fonts.bodySemiBold, ...text("caption"), color: colors.accent },
+    markPillText: { fontFamily: fonts.bodySemiBold, ...text("caption"), color: colors.accentText },
     emptyState: { alignItems: "center", paddingTop: 50, gap: 10 },
     emptyIconCircle: {
       width: 52,
@@ -205,7 +210,7 @@ function createStyles(colors: Colors) {
     cardBody: { flex: 1 },
     rowTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 2 },
     title: { fontFamily: fonts.bodyBold, ...text("body"), color: colors.textPrimary, flexShrink: 1 },
-    timestamp: { fontFamily: fonts.mono, ...text("micro"), color: colors.textFaint, flexShrink: 0 },
+    timestamp: { fontFamily: fonts.mono, ...text("caption"), color: colors.textFaint, flexShrink: 0 },
     body: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: colors.textDim, lineHeight: 19 },
     readText: { color: colors.textFaint },
   });

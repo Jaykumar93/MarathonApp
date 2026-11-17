@@ -39,12 +39,20 @@ export interface ThemeColors {
    * fills (session-type color coding still wants the true palette.contour).
    */
   secondaryAccent: string;
+  /**
+   * Orange as TEXT on the surface behind it. The brand orange (#FF5A1F) is
+   * only 2.7:1 on light grounds, so light mode uses a deeper one (4.8:1 on the
+   * screen ground, 5.6:1 on a card); dark mode keeps the brand orange (5.8:1).
+   */
+  accentText: string;
 }
 
 const lightColors: ThemeColors = {
   textPrimary: "#14161A",
-  textDim: "#6B6E73",
-  textFaint: "#9A9D9F",
+  // Both greys were below AA on the light grounds (faint 2.4:1, dim 4.4:1).
+  // Now faint 5.1:1 / dim 7.0:1 on the screen ground, still two clear steps.
+  textDim: "#4D5055",
+  textFaint: "#62656A",
   cardBg: "#FFFFFF",
   cardLine: "rgba(20,22,26,0.07)",
   screenBg: "#EEEFEA",
@@ -58,6 +66,7 @@ const lightColors: ThemeColors = {
   warningBorder: "rgba(242,183,5,0.4)",
   warningText: "#4A3C04",
   secondaryAccent: palette.contour,
+  accentText: "#BD3A0C",
 };
 
 // Every value here comes directly from design.md §3's explicit light/dark
@@ -85,6 +94,7 @@ const darkColors: ThemeColors = {
   // Same hue as palette.contour, lightened for ~6.5:1 contrast against the
   // dark screen background (contour itself only measures ~1.9:1 there).
   secondaryAccent: "#6BA696",
+  accentText: palette.accent,
 };
 
 export type ThemeMode = "light" | "dark";

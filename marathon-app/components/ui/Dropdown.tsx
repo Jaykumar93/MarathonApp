@@ -53,7 +53,7 @@ export function Dropdown<T extends string | number>({ options, value, onSelect, 
               this immune to the same focus-stealing issue a TextInput
               would hit if ever nested inside a Pressable's own subtree on
               web (see activity.tsx's Filters sheet for the concrete case). */}
-          <Pressable style={styles.backdrop} onPress={() => setOpen(false)} />
+          <Pressable style={styles.backdrop} onPress={() => setOpen(false)} accessibilityRole="button" accessibilityLabel="Close options" />
           <View style={styles.sheet}>
             <ScrollView>
               {options.map((opt) => {
@@ -61,6 +61,8 @@ export function Dropdown<T extends string | number>({ options, value, onSelect, 
                 return (
                   <Pressable
                     key={String(opt.value)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
                     style={[styles.optionRow, selected && styles.optionRowSelected]}
                     onPress={() => {
                       onSelect(opt.value);
@@ -109,6 +111,6 @@ function createStyles(colors: Colors) {
     optionRow: { paddingVertical: 13, paddingHorizontal: 20 },
     optionRowSelected: { backgroundColor: colors.screenBg },
     optionText: { fontFamily: fonts.bodyMedium, ...text("emphasis"), color: colors.textPrimary },
-    optionTextSelected: { fontFamily: fonts.bodySemiBold, color: colors.accent },
+    optionTextSelected: { fontFamily: fonts.bodySemiBold, color: colors.accentText },
   });
 }

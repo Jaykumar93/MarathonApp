@@ -180,8 +180,8 @@ function createStyles(colors: Colors) {
     error: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
     footerRow: { flexDirection: "row", justifyContent: "center" },
     footerText: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
-    footerLink: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accent },
+    footerLink: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accentText },
     consentText: { fontFamily: fonts.body, fontSize: fs.caption, includeFontPadding: false, color: colors.textFaint, lineHeight: 16 },
-    consentLink: { fontFamily: fonts.bodySemiBold, color: colors.accent },
+    consentLink: { fontFamily: fonts.bodySemiBold, color: colors.accentText },
   });
 }

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
-import { fonts, text, radius } from "../../lib/theme";
+import { fonts, text, radius, palette } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { MAX_ACTIVITY_PHOTOS, uploadActivityPhoto, deleteActivityPhoto } from "../../lib/data/activityPhotos";
 
@@ -77,9 +77,9 @@ export function PhotoPicker({ userId, photos, onChange, variant = "light" }: Pho
       <View style={styles.row}>
         {photos.map((url) => (
           <View key={url} style={styles.slot}>
-            <Image source={{ uri: url }} style={styles.slotImage} />
+            <Image source={{ uri: url }} style={styles.slotImage} accessibilityLabel="Attached run photo" />
             <Pressable style={styles.removeBtn} onPress={() => handleRemove(url)} hitSlop={6} accessibilityLabel="Remove photo">
-              <Ionicons name="close" size={13} color="#fff" />
+              <Ionicons name="close" size={13} color={palette.onAccent} />
             </Pressable>
           </View>
         ))}
@@ -91,9 +91,9 @@ export function PhotoPicker({ userId, photos, onChange, variant = "light" }: Pho
             accessibilityLabel="Add a photo"
           >
             {uploading ? (
-              <ActivityIndicator color={dark ? "#fff" : colors.textDim} />
+              <ActivityIndicator color={dark ? palette.onAccent : colors.textDim} />
             ) : (
-              <Ionicons name="add" size={22} color={dark ? "#fff" : colors.textDim} />
+              <Ionicons name="add" size={22} color={dark ? palette.onAccent : colors.textDim} />
             )}
           </Pressable>
         )}

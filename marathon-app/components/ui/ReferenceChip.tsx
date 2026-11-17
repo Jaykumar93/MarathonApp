@@ -44,6 +44,6 @@ function createStyles(colors: Colors) {
       paddingVertical: 5,
       paddingHorizontal: 10,
     },
-    text: { fontFamily: fonts.bodyMedium, ...text("micro"), color: colors.textDim },
+    text: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.textDim },
   });
 }

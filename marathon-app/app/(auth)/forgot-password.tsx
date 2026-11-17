@@ -90,6 +90,6 @@ function createStyles(colors: Colors) {
     form: { gap: 14 },
     error: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
     footerRow: { flexDirection: "row", justifyContent: "center" },
-    footerLink: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accent },
+    footerLink: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accentText },
   });
 }

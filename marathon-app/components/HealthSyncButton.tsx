@@ -64,7 +64,7 @@ export function HealthSyncButton() {
     <Pressable
       onPress={handlePress}
       disabled={syncing}
-      hitSlop={8}
+      hitSlop={4}
       style={styles.button}
       accessibilityRole="button"
       accessibilityLabel={isConnected ? "Sync Health Connect" : "Connect Health Connect"}
@@ -79,5 +79,5 @@ export function HealthSyncButton() {
 }
 
 const styles = StyleSheet.create({
-  button: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
+  button: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
 });

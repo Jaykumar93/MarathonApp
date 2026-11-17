@@ -375,8 +375,8 @@ const styles = StyleSheet.create({
   // is what read as the stats row and Pause/Stop sitting right on top of
   // each other. An explicit gap instead.
   collapsedControls: { marginTop: 18 },
-  pauseBtn: { flex: 1, height: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: darkSurface.outline, alignItems: "center", justifyContent: "center" },
+  pauseBtn: { flex: 1, minHeight: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: darkSurface.outline, alignItems: "center", justifyContent: "center" },
   pauseBtnText: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: darkSurface.text },
-  stopBtn: { flex: 1, height: 52, borderRadius: radius.md, backgroundColor: palette.accent, alignItems: "center", justifyContent: "center" },
+  stopBtn: { flex: 1, minHeight: 52, borderRadius: radius.md, backgroundColor: palette.accentFill, alignItems: "center", justifyContent: "center" },
   stopBtnText: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: darkSurface.text },
 });

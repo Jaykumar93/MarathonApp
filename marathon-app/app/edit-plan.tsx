@@ -228,7 +228,7 @@ export default function EditPlan() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: SCREEN_BOTTOM_GAP + insets.bottom }]}>
+    <ScrollView style={styles.screen} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: SCREEN_BOTTOM_GAP + insets.bottom }]}>
       <ScreenHeader title="Edit Plan" onBack={goBack} />
       <Text style={styles.subtitle}>
         Changing any of this regenerates your plan from today - your training history stays intact.

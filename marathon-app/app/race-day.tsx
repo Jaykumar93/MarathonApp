@@ -175,8 +175,8 @@ export default function RaceDay() {
             <Text style={styles.cardTitleValue}>race day</Text>
           </View>
           {!goal.race_lat || !goal.race_lon ? (
-            <Pressable onPress={() => router.push("/edit-plan")}>
-              <Text style={styles.weatherPrompt}>Add a race location in Edit Plan to see the forecast <Ionicons name="chevron-forward" size={12} color={colors.accent} /></Text>
+            <Pressable accessibilityRole="button" onPress={() => router.push("/edit-plan")}>
+              <Text style={styles.weatherPrompt}>Add a race location in Edit Plan to see the forecast <Ionicons name="chevron-forward" size={12} color={colors.accentText} /></Text>
             </Pressable>
           ) : !isWithinForecastRange(goal.goal_date, today) ? (
             <Text style={styles.detailLine}>Forecast opens up 16 days before race day.</Text>
@@ -221,7 +221,13 @@ export default function RaceDay() {
           <Text style={styles.cardTitle}>Morning-of checklist</Text>
           {checklist.map((item) => (
             <View key={item.id} style={styles.checklistRow}>
-              <Pressable style={styles.checklistToggle} onPress={() => toggleItem(item.id)} hitSlop={8}>
+              <Pressable
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: item.checked }}
+                style={styles.checklistToggle}
+                onPress={() => toggleItem(item.id)}
+                hitSlop={8}
+              >
                 <Ionicons
                   name={item.checked ? "checkbox" : "square-outline"}
                   size={20}
@@ -229,7 +235,7 @@ export default function RaceDay() {
                 />
                 <Text style={[styles.checklistLabel, item.checked && styles.checklistLabelDone]}>{item.label}</Text>
               </Pressable>
-              <Pressable onPress={() => removeItem(item.id)} hitSlop={8} accessibilityLabel={`Remove ${item.label}`}>
+              <Pressable accessibilityRole="button" onPress={() => removeItem(item.id)} hitSlop={8} accessibilityLabel={`Remove ${item.label}`}>
                 <Ionicons name="close" size={16} color={colors.textFaint} />
               </Pressable>
             </View>
@@ -244,7 +250,7 @@ export default function RaceDay() {
               onSubmitEditing={addItem}
               returnKeyType="done"
             />
-            <Pressable onPress={addItem} hitSlop={8} accessibilityLabel="Add checklist item">
+            <Pressable accessibilityRole="button" onPress={addItem} hitSlop={8} accessibilityLabel="Add checklist item">
               <Ionicons name="add-circle" size={24} color={colors.accent} />
             </Pressable>
           </View>

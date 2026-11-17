@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
-import { fonts, noSelectStyle, palette, text, radius } from "../lib/theme";
+import { fonts, noSelectStyle, palette, text, radius, readableOn } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { useHorizontalSwipe } from "../lib/useHorizontalSwipe";
 import { useSlideTransition } from "../lib/useSlideTransition";
@@ -51,11 +51,21 @@ function cellStyleFor(day: CalendarDayInfo, today: string, colors: Colors): Cell
   const typeColor = TYPE_COLOR[day.sessionType] ?? colors.contour;
   const isPast = day.date < today;
 
-  if (day.status === "completed") return { bg: typeColor, border: typeColor, dashed: false, text: "#fff" };
+  if (day.status === "completed") return { bg: typeColor, border: typeColor, dashed: false, text: readableOn(typeColor) };
   if (day.status === "missed" || (isPast && day.status === "pending")) {
     return { bg: colors.missedBg, border: colors.missedBg, dashed: false, text: colors.missedText, strike: true };
   }
   return { bg: colors.cardBg, border: typeColor, dashed: false, text: colors.textPrimary, outlined: true };
+}
+
+// Selection is a filled state, not just a ring - a ring reads as "you're looking
+// at this" only when it stands out against the day's own status colour, which a
+// same-coloured outline doesn't reliably do. The fill is neutral (ink on light, frost
+// on dark), not orange: orange is reserved for the one thing to do next (Start),
+// and used to be the selected day, today's fill, the avatar and the play glyph
+// all at once. "Today" stays its own ring so the two meanings never merge.
+function selectedCellStyle(colors: Colors, strike?: boolean): CellStyle {
+  return { bg: colors.textPrimary, border: colors.textPrimary, dashed: false, text: colors.screenBg, strike };
 }
 
 interface PlanCalendarScrollerProps {
@@ -203,16 +213,7 @@ export function PlanCalendarScroller({ days, selectedDate, onSelectDate }: PlanC
         renderItem={({ item }) => {
           const cell = cellStyleFor(item, today, colors);
           const isSelected = item.date === selectedDate;
-          // Selection is a filled state, not just a ring - a ring reads as
-          // "you're looking at this" only when it stands out clearly against
-          // whatever status color the day already has, which a same-colored
-          // outline doesn't reliably do. A solid fill is unambiguous
-          // regardless of the day's own session-type/status coloring
-          // underneath it. "Today" stays its own ring so the two meanings
-          // (today vs. selected) never merge into one signal.
-          const display: CellStyle = isSelected
-            ? { bg: colors.accent, border: colors.accent, dashed: false, text: "#fff", strike: cell.strike }
-            : cell;
+          const display: CellStyle = isSelected ? selectedCellStyle(colors, cell.strike) : cell;
           const label = [
             `${item.dayLabel} ${item.dayNumber}`,
             item.isToday && "today",
@@ -229,7 +230,7 @@ export function PlanCalendarScroller({ days, selectedDate, onSelectDate }: PlanC
               accessibilityRole="button"
               accessibilityLabel={label}
             >
-              <Text style={styles.dayName}>{item.dayLabel}</Text>
+              <Text style={styles.dayName} maxFontSizeMultiplier={1.2}>{item.dayLabel}</Text>
               <View
                 style={[
                   styles.cell,
@@ -243,6 +244,7 @@ export function PlanCalendarScroller({ days, selectedDate, onSelectDate }: PlanC
                 ]}
               >
                 <Text
+                  maxFontSizeMultiplier={1.2}
                   style={[
                     styles.cellText,
                     { color: display.text, textDecorationLine: display.strike ? "line-through" : "none" },
@@ -259,8 +261,81 @@ export function PlanCalendarScroller({ days, selectedDate, onSelectDate }: PlanC
   );
 }
 
+/**
+ * One calendar week as a fixed row of seven days - no month arrows, no
+ * scrolling. Home shows this week only; browsing the rest of the plan is the
+ * Plan tab's job (PlanCalendarScroller), so each screen has one way to move
+ * through time instead of two look-alike month navigators.
+ */
+export function WeekStrip({
+  days,
+  selectedDate,
+  onSelectDate,
+}: {
+  days: CalendarDayInfo[];
+  selectedDate: string;
+  onSelectDate: (date: string) => void;
+}) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const today = todayIso();
+  return (
+    <View style={styles.weekRow}>
+      {days.map((item) => {
+        const cell = cellStyleFor(item, today, colors);
+        const isSelected = item.date === selectedDate;
+        const display: CellStyle = isSelected ? selectedCellStyle(colors, cell.strike) : cell;
+        const label = [
+          `${item.dayLabel} ${item.dayNumber}`,
+          item.isToday && "today",
+          item.sessionType && item.sessionType !== "rest" ? `${item.sessionType} planned` : null,
+          isSelected && "selected",
+        ]
+          .filter(Boolean)
+          .join(", ");
+        return (
+          <Pressable
+            key={item.date}
+            style={styles.weekCol}
+            onPress={() => onSelectDate(item.date)}
+            hitSlop={4}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isSelected }}
+            accessibilityLabel={label}
+          >
+            <Text style={styles.dayName} maxFontSizeMultiplier={1.2}>
+              {item.dayLabel}
+            </Text>
+            <View
+              style={[
+                styles.cell,
+                {
+                  backgroundColor: display.bg,
+                  borderColor: display.border,
+                  borderWidth: display.dashed || display.outlined ? 1.5 : 0,
+                  borderStyle: display.dashed ? "dashed" : "solid",
+                },
+                item.isToday && styles.todayRing,
+              ]}
+            >
+              <Text
+                maxFontSizeMultiplier={1.2}
+                style={[styles.cellText, { color: display.text, textDecorationLine: display.strike ? "line-through" : "none" }]}
+              >
+                {item.dayNumber}
+              </Text>
+            </View>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 function createStyles(colors: Colors) {
   return StyleSheet.create({
+    weekRow: { flexDirection: "row" },
+    weekCol: { flex: 1, alignItems: "center", gap: 5, minHeight: 48 },
     header: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 8 },
     navIcon: { paddingHorizontal: 6 },
     navArrowDisabled: { opacity: 0.3 },

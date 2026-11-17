@@ -226,7 +226,7 @@ export default function Settings() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: SCREEN_BOTTOM_GAP + insets.bottom }]}>
+    <ScrollView style={styles.screen} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: SCREEN_BOTTOM_GAP + insets.bottom }]}>
       <ScreenHeader title="Profile & Settings" onBack={() => router.replace("/(tabs)")} backLabel="Home" />
 
       <SectionLabel>PROFILE</SectionLabel>
@@ -289,15 +289,15 @@ export default function Settings() {
                   Health Connect's own request call reporting success when the
                   OS hadn't actually granted it) with no other way to retry
                   once this no longer shows the plain Connect button. */}
-              <Pressable onPress={handleConnectHealthConnect} disabled={connectingHealth} hitSlop={8}>
+              <Pressable accessibilityRole="button" onPress={handleConnectHealthConnect} disabled={connectingHealth} hitSlop={8}>
                 <Text style={styles.connectedLabel}>{connectingHealth ? "Syncing…" : "Connected · Sync now"}</Text>
               </Pressable>
-              <Pressable onPress={handleDisconnectHealthConnect} hitSlop={8}>
+              <Pressable accessibilityRole="button" onPress={handleDisconnectHealthConnect} hitSlop={8}>
                 <Text style={styles.disconnectLink}>Disconnect</Text>
               </Pressable>
             </View>
           ) : (
-            <Pressable onPress={handleConnectHealthConnect} disabled={connectingHealth} hitSlop={8}>
+            <Pressable accessibilityRole="button" onPress={handleConnectHealthConnect} disabled={connectingHealth} hitSlop={8}>
               <Text style={styles.connectLink}>{connectingHealth ? "Connecting…" : "Connect"}</Text>
             </Pressable>
           )}
@@ -308,9 +308,9 @@ export default function Settings() {
 
       <SectionLabel>GEAR</SectionLabel>
       <Card>
-        <Pressable style={styles.row} onPress={() => router.push("/gear")}>
+        <Pressable accessibilityRole="button" style={styles.row} onPress={() => router.push("/gear")}>
           <Text style={styles.label}>Shoes</Text>
-          <Text style={styles.connectLink}>Manage <Ionicons name="chevron-forward" size={12} color={colors.accent} /></Text>
+          <Text style={styles.connectLink}>Manage <Ionicons name="chevron-forward" size={12} color={colors.accentText} /></Text>
         </Pressable>
       </Card>
 
@@ -419,9 +419,9 @@ export default function Settings() {
           <Text style={styles.value}>{Constants.expoConfig?.version ?? "1.0.0"}</Text>
         </View>
         <View style={styles.divider} />
-        <Pressable style={styles.row} onPress={() => router.push("/privacy-policy")}>
+        <Pressable accessibilityRole="button" style={styles.row} onPress={() => router.push("/privacy-policy")}>
           <Text style={styles.label}>Privacy Policy</Text>
-          <Text style={styles.connectLink}>View <Ionicons name="chevron-forward" size={12} color={colors.accent} /></Text>
+          <Text style={styles.connectLink}>View <Ionicons name="chevron-forward" size={12} color={colors.accentText} /></Text>
         </Pressable>
       </Card>
 
@@ -442,8 +442,8 @@ function createStyles(colors: Colors) {
   value: { fontFamily: fonts.bodySemiBold, fontSize: type.pDim, color: colors.textPrimary },
   comingSoon: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint },
   connectedLabel: { fontFamily: fonts.bodySemiBold, fontSize: type.pFaint, color: colors.success },
-  connectLink: { fontFamily: fonts.bodySemiBold, fontSize: type.pFaint, color: colors.accent },
-  disconnectLink: { fontFamily: fonts.bodyMedium, ...text("micro"), color: colors.textFaint },
+  connectLink: { fontFamily: fonts.bodySemiBold, fontSize: type.pFaint, color: colors.accentText },
+  disconnectLink: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.textFaint },
   divider: { height: 1, backgroundColor: colors.cardLine, marginVertical: 12 },
   fieldGap: { marginTop: 12 },
   inlineSave: { marginTop: 10 },

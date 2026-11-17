@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { Animated, Pressable, StyleSheet } from "react-native";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
+import { palette } from "../../lib/theme";
 
 const TRACK_W = 48;
 const TRACK_H = 28;
@@ -68,7 +69,7 @@ function createStyles(colors: Colors) {
       width: KNOB,
       height: KNOB,
       borderRadius: KNOB / 2,
-      backgroundColor: "#FFFFFF",
+      backgroundColor: palette.onAccent,
       shadowColor: "#000",
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.25,

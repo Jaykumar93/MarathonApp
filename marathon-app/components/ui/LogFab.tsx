@@ -3,7 +3,7 @@ import { Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTheme, type Colors, type ThemeShadows } from "../../lib/theme/ThemeContext";
-import { radius } from "../../lib/theme";
+import { radius, palette } from "../../lib/theme";
 
 /**
  * Persistent floating "+ " - bottom-right on Home, Plan and Activity,
@@ -25,7 +25,7 @@ export function LogFab() {
       accessibilityRole="button"
       accessibilityLabel="Log a run"
     >
-      <Ionicons name="add" size={28} color="#fff" />
+      <Ionicons name="add" size={28} color={palette.onAccent} />
     </Pressable>
   );
 }

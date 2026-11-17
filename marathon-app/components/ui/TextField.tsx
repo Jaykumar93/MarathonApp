@@ -52,7 +52,7 @@ function createStyles(colors: Colors) {
     },
     inputRow: { justifyContent: "center" },
     input: {
-      height: 50,
+      minHeight: 50,
       borderWidth: 1,
       borderColor: colors.cardLine,
       borderRadius: radius.md,

@@ -10,19 +10,18 @@ import {
   getWeeklyVolumesKm,
   todayIso,
   useActivePlanData,
-  useDaySwipeNavigation,
   usePlanCalendarDays,
 } from "../../lib/data/usePlanData";
 import { getActivitiesInRange, groupActivitiesByDate, type ActivityRow } from "../../lib/data/activities";
 import { getShoes, type ShoeRow } from "../../lib/data/shoes";
 import { healthConnectProvider } from "../../lib/health/healthConnectProvider";
 import { syncHealthActivities } from "../../lib/health/syncHealthData";
-import { fonts, noSelectStyle, spacing, type, text } from "../../lib/theme";
+import { fonts, spacing, text } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Card } from "../../components/ui/Card";
 import { CountdownArc } from "../../components/CountdownArc";
 import { MonthActivityChart } from "../../components/MonthActivityChart";
-import { PlanCalendarScroller } from "../../components/PlanCalendarScroller";
+import { WeekStrip } from "../../components/PlanCalendarScroller";
 import { DayDetailPanel } from "../../components/DayDetailPanel";
 import { NoPlanPrompt } from "../../components/NoPlanPrompt";
 import { formatDistance } from "../../lib/units";
@@ -47,9 +46,6 @@ export default function Home() {
   const [viewedYear, setViewedYear] = useState(today.getUTCFullYear());
   const [viewedMonth, setViewedMonth] = useState(today.getUTCMonth() + 1);
   const [selectedDate, setSelectedDate] = useState(todayIso());
-  // Lets the detail card itself be paged through day by day, not just by
-  // tapping cells in the calendar strip above it.
-  const dayDetailSwipeHandlers = useDaySwipeNavigation(setSelectedDate);
   const [monthActivities, setMonthActivities] = useState<ActivityRow[]>([]);
   const [selectedDayActivities, setSelectedDayActivities] = useState<ActivityRow[]>([]);
   const [weekActivities, setWeekActivities] = useState<ActivityRow[]>([]);
@@ -132,6 +128,8 @@ export default function Home() {
   const weekProgressPct = weekTargetKm > 0 ? Math.min(1, weekLoggedKm / weekTargetKm) * 100 : 0;
   const unit = profile?.distance_unit ?? "km";
   const selectedSession = allSessions.find((s) => s.session_date === selectedDate) ?? null;
+  const [weekStart, weekEnd] = getCurrentCalendarWeekRange();
+  const weekDays = allDays.filter((d) => d.date >= weekStart && d.date <= weekEnd);
 
   const daysRemaining = Math.max(
     0,
@@ -184,12 +182,23 @@ export default function Home() {
           </Pressable>
         )}
 
-        <SectionLabel>CALENDAR</SectionLabel>
+        {/* Today first: this week's strip and the selected day (today by default),
+            with the one Start run button. Browsing other months is the Plan tab's job. */}
         <Card>
-          <PlanCalendarScroller days={allDays} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+          <WeekStrip days={weekDays} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
           <View style={styles.divider} />
-          <View {...dayDetailSwipeHandlers} style={noSelectStyle}>
-            <DayDetailPanel date={selectedDate} session={selectedSession} activities={selectedDayActivities} />
+          <DayDetailPanel date={selectedDate} session={selectedSession} activities={selectedDayActivities} />
+        </Card>
+
+        <Card>
+          <View style={styles.cardTitleRow}>
+            <Text style={styles.cardTitleMain}>Weekly mileage</Text>
+            <Text style={styles.cardTitleValue}>
+              {formatDistance(weekLoggedKm, unit)} / {formatDistance(weekTargetKm, unit)}
+            </Text>
+          </View>
+          <View style={styles.progressBarTrack}>
+            <View style={[styles.progressBarFill, { width: `${weekProgressPct}%` }]} />
           </View>
         </Card>
 
@@ -203,18 +212,6 @@ export default function Home() {
             onNextMonth={handleNextMonth}
             selectedDate={selectedDate}
           />
-        </Card>
-
-        <Card>
-          <View style={styles.cardTitleRow}>
-            <Text style={styles.cardTitleMain}>Weekly mileage</Text>
-            <Text style={styles.cardTitleValue}>
-              {formatDistance(weekLoggedKm, unit)} / {formatDistance(weekTargetKm, unit)}
-            </Text>
-          </View>
-          <View style={styles.progressBarTrack}>
-            <View style={[styles.progressBarFill, { width: `${weekProgressPct}%` }]} />
-          </View>
         </Card>
       </ScrollView>
     </View>

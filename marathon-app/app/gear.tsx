@@ -90,7 +90,7 @@ export default function Gear() {
                   <Text style={[styles.shoeName, shoe.retired && styles.retiredText]}>{shoe.name}</Text>
                   {!!shoe.brand && <Text style={[styles.shoeBrand, shoe.retired && styles.retiredText]}>{shoe.brand}</Text>}
                 </View>
-                <Pressable onPress={() => handleToggleRetire(shoe)} hitSlop={8}>
+                <Pressable accessibilityRole="button" onPress={() => handleToggleRetire(shoe)} hitSlop={8}>
                   <Text style={styles.retireLink}>{shoe.retired ? "Un-retire" : "Retire"}</Text>
                 </Pressable>
               </View>
@@ -137,8 +137,8 @@ export default function Gear() {
           </View>
         </Card>
       ) : (
-        <Pressable style={styles.addRow} onPress={() => setAdding(true)}>
-          <Ionicons name="add-circle-outline" size={20} color={colors.accent} />
+        <Pressable accessibilityRole="button" style={styles.addRow} onPress={() => setAdding(true)}>
+          <Ionicons name="add-circle-outline" size={20} color={colors.accentText} />
           <Text style={styles.addRowText}>Add a shoe</Text>
         </Pressable>
       )}
@@ -166,6 +166,6 @@ function createStyles(colors: Colors) {
     fieldGap: { marginTop: 12 },
     addActions: { flexDirection: "row", gap: 10, marginTop: 16 },
     addRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10 },
-    addRowText: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accent },
+    addRowText: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accentText },
   });
 }

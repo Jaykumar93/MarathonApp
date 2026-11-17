@@ -183,10 +183,10 @@ export default function Plan() {
         <View style={styles.headerRow}>
           <Text style={styles.header}>Training block</Text>
           <View style={styles.headerActions}>
-            <Pressable onPress={() => router.push("/edit-plan")} hitSlop={8}>
+            <Pressable accessibilityRole="button" onPress={() => router.push("/edit-plan")} hitSlop={8}>
               <Text style={styles.headerActionText}>Edit</Text>
             </Pressable>
-            <Pressable onPress={() => setConfirmingDelete(true)} hitSlop={8}>
+            <Pressable accessibilityRole="button" onPress={() => setConfirmingDelete(true)} hitSlop={8}>
               <Text style={[styles.headerActionText, styles.headerActionDanger]}>Delete</Text>
             </Pressable>
           </View>

@@ -15,6 +15,12 @@ export const palette = {
   predawn: "#14161A",
   frost: "#EEEFEA",
   accent: "#FF5A1F", // Course Marking - CTAs, tempo runs
+  // Orange as the FILL behind a white label (buttons, selected chips, badges):
+  // white on #FF5A1F is only 3.1:1, below the 4.5:1 AA bar for normal text; this
+  // deeper orange is 4.7:1. Marks with no text (route lines, rings, bars, icons)
+  // keep the brand orange above.
+  accentFill: "#D14210",
+  onAccent: "#FFFFFF", // text and glyphs drawn on an accent or semantic fill
   contour: "#2B4C43", // Contour Ink - long runs, secondary/planned data
   success: "#3E8E7E", // Negative Split - easy runs, on-target/completed
   warning: "#F2B705", // Caution Flare - plan-adjustment, near-threshold
@@ -23,6 +29,26 @@ export const palette = {
   dangerBorder: "rgba(217,72,58,0.35)",
   scrim: "rgba(20,22,26,0.45)", // behind bottom sheets and modals
 } as const;
+
+function relativeLuminance(hex: string): number {
+  const [r, g, b] = [1, 3, 5]
+    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/**
+ * Whichever of white or Pre-Dawn ink reads better on a solid `#RRGGBB` fill.
+ * White on the easy-run green is 3.9:1 and on tempo orange 3.1:1 (both below
+ * the 4.5:1 AA bar for small text); dark text on those is 4.8:1 and 5.8:1.
+ * Dark fills such as Contour still get white.
+ */
+export function readableOn(bg: string): string {
+  const L = relativeLuminance(bg);
+  const white = 1.05 / (L + 0.05);
+  const ink = (L + 0.05) / (relativeLuminance(palette.predawn) + 0.05);
+  return white >= ink ? palette.onAccent : palette.predawn;
+}
 
 export const fonts = {
   data: "SpaceGrotesk_600SemiBold",
