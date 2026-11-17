@@ -326,13 +326,13 @@ export default function Activity() {
                 {formatClock(group.totalSeconds)}
               </Text>
               <Card style={styles.listCard}>
-                {group.activities.map((a) => {
+                {group.activities.map((a, index) => {
                   const distanceKm = a.distance_meters / 1000;
                   const paceSecondsPerKm = distanceKm > 0 ? a.duration_seconds / distanceKm : null;
                   return (
                     <Pressable
                       key={a.id}
-                      style={styles.row}
+                      style={[styles.row, index > 0 && styles.rowDivider]}
                       onPress={() => router.push(`/run-summary?id=${a.id}`)}
                       accessibilityRole="button"
                     >
@@ -412,17 +412,16 @@ function createStyles(colors: Colors) {
   monthHeading: { fontFamily: fonts.bodyBold, ...text("body"), color: colors.textPrimary },
   monthSummary: { fontFamily: fonts.mono, fontSize: type.pDim, color: colors.textDim },
   monthSubSummary: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginBottom: 8 },
-  listCard: { paddingHorizontal: 10, paddingVertical: 8, marginBottom: 0, gap: 8 },
+  listCard: { paddingHorizontal: 12, paddingVertical: 2, marginBottom: 0 },
+  // Flat rows divided by hairlines inside the one card - each row used to be its
+  // own bordered box inside the month card, a card within a card.
   row: {
     flexDirection: "row",
     alignItems: "center",
     gap: 11,
-    padding: 10,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.cardLine,
-    backgroundColor: colors.screenBg,
+    paddingVertical: 11,
   },
+  rowDivider: { borderTopWidth: 1, borderTopColor: colors.cardLine },
   rowBody: { flex: 1 },
   rowTitle: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.textPrimary },
   rowDate: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },

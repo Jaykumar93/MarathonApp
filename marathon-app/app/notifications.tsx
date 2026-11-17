@@ -180,7 +180,9 @@ function createStyles(colors: Colors) {
     emptyTitle: { fontFamily: fonts.bodyBold, ...text("body"), color: colors.textPrimary },
     emptySub: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, textAlign: "center" },
     card: { flexDirection: "row", gap: 11, alignItems: "flex-start" },
-    unreadCard: { backgroundColor: colors.warningBg },
+    // A light wash of the accent - the same orange as the unread bar - rather than the
+    // warning yellow, which stacked into a heavy brown wall when most rows were unread.
+    unreadCard: { backgroundColor: `${colors.accent}14` },
     readCard: { opacity: 0.55 },
     unreadBar: {
       position: "absolute",

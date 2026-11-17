@@ -181,7 +181,9 @@ export default function RunSummary() {
           onBack={goBack}
           right={
             !editing ? (
-              <Pressable onPress={startEditing} hitSlop={10} accessibilityLabel="Edit run details"> <Ionicons name="pencil-outline" size={18} color={colors.textDim} /> </Pressable>
+              <Pressable onPress={startEditing} hitSlop={10} accessibilityLabel="Edit run details">
+                <Ionicons name="pencil-outline" size={18} color={colors.textDim} />
+              </Pressable>
             ) : undefined
           }
         />

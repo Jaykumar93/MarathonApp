@@ -220,7 +220,7 @@ export default function ShareRun() {
 
       <ScrollView
         style={styles.scrollFlex}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 96 + insets.bottom }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.previewWrap}>
@@ -322,7 +322,7 @@ export default function ShareRun() {
         {!shareAvailable && <Text style={styles.unavailableNote}>Sharing isn't available in this preview - it'll work on your device.</Text>}
       </ScrollView>
 
-      <View style={[styles.shareButtonWrap, { bottom: insets.bottom + 24 }]}>
+      <View style={[styles.shareButtonWrap, { paddingBottom: insets.bottom + 16 }]}>
         {notice && <Text style={styles.notice}>{notice}</Text>}
         <View style={styles.buttonRow}>
           <View style={styles.buttonSlot}>
@@ -396,10 +396,18 @@ function createStyles(colors: Colors) {
   },
   exportButtonText: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
   unavailableNote: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, textAlign: "center", marginTop: 16 },
+  // Solid, with a hairline on top - the buttons float over the scrolling content,
+  // and without a background the export row showed through behind them.
   shareButtonWrap: {
     position: "absolute",
-    left: spacing.screenPadding,
-    right: spacing.screenPadding,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: spacing.screenPadding,
+    paddingTop: 12,
+    backgroundColor: colors.screenBg,
+    borderTopWidth: 1,
+    borderTopColor: colors.cardLine,
   },
   buttonRow: { flexDirection: "row", gap: 10 },
   buttonSlot: { flex: 1 },
