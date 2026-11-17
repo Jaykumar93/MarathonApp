@@ -11,9 +11,11 @@ import { createGoal, type CreateGoalInput } from "../../lib/data/goals";
 import { createPlanWithSessions } from "../../lib/data/plans";
 import { generatePlan, type GoalInput } from "../../lib/planEngine";
 import { healthConnectProvider } from "../../lib/health/healthConnectProvider";
-import { fonts, palette, text } from "../../lib/theme";
+import { fonts, text } from "../../lib/theme";
+import { useTheme } from "../../lib/theme/ThemeContext";
 
 export default function HealthData() {
+  const { colors } = useTheme();
   const router = useRouter();
   const { answers, update } = useOnboarding();
   const { session, refreshActiveGoal } = useAuth();
@@ -142,7 +144,7 @@ export default function HealthData() {
 
       {error && (
         <View>
-          <Text style={{ fontFamily: fonts.body, ...text("small"), color: palette.danger }}>{error}</Text>
+          <Text style={{ fontFamily: fonts.body, ...text("small"), color: colors.dangerText }}>{error}</Text>
         </View>
       )}
     </OnboardingStepLayout>

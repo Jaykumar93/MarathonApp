@@ -217,14 +217,14 @@ export function ActiveRunSheet({
         <View style={styles.collapsedStatsRow}>
           <View style={styles.collapsedSideLeft}>
             <Text style={styles.collapsedSideValue}>{formatDistance(distanceKm, unit).replace(` ${unit}`, "")}</Text>
-            <Text style={styles.collapsedSideLabel}>{unit.toUpperCase()}</Text>
+            <Text style={[styles.collapsedSideLabel, styles.distanceLabel]}>{unit.toUpperCase()}</Text>
           </View>
           <View style={styles.collapsedPaceCenter}>
-            <Text style={styles.collapsedPaceValue}>{currentPace != null ? formatPace(currentPace, unit).replace(`/${unit}`, "") : "--:--"}</Text>
-            <Text style={styles.collapsedPaceLabel}>PACE / {unit.toUpperCase()}</Text>
+            <Text style={[styles.collapsedPaceValue, phase === "paused" && styles.timeValue]}>{currentPace != null ? formatPace(currentPace, unit).replace(`/${unit}`, "") : "--:--"}</Text>
+            <Text style={[styles.collapsedPaceLabel, phase === "paused" && styles.pausedLabel]}>{phase === "paused" ? "PAUSED" : `PACE / ${unit.toUpperCase()}`}</Text>
           </View>
           <View style={styles.collapsedSideRight}>
-            <Text style={styles.collapsedSideValue}>{formatElapsed(elapsedSeconds)}</Text>
+            <Text style={[styles.collapsedSideValue, styles.timeValue]}>{formatElapsed(elapsedSeconds)}</Text>
             <Text style={styles.collapsedSideLabel}>TIME</Text>
           </View>
         </View>
@@ -253,14 +253,14 @@ export function ActiveRunSheet({
 
         <View style={styles.statRow}>
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>DIST</Text>
+            <Text style={[styles.statLabel, styles.distanceLabel]}>DIST</Text>
             <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               {formatDistance(distanceKm, unit)}
             </Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>TIME</Text>
-            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+            <Text style={[styles.statValue, styles.timeValue]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               {formatElapsed(elapsedSeconds)}
             </Text>
           </View>
@@ -327,10 +327,14 @@ const styles = StyleSheet.create({
   collapsedStatsRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 14 },
   collapsedSideLeft: { alignItems: "flex-start" },
   collapsedSideRight: { alignItems: "flex-end" },
-  collapsedSideValue: { fontFamily: fonts.dataBold, ...text("headline"), color: darkSurface.text },
+  collapsedSideValue: { fontFamily: fonts.monoSemiBold, ...text("headline"), color: darkSurface.text },
+  // Distance is the number the sheet is "about" (violet label); time is secondary (dimmed value) so the two never read as one.
+  distanceLabel: { color: palette.accentGlow },
+  timeValue: { color: darkSurface.textDim },
+  pausedLabel: { color: palette.warning },
   collapsedSideLabel: { fontFamily: fonts.monoMedium, ...text("micro"), letterSpacing: 1, color: darkSurface.textFaint, marginTop: 3 },
   collapsedPaceCenter: { alignItems: "center" },
-  collapsedPaceValue: { fontFamily: fonts.dataBold, fontSize: fs.hero, includeFontPadding: false, color: darkSurface.text, lineHeight: 44 },
+  collapsedPaceValue: { fontFamily: fonts.monoSemiBold, fontSize: fs.hero, includeFontPadding: false, color: darkSurface.text, lineHeight: 44 },
   collapsedPaceLabel: { fontFamily: fonts.monoMedium, ...text("micro"), letterSpacing: 1, color: darkSurface.textFaint, marginTop: 4 },
 
   expandedContent: { position: "absolute", left: 0, right: 0, top: 20, bottom: 20, paddingHorizontal: 20 },
@@ -355,13 +359,13 @@ const styles = StyleSheet.create({
   statRow: { flexDirection: "row", gap: 8, marginBottom: 14 },
   statCard: { flex: 1, backgroundColor: darkSurface.card, borderRadius: radius.md, paddingVertical: 15, alignItems: "center" },
   statLabel: { fontFamily: fonts.monoMedium, ...text("caption"), letterSpacing: 1, color: darkSurface.textFaint, marginBottom: 5 },
-  statValue: { fontFamily: fonts.dataBold, ...text("headline"), color: darkSurface.text },
+  statValue: { fontFamily: fonts.monoSemiBold, ...text("headline"), color: darkSurface.text },
 
   plannedNote: { marginBottom: 8, alignItems: "center" },
   plannedNoteText: { fontFamily: fonts.body, ...text("caption"), color: darkSurface.textFaint, textAlign: "center" },
 
   centerPaceWrap: { flex: 1, alignItems: "center", justifyContent: "center" },
-  paceValue: { fontFamily: fonts.dataBold, fontSize: fs.numeral, includeFontPadding: false, color: darkSurface.text, lineHeight: 66 },
+  paceValue: { fontFamily: fonts.monoSemiBold, fontSize: fs.numeral, includeFontPadding: false, color: darkSurface.text, lineHeight: 66 },
   paceLabel: { fontFamily: fonts.monoMedium, ...text("caption"), letterSpacing: 1.5, color: darkSurface.textFaint, marginTop: 6 },
   paceTarget: { fontFamily: fonts.body, ...text("small"), color: darkSurface.textDim, marginTop: 10 },
   paceAhead: { color: palette.success, fontFamily: fonts.bodySemiBold },
@@ -375,8 +379,8 @@ const styles = StyleSheet.create({
   // is what read as the stats row and Pause/Stop sitting right on top of
   // each other. An explicit gap instead.
   collapsedControls: { marginTop: 18 },
-  pauseBtn: { flex: 1, minHeight: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: darkSurface.outline, alignItems: "center", justifyContent: "center" },
-  pauseBtnText: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: darkSurface.text },
-  stopBtn: { flex: 1, minHeight: 52, borderRadius: radius.md, backgroundColor: palette.accentFill, alignItems: "center", justifyContent: "center" },
+  pauseBtn: { flex: 1, minHeight: 58, borderRadius: radius.md, backgroundColor: palette.accentFill, alignItems: "center", justifyContent: "center" },
+  pauseBtnText: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: palette.onAccent },
+  stopBtn: { flex: 1, minHeight: 58, borderRadius: radius.md, borderWidth: 1.5, borderColor: darkSurface.outline, alignItems: "center", justifyContent: "center" },
   stopBtnText: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: darkSurface.text },
 });

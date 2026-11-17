@@ -177,7 +177,7 @@ function createStyles(colors: Colors) {
     title: { fontFamily: fonts.dataBold, ...text("display"), color: colors.textPrimary },
     subtitle: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
     form: { gap: 14 },
-    error: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
+    error: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText },
     footerRow: { flexDirection: "row", justifyContent: "center" },
     footerText: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
     footerLink: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accentText },

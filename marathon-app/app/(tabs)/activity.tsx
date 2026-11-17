@@ -373,7 +373,7 @@ function createStyles(colors: Colors) {
   statRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
   statCard: { flex: 1, backgroundColor: colors.cardBg, borderRadius: spacing.cardRadius, paddingVertical: 12, alignItems: "center" },
   statLabel: { fontFamily: fonts.monoMedium, fontSize: type.statLabel, color: colors.textFaint, marginBottom: 4 },
-  statValue: { fontFamily: fonts.dataBold, ...text("emphasis"), color: colors.textPrimary },
+  statValue: { fontFamily: fonts.monoSemiBold, ...text("emphasis"), color: colors.textPrimary },
   statSubValue: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textDim, marginTop: 1 },
   topFilterRow: { flexDirection: "row", gap: 8, alignItems: "center", marginBottom: 16 },
   typeDropdown: { width: 130 },

@@ -198,7 +198,7 @@ function createStyles(colors: Colors) {
     statsRow: { flexDirection: "row" },
     stat: { flex: 1 },
     statLabel: { fontFamily: fonts.monoMedium, ...text("micro"), color: colors.textFaint, marginBottom: 2 },
-    statValue: { fontFamily: fonts.dataBold, ...text("emphasis"), color: colors.textPrimary },
+    statValue: { fontFamily: fonts.monoSemiBold, ...text("emphasis"), color: colors.textPrimary },
     subLine: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint, marginTop: 10 },
     intervalLine: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.textDim, marginTop: 10 },
     startWrap: { marginTop: 14 },

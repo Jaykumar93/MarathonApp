@@ -56,7 +56,7 @@ export function PlanFeasibilityWarnings({ preview }: { preview: GenerateResult }
 
 function createStyles(colors: Colors) {
   return StyleSheet.create({
-    errorText: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
+    errorText: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText },
     banner: {
       backgroundColor: colors.warningBg,
       borderWidth: 1,

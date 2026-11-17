@@ -218,7 +218,7 @@ function createStyles(colors: Colors) {
   subtitle: { fontFamily: fonts.body, ...text("small"), color: colors.textDim, marginBottom: 12 },
   fieldLabel: { fontFamily: fonts.bodyMedium, ...inputText("small"), color: colors.textDim, marginBottom: 8 },
   fieldGap: { marginTop: 14 },
-  errorText: { fontFamily: fonts.body, ...text("small"), color: palette.danger, marginTop: 6 },
+  errorText: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText, marginTop: 6 },
   moreLink: {
     fontFamily: fonts.bodySemiBold,
     ...text("small"),

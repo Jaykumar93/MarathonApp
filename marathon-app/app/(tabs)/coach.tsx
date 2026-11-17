@@ -17,6 +17,7 @@ import { formatDistance, formatPace } from "../../lib/units";
 import { SESSION_TYPE_LABEL } from "../../lib/sessionTypes";
 import { fonts, spacing, text, fs, inputText, radius, palette } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
+import { Pika } from "../../components/mascot/Pika";
 import { Card } from "../../components/ui/Card";
 import { ReferenceChip } from "../../components/ui/ReferenceChip";
 import { CoachChart } from "../../components/ui/CoachChart";
@@ -427,6 +428,7 @@ export default function Coach() {
             <ActivityIndicator color={colors.accent} style={styles.emptyState} />
           ) : (
             <View style={styles.emptyState}>
+              <Pika expression="easy" size={96} />
               <Text style={styles.emptyTitle}>Ask your coach</Text>
               <Text style={styles.emptyBody}>
                 Pacing, fueling, recovery, tapering, or how a specific run went - ask anything about your training.
@@ -560,7 +562,7 @@ function createStyles(colors: Colors) {
     entryCard: { marginBottom: 4 },
     entryTitle: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
     entryDetail: { fontFamily: fonts.mono, ...text("caption"), color: colors.textDim, marginTop: 3 },
-    errorText: { fontFamily: fonts.bodyMedium, ...text("small"), color: colors.danger, paddingHorizontal: spacing.screenPadding, paddingBottom: 4 },
+    errorText: { fontFamily: fonts.bodyMedium, ...text("small"), color: colors.dangerText, paddingHorizontal: spacing.screenPadding, paddingBottom: 4 },
     inputRow: {
       flexDirection: "row",
       alignItems: "flex-end",
@@ -623,6 +625,6 @@ function createStyles(colors: Colors) {
     historyConfirmText: { flex: 1, fontFamily: fonts.body, ...text("small"), color: colors.textDim },
     historyConfirmRow: { flexDirection: "row", gap: 14 },
     historyCancelText: { fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textDim },
-    historyDeleteConfirmText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.danger },
+    historyDeleteConfirmText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.dangerText },
   });
 }

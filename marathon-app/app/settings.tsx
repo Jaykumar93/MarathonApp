@@ -441,13 +441,13 @@ function createStyles(colors: Colors) {
   subLabel: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
   value: { fontFamily: fonts.bodySemiBold, fontSize: type.pDim, color: colors.textPrimary },
   comingSoon: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint },
-  connectedLabel: { fontFamily: fonts.bodySemiBold, fontSize: type.pFaint, color: colors.success },
+  connectedLabel: { fontFamily: fonts.bodySemiBold, fontSize: type.pFaint, color: colors.successText },
   connectLink: { fontFamily: fonts.bodySemiBold, fontSize: type.pFaint, color: colors.accentText },
   disconnectLink: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.textFaint },
   divider: { height: 1, backgroundColor: colors.cardLine, marginVertical: 12 },
   fieldGap: { marginTop: 12 },
   inlineSave: { marginTop: 10 },
-  errorText: { fontFamily: fonts.body, ...text("small"), color: palette.danger, marginTop: 6 },
+  errorText: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText, marginTop: 6 },
   memberSince: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 12 },
   });
 }

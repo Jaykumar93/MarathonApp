@@ -127,7 +127,7 @@ function createStyles(colors: Colors) {
     subtitle: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
     form: { gap: 14 },
     forgotLink: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.accentText, textAlign: "right", marginTop: -6 },
-    error: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
+    error: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText },
     dividerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     dividerLine: { flex: 1, height: 1, backgroundColor: colors.cardLine },
     dividerText: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint },

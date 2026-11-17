@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
-import { fonts, noSelectStyle, palette, text, radius, readableOn } from "../lib/theme";
+import { fonts, noSelectStyle, text, radius, readableOn } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { useHorizontalSwipe } from "../lib/useHorizontalSwipe";
 import { useSlideTransition } from "../lib/useSlideTransition";
 import { todayIso } from "../lib/data/usePlanData";
+import { SESSION_TYPE_COLOR } from "../lib/sessionTypes";
 import { Ionicons } from "@expo/vector-icons";
 
 const MONTH_NAMES = [
@@ -23,17 +24,6 @@ export interface CalendarDayInfo {
 
 const CELL_WIDTH = 44;
 
-// palette (not the themed `colors`) - accent/contour/success hold the same
-// hex in both modes (design.md §3), so this lookup table stays module-scope
-// and theme-independent, same pattern as PrimaryButton's SPINNER_COLOR.
-const TYPE_COLOR: Record<string, string> = {
-  easy: palette.success,
-  tempo: palette.accent,
-  interval: palette.interval,
-  long: palette.contour,
-  race: palette.race,
-};
-
 interface CellStyle {
   bg: string;
   border: string;
@@ -48,7 +38,7 @@ function cellStyleFor(day: CalendarDayInfo, today: string, colors: Colors): Cell
   if (!day.sessionType || day.sessionType === "rest") {
     return { bg: "transparent", border: colors.cardLine, dashed: true, text: colors.textFaint };
   }
-  const typeColor = TYPE_COLOR[day.sessionType] ?? colors.contour;
+  const typeColor = SESSION_TYPE_COLOR[day.sessionType] ?? colors.contour;
   const isPast = day.date < today;
 
   if (day.status === "completed") return { bg: typeColor, border: typeColor, dashed: false, text: readableOn(typeColor) };
@@ -345,6 +335,6 @@ function createStyles(colors: Colors) {
     dayName: { fontFamily: fonts.bodySemiBold, ...text("micro"), color: colors.textFaint },
     cell: { width: 32, height: 32, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
     todayRing: { borderWidth: 2.5, borderColor: colors.textPrimary },
-    cellText: { fontFamily: fonts.data, ...text("caption") },
+    cellText: { fontFamily: fonts.monoMedium, ...text("caption") },
   });
 }

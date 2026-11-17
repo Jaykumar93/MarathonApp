@@ -389,7 +389,7 @@ function createStyles(colors: Colors) {
     subtitle: { fontFamily: fonts.body, ...text("small"), color: colors.textDim, marginBottom: 16 },
     fieldLabel: { fontFamily: fonts.bodyMedium, ...inputText("small"), color: colors.textDim, marginBottom: 8 },
     fieldGap: { marginTop: 14 },
-    errorText: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
+    errorText: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText },
     saveButton: { marginTop: 8, marginBottom: 12 },
   });
 }

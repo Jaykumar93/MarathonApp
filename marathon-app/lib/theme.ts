@@ -182,6 +182,7 @@ export const darkSurface = {
   handle: "rgba(255,255,255,0.28)",
   scrim: "rgba(0,0,0,0.5)",
   floating: "rgba(15,18,32,0.85)",
+  dangerText: "#FF8A80", // red as text on these dark surfaces (palette.danger is 4.4:1 on ink)
 } as const;
 
 /**

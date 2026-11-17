@@ -112,6 +112,6 @@ function createStyles(colors: Colors) {
     title: { fontFamily: fonts.dataBold, ...text("headline"), color: colors.textPrimary },
     subtitle: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
     form: { gap: 14 },
-    error: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
+    error: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText },
   });
 }

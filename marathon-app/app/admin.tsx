@@ -195,7 +195,7 @@ function createStyles(colors: Colors) {
     scrollFlex: { flex: 1 },
     scrollContent: { paddingBottom: 24 },
     emptyText: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, paddingVertical: 4 },
-    errorText: { fontFamily: fonts.body, ...text("small"), color: colors.danger, marginBottom: 8 },
+    errorText: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText, marginBottom: 8 },
     divider: { height: 1, backgroundColor: colors.cardLine, marginVertical: 10 },
     userRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     userInfo: { flex: 1 },
@@ -216,7 +216,7 @@ function createStyles(colors: Colors) {
       borderWidth: 1.5,
       borderColor: colors.danger,
     },
-    revokeChipText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.danger },
+    revokeChipText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.dangerText },
     confirmOverlay: {
       position: "absolute",
       top: 0,

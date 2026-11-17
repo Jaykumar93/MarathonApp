@@ -282,18 +282,18 @@ function createStyles(colors: Colors) {
     detailLine: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim, marginTop: 2 },
     // One-off literal colors, not new shared theme tokens - only this card
     // uses this success tint anywhere in the app.
-    readinessCard: { backgroundColor: "rgba(62,142,126,0.1)", borderColor: "rgba(62,142,126,0.3)", borderWidth: 1 },
+    readinessCard: { backgroundColor: "rgba(79,178,134,0.12)", borderColor: "rgba(79,178,134,0.35)", borderWidth: 1 },
     readinessKicker: {
       fontFamily: fonts.bodyBold,
       ...text("micro"),
-      color: palette.success,
+      color: colors.successText,
       textTransform: "uppercase",
       letterSpacing: 0.5,
       marginBottom: 6,
     },
     readinessBody: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: colors.textPrimary, lineHeight: 20 },
     weatherPrompt: { fontFamily: fonts.bodyMedium, ...text("body"), color: colors.secondaryAccent },
-    weatherTemp: { fontFamily: fonts.dataBold, ...text("display"), color: colors.textPrimary },
+    weatherTemp: { fontFamily: fonts.monoSemiBold, ...text("display"), color: colors.textPrimary },
     // Matches the mockup's dark pace-band bracelet look regardless of the
     // app's own light/dark theme - a one-off literal, same reasoning as
     // readinessCard above.

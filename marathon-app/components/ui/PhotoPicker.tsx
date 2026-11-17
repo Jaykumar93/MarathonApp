@@ -130,7 +130,7 @@ function createStyles(colors: Colors) {
       backgroundColor: colors.cardBg,
     },
     addSlotDark: { borderColor: "rgba(255,255,255,0.25)", backgroundColor: "rgba(255,255,255,0.06)" },
-    errorText: { fontFamily: fonts.body, ...text("caption"), color: colors.danger, marginTop: 6 },
+    errorText: { fontFamily: fonts.body, ...text("caption"), color: colors.dangerText, marginTop: 6 },
     errorTextDark: { color: "#f0a89e" },
   });
 }

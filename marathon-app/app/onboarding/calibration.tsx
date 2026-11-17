@@ -6,7 +6,7 @@ import { ChipSelect } from "../../components/ui/ChipSelect";
 import { TextField } from "../../components/ui/TextField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
 import { parseHms } from "../../lib/timeFormat";
-import { fonts, palette, text } from "../../lib/theme";
+import { fonts, text } from "../../lib/theme";
 import { useTheme } from "../../lib/theme/ThemeContext";
 
 const CALIBRATION_DISTANCE_OPTIONS = [
@@ -100,7 +100,7 @@ export default function Calibration() {
             />
           </View>
           {calibrationIncomplete && (
-            <Text style={{ fontFamily: fonts.body, ...text("small"), color: palette.danger, marginTop: 8 }}>
+            <Text style={{ fontFamily: fonts.body, ...text("small"), color: colors.dangerText, marginTop: 8 }}>
               Pick the distance this time was run over, or clear the duration field to skip this section.
             </Text>
           )}

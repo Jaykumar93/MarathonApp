@@ -476,9 +476,9 @@ function createStyles(colors: Colors) {
     alignItems: "center",
   },
   statLabel: { fontFamily: fonts.monoMedium, fontSize: type.statLabel, color: colors.textFaint, marginBottom: 4 },
-  statValue: { fontFamily: fonts.dataBold, fontSize: type.statValue, color: colors.textPrimary },
+  statValue: { fontFamily: fonts.monoSemiBold, fontSize: type.statValue, color: colors.textPrimary },
   statInput: {
-    fontFamily: fonts.dataBold,
+    fontFamily: fonts.monoSemiBold,
     fontSize: type.statValue,
     color: colors.textPrimary,
     textAlign: "center",
@@ -535,7 +535,7 @@ function createStyles(colors: Colors) {
     justifyContent: "center",
     marginBottom: 12,
   },
-  confirmTitle: { fontFamily: fonts.bodyBold, ...text("emphasis"), color: colors.danger, marginBottom: 4 },
+  confirmTitle: { fontFamily: fonts.bodyBold, ...text("emphasis"), color: colors.dangerText, marginBottom: 4 },
   confirmBody: { fontFamily: fonts.body, ...text("body"), color: colors.textDim, marginBottom: 16 },
   });
 }

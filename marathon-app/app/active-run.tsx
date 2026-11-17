@@ -443,9 +443,9 @@ const styles = StyleSheet.create({
   centerTitle: { fontFamily: fonts.dataBold, ...text("title"), color: darkSurface.text, textAlign: "center" },
   centerText: { fontFamily: fonts.body, ...text("body"), color: darkSurface.textDim, textAlign: "center" },
   centerButton: { marginTop: 12, width: "100%", maxWidth: 280 },
-  countdownNumber: { fontFamily: fonts.dataBold, fontSize: fs.countdown, includeFontPadding: false, color: darkSurface.text, lineHeight: 104, marginTop: 16 },
+  countdownNumber: { fontFamily: fonts.monoSemiBold, fontSize: fs.countdown, includeFontPadding: false, color: darkSurface.text, lineHeight: 104, marginTop: 16 },
   confirmBox: { alignItems: "center", marginTop: 20, width: "100%" },
-  confirmText: { fontFamily: fonts.bodySemiBold, ...text("body"), color: palette.danger, textAlign: "center", marginBottom: 4 },
+  confirmText: { fontFamily: fonts.bodySemiBold, ...text("body"), color: darkSurface.dangerText, textAlign: "center", marginBottom: 4 },
   finishedStatRow: { flexDirection: "row", gap: 8, marginVertical: 20, width: "100%", maxWidth: 340 },
   finishedStat: {
     flex: 1,
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
   },
-  finishedStatValue: { fontFamily: fonts.dataBold, ...text("emphasis"), color: darkSurface.text },
+  finishedStatValue: { fontFamily: fonts.monoSemiBold, ...text("emphasis"), color: darkSurface.text },
   paceLabel: { fontFamily: fonts.monoMedium, ...text("micro"), letterSpacing: 1, color: darkSurface.textFaint, marginTop: 4 },
 });
 

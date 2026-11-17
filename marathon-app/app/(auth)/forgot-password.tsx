@@ -88,7 +88,7 @@ function createStyles(colors: Colors) {
     title: { fontFamily: fonts.dataBold, ...text("headline"), color: colors.textPrimary },
     subtitle: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: colors.textDim, lineHeight: 19 },
     form: { gap: 14 },
-    error: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
+    error: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText },
     footerRow: { flexDirection: "row", justifyContent: "center" },
     footerLink: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accentText },
   });

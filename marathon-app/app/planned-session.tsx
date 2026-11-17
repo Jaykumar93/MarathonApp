@@ -181,7 +181,7 @@ function createStyles(colors: Colors) {
     alignItems: "center",
   },
   statLabel: { fontFamily: fonts.monoMedium, fontSize: type.statLabel, color: colors.textFaint, marginBottom: 4 },
-  statValue: { fontFamily: fonts.dataBold, fontSize: type.statValue, color: colors.textPrimary },
+  statValue: { fontFamily: fonts.monoSemiBold, fontSize: type.statValue, color: colors.textPrimary },
   cardHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   cardTitle: { fontFamily: fonts.bodyBold, ...text("small"), color: colors.textPrimary, marginBottom: 6 },
   detailLine: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim, marginTop: 2 },

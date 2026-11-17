@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   // Three values in a 240pt row: equal columns that shrink their text to fit
   // instead of letting "12.4 km" run into the time beside it.
   statColEqual: { flex: 1, paddingHorizontal: 2 },
-  statValue: { fontFamily: fonts.dataBold, fontSize: 22, color: "#fff", ...shadow },
+  statValue: { fontFamily: fonts.monoSemiBold, fontSize: 22, color: "#fff", ...shadow },
   statValueLarge: { fontSize: 26 },
   statValueCompact: { fontSize: 18, lineHeight: 24 },
   statLabel: { fontFamily: fonts.monoMedium, fontSize: 9.5, letterSpacing: 1.2, color: "rgba(255,255,255,0.8)", marginTop: 3, ...shadow },
@@ -217,15 +217,15 @@ const styles = StyleSheet.create({
   // Overlay: route runs full-bleed, text stacks at the bottom-left
   overlayWordmark: { position: "absolute", top: 24, left: 24 },
   overlayFooter: { position: "absolute", left: 24, right: 24, bottom: 28 },
-  overlayHero: { fontFamily: fonts.dataBold, fontSize: 46, color: "#fff", marginTop: 2, ...shadow },
+  overlayHero: { fontFamily: fonts.monoSemiBold, fontSize: 46, color: "#fff", marginTop: 2, ...shadow },
   overlayStatsLine: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 2 },
-  overlayStatText: { fontFamily: fonts.dataBold, fontSize: 18, color: "#fff", ...shadow },
+  overlayStatText: { fontFamily: fonts.monoSemiBold, fontSize: 18, color: "#fff", ...shadow },
   dividerDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.7)" },
 
   // Bold: huge distance up top, route beneath it, time/pace pair at the bottom
   boldCard: { justifyContent: "space-between" },
   boldHeroBlock: { alignItems: "center", marginTop: -8 },
-  boldHeroValue: { fontFamily: fonts.dataBold, fontSize: 60, color: "#fff", ...shadow },
+  boldHeroValue: { fontFamily: fonts.monoSemiBold, fontSize: 60, color: "#fff", ...shadow },
   boldStatRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 28 },
   verticalDivider: { width: 1, height: 34, backgroundColor: "rgba(255,255,255,0.4)" },
 });
