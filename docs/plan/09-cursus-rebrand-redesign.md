@@ -1,6 +1,6 @@
 # Task 9 — Cursus rebrand and redesign (name, colour, type, logo, mascot, new flows)
 
-**Status:** Not Started — plan written 2026-11-17, before any app code is touched. Per this repo's 3-tier docs workflow (see [MAIN_PLAN.md](MAIN_PLAN.md)): this file is the living sub-plan; the step-by-step log goes in `implementation/09-cursus-rebrand-redesign.md` once the task is Done.
+**Status:** Done 2026-11-17 for code, backend and docs; Phase 8 device QA and the preview build are open. Implementation log: [implementation/09-cursus-rebrand-redesign.md](implementation/09-cursus-rebrand-redesign.md). (Originally: plan written before any app code was touched.) Per this repo's 3-tier docs workflow (see [MAIN_PLAN.md](MAIN_PLAN.md)): this file is the living sub-plan; the step-by-step log goes in `implementation/09-cursus-rebrand-redesign.md` once the task is Done.
 
 ## Scope note
 
