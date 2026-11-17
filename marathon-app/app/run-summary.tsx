@@ -12,7 +12,7 @@ import { formatDistance, formatPace } from "../lib/units";
 import { formatHms, parseHms } from "../lib/timeFormat";
 import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
 import { projectRoute } from "../lib/routeShape";
-import type { RoutePoint } from "../lib/gpsStats";
+import type { RoutePoint, Split } from "../lib/gpsStats";
 import { fonts, spacing, type, text, inputText, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
@@ -147,6 +147,14 @@ export default function RunSummary() {
   const isTracked = routePoints.length > 0;
   const projectedRoute = routePoints.length >= 2 ? projectRoute(routePoints, ROUTE_VIEW_WIDTH, ROUTE_VIEW_HEIGHT, 16) : [];
 
+  const splits: Split[] = Array.isArray(activity.splits)
+    ? (activity.splits as Split[]).filter((sp) => typeof sp?.km === "number" && typeof sp?.seconds === "number" && sp.distanceMeters > 0)
+    : [];
+  const splitPaces = splits.map((sp) => sp.seconds / (sp.distanceMeters / 1000));
+  const fastestSplit = splitPaces.length > 1 ? Math.min(...splitPaces) : null;
+  const distNum = unit === "mi" ? distanceKm * 0.621371 : distanceKm;
+  const paceNum = formatPace(paceSecondsPerKm, unit).replace(/\/(km|mi)$/, "");
+
   async function confirmDelete() {
     if (!activity) return;
     setDeleting(true);
@@ -209,12 +217,20 @@ export default function RunSummary() {
         contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: 96 + insets.bottom }]}
       >
         <ScreenHeader
+          title="Run summary"
           onBack={goBack}
           right={
             !editing ? (
-              <Pressable onPress={startEditing} hitSlop={10} accessibilityLabel="Edit run details">
-                <Ionicons name="pencil-outline" size={18} color={colors.textDim} />
-              </Pressable>
+              <View style={styles.headerActions}>
+                <Pressable onPress={startEditing} hitSlop={10} accessibilityLabel="Edit run details">
+                  <Ionicons name="pencil-outline" size={20} color={colors.textPrimary} />
+                </Pressable>
+                {projectedRoute.length >= 2 && (
+                  <Pressable onPress={() => router.push(`/share-run?id=${activity.id}`)} hitSlop={10} accessibilityLabel="Share this run">
+                    <Ionicons name="share-outline" size={22} color={colors.textPrimary} />
+                  </Pressable>
+                )}
+              </View>
             ) : undefined
           }
         />
@@ -228,16 +244,35 @@ export default function RunSummary() {
             placeholderTextColor={colors.textFaint}
           />
         ) : (
-          <>
-            <Text style={styles.header}>Nice work — saved.</Text>
-            {activity.name && <Text style={styles.nameLine}>{activity.name}</Text>}
-          </>
+          activity.name && <Text style={styles.nameLine}>{activity.name}</Text>
         )}
         <Text style={styles.dateLine}>{formatDateHeading(activity.start_time.slice(0, 10))}</Text>
 
+        {projectedRoute.length >= 2 && (
+          <View style={styles.routeCard}>
+            <Svg width="100%" height={ROUTE_VIEW_HEIGHT} viewBox={`0 0 ${ROUTE_VIEW_WIDTH} ${ROUTE_VIEW_HEIGHT}`}>
+              <Polyline
+                points={projectedRoute.map((p) => `${p.x},${p.y}`).join(" ")}
+                fill="none"
+                stroke={colors.accentMark}
+                strokeWidth={3}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <Circle cx={projectedRoute[0].x} cy={projectedRoute[0].y} r={5} fill={colors.success} />
+              <Circle
+                cx={projectedRoute[projectedRoute.length - 1].x}
+                cy={projectedRoute[projectedRoute.length - 1].y}
+                r={5}
+                fill={colors.textPrimary}
+              />
+            </Svg>
+          </View>
+        )}
+
         <View style={styles.statRow}>
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>DISTANCE</Text>
+            <Text style={[styles.statLabel, { color: colors.accentText }]}>{editing && !isTracked ? `DIST · ${unit.toUpperCase()}` : "DIST"}</Text>
             {editing && !isTracked ? (
               <TextInput
                 style={styles.statInput}
@@ -246,11 +281,11 @@ export default function RunSummary() {
                 keyboardType="decimal-pad"
               />
             ) : (
-              <Text style={styles.statValue}>{formatDistance(distanceKm, unit)}</Text>
+              <Text style={styles.statValue}>{distNum.toFixed(2)}</Text>
             )}
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>DURATION</Text>
+            <Text style={styles.statLabel}>TIME</Text>
             {editing && !isTracked ? (
               <TextInput
                 style={styles.statInput}
@@ -259,16 +294,39 @@ export default function RunSummary() {
                 keyboardType="numbers-and-punctuation"
               />
             ) : (
-              <Text style={styles.statValue}>{formatDuration(activity.duration_seconds)}</Text>
+              <Text style={[styles.statValue, { color: colors.textDim }]}>{formatDuration(activity.duration_seconds)}</Text>
             )}
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>PACE</Text>
-            <Text style={styles.statValue}>{formatPace(paceSecondsPerKm, unit)}</Text>
+            <Text style={styles.statValue}>{paceNum || "--"}</Text>
           </View>
         </View>
         {editing && isTracked && (
           <Text style={styles.trackedNote}>Distance and time come from GPS tracking and can't be edited.</Text>
+        )}
+
+        {!editing && splits.length > 0 && (
+          <Card style={styles.splitsCard}>
+            <View style={[styles.splitRow, styles.splitHead]}>
+              <Text style={[styles.splitCell, styles.splitKm, styles.splitHeadText]}>{unit.toUpperCase()}</Text>
+              <Text style={[styles.splitCell, styles.splitPace, styles.splitHeadText]}>PACE</Text>
+            </View>
+            {splits.map((sp, i) => {
+              const fastest = fastestSplit != null && splitPaces[i] === fastestSplit;
+              const secsPerUnit = unit === "mi" ? splitPaces[i] / 0.621371 : splitPaces[i];
+              const m = Math.floor(secsPerUnit / 60);
+              const sc = Math.round(secsPerUnit % 60);
+              return (
+                <View key={sp.km} style={styles.splitRow}>
+                  <Text style={[styles.splitCell, styles.splitKm, fastest && { color: colors.accentText }]}>{sp.km}</Text>
+                  <Text style={[styles.splitCell, styles.splitPace, fastest && { color: colors.accentText }]}>
+                    {sc === 60 ? `${m + 1}:00` : `${m}:${String(sc).padStart(2, "0")}`}
+                  </Text>
+                </View>
+              );
+            })}
+          </Card>
         )}
 
         {!editing && activity.rpe == null && activity.reflected_at == null && (
@@ -311,48 +369,6 @@ export default function RunSummary() {
             <Ionicons name="chatbubble-ellipses-outline" size={17} color={colors.secondaryAccent} />
             <Text style={styles.askCoachText}>Ask the coach about this run</Text>
           </Pressable>
-        )}
-
-        {projectedRoute.length >= 2 && (
-          <Card>
-            <View style={styles.routeCardHeader}>
-              <Text style={styles.cardTitle}>Route</Text>
-              <Pressable
-                onPress={() => router.push(`/share-run?id=${activity.id}`)}
-                hitSlop={8}
-                accessibilityLabel="Share this run"
-              >
-                <Ionicons name="share-outline" size={19} color={colors.textDim} />
-              </Pressable>
-            </View>
-            <Svg width="100%" height={ROUTE_VIEW_HEIGHT} viewBox={`0 0 ${ROUTE_VIEW_WIDTH} ${ROUTE_VIEW_HEIGHT}`}>
-              <Polyline
-                points={projectedRoute.map((p) => `${p.x},${p.y}`).join(" ")}
-                fill="none"
-                stroke={colors.accent}
-                strokeWidth={3}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <Circle cx={projectedRoute[0].x} cy={projectedRoute[0].y} r={5} fill={colors.success} />
-              <Circle
-                cx={projectedRoute[projectedRoute.length - 1].x}
-                cy={projectedRoute[projectedRoute.length - 1].y}
-                r={5}
-                fill={colors.textPrimary}
-              />
-            </Svg>
-            <View style={styles.routeLegend}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
-                <Text style={styles.legendText}>Start</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: colors.textPrimary }]} />
-                <Text style={styles.legendText}>Finish</Text>
-              </View>
-            </View>
-          </Card>
         )}
 
         {planSession && planSession.session_type !== "rest" && (
@@ -446,18 +462,11 @@ export default function RunSummary() {
 
       {/* Pinned to the screen's bottom edge, not the scroll content - same reasoning as planned-session.tsx's Start button and the delete-confirm sheet below. Hidden while editing - Cancel/Save live inline above instead, since Done/Delete don't apply mid-edit. */}
       {!editing && (
-        <View style={[styles.buttonRow, styles.buttonRowFixed, { bottom: insets.bottom + 24 }]}>
-          <View style={{ flex: 1 }}>
-            <PrimaryButton label="Done" onPress={() => router.replace("/(tabs)/activity")} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <PrimaryButton
-              label={deleting ? "Deleting…" : "Delete"}
-              variant="dangerOutline"
-              onPress={() => setConfirmingDelete(true)}
-              disabled={deleting}
-            />
-          </View>
+        <View style={[styles.buttonRowFixed, { bottom: insets.bottom + 18 }]}>
+          <PrimaryButton label="Done" onPress={() => router.replace("/(tabs)/activity")} />
+          <Pressable onPress={() => setConfirmingDelete(true)} disabled={deleting} hitSlop={8} accessibilityRole="button" style={styles.deleteLink}>
+            <Text style={styles.deleteLinkText}>{deleting ? "Deleting…" : "Delete run"}</Text>
+          </Pressable>
         </View>
       )}
 
@@ -492,13 +501,22 @@ function createStyles(colors: Colors) {
   container: { padding: spacing.screenPadding, paddingTop: 20, gap: 4 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
   body: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
-  header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary, textAlign: "center" },
-  nameLine: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary, textAlign: "center", marginTop: 4 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 16 },
+  nameLine: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: colors.textPrimary, marginTop: 2 },
+  routeCard: { backgroundColor: colors.cardBg, borderRadius: spacing.cardRadius, borderWidth: 1, borderColor: colors.cardLine, overflow: "hidden", marginBottom: 10 },
+  splitsCard: { paddingVertical: 6, paddingHorizontal: 12 },
+  splitRow: { flexDirection: "row", paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.cardLine },
+  splitHead: { paddingVertical: 8 },
+  splitHeadText: { color: colors.textDim },
+  splitCell: { fontFamily: fonts.monoMedium, ...text("body"), color: colors.textPrimary },
+  splitKm: { flex: 1 },
+  splitPace: { flex: 1, textAlign: "right" },
+  deleteLink: { alignSelf: "center", paddingVertical: 10, marginTop: 4 },
+  deleteLinkText: { fontFamily: fonts.bodyMedium, ...text("body"), color: colors.dangerText },
   nameInput: {
     fontFamily: fonts.bodySemiBold,
     ...inputText("emphasis"),
     color: colors.textPrimary,
-    textAlign: "center",
     borderWidth: 1,
     borderColor: colors.cardLine,
     borderRadius: radius.md,
@@ -510,25 +528,26 @@ function createStyles(colors: Colors) {
     fontFamily: fonts.body,
     ...text("small"),
     color: colors.textDim,
-    textAlign: "center",
-    marginTop: 6,
-    marginBottom: 18,
+    marginTop: 2,
+    marginBottom: 14,
   },
   photoRow: { flexDirection: "row", gap: 8, marginTop: 4, marginBottom: 4, justifyContent: "center" },
   photoThumb: { width: 84, height: 84, borderRadius: radius.md },
   photoEditSection: { marginTop: 4, marginBottom: 8 },
   fieldLabel: { fontFamily: fonts.bodyMedium, ...inputText("small"), color: colors.textDim, marginBottom: 8 },
   fieldGap: { marginTop: 12 },
-  statRow: { flexDirection: "row", gap: 8, marginBottom: 6 },
+  statRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
   statCard: {
     flex: 1,
     backgroundColor: colors.cardBg,
     borderRadius: spacing.cardRadius,
+    borderWidth: 1,
+    borderColor: colors.cardLine,
     paddingVertical: 12,
     alignItems: "center",
   },
-  statLabel: { fontFamily: fonts.monoMedium, fontSize: type.statLabel, color: colors.textFaint, marginBottom: 4 },
-  statValue: { fontFamily: fonts.monoSemiBold, fontSize: type.statValue, color: colors.textPrimary },
+  statLabel: { fontFamily: fonts.monoMedium, ...text("emphasis"), letterSpacing: 1, color: colors.textDim, marginBottom: 4 },
+  statValue: { fontFamily: fonts.monoSemiBold, ...text("title"), color: colors.textPrimary },
   statInput: {
     fontFamily: fonts.monoSemiBold,
     fontSize: type.statValue,

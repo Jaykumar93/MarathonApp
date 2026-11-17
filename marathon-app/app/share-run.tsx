@@ -215,12 +215,12 @@ export default function ShareRun() {
   return (
     <View style={[styles.screen, { paddingTop: SCREEN_TOP_GAP + insets.top }]}>
       <View style={styles.topRow}>
-        <ScreenHeader onBack={goBack} />
+        <ScreenHeader title="Share" onBack={goBack} />
       </View>
 
       <ScrollView
         style={styles.scrollFlex}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 + insets.bottom }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 32 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.previewWrap}>
@@ -288,6 +288,24 @@ export default function ShareRun() {
           </View>
         )}
 
+        <View style={styles.actionsBlock}>
+          {notice && <Text style={styles.notice}>{notice}</Text>}
+          <PrimaryButton
+            label={sharing ? "Preparing…" : "Share"}
+            onPress={handleShare}
+            disabled={sharing || downloading || !shareAvailable}
+            loading={sharing}
+          />
+          <View style={{ height: 10 }} />
+          <PrimaryButton
+            label={downloading ? "Saving…" : "Download image"}
+            variant="secondary"
+            onPress={handleDownload}
+            disabled={downloading || sharing}
+            loading={downloading}
+          />
+        </View>
+
         {activity.notes && (
           <View style={styles.descriptionBlock}>
             <SectionLabel>Description</SectionLabel>
@@ -322,28 +340,6 @@ export default function ShareRun() {
         {!shareAvailable && <Text style={styles.unavailableNote}>Sharing isn't available in this preview - it'll work on your device.</Text>}
       </ScrollView>
 
-      <View style={[styles.shareButtonWrap, { paddingBottom: insets.bottom + 16 }]}>
-        {notice && <Text style={styles.notice}>{notice}</Text>}
-        <View style={styles.buttonRow}>
-          <View style={styles.buttonSlot}>
-            <PrimaryButton
-              label={downloading ? "Saving…" : "Download"}
-              variant="secondary"
-              onPress={handleDownload}
-              disabled={downloading || sharing}
-              loading={downloading}
-            />
-          </View>
-          <View style={styles.buttonSlot}>
-            <PrimaryButton
-              label={sharing ? "Preparing…" : "Share"}
-              onPress={handleShare}
-              disabled={sharing || downloading || !shareAvailable}
-              loading={sharing}
-            />
-          </View>
-        </View>
-      </View>
     </View>
   );
 }
@@ -370,6 +366,8 @@ function createStyles(colors: Colors) {
   swipeHint: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint, textAlign: "center", marginTop: 2 },
   transparentHint: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint, textAlign: "center", marginTop: 8, paddingHorizontal: 12 },
   toggleRow: {
+    borderWidth: 1,
+    borderColor: colors.cardLine,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -382,14 +380,15 @@ function createStyles(colors: Colors) {
   toggleLabel: { fontFamily: fonts.bodyMedium, ...text("body"), color: colors.textPrimary },
   descriptionBlock: { marginTop: 18 },
   descriptionText: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: colors.textDim, lineHeight: 19 },
-  exportBlock: { marginTop: 18 },
+  exportBlock: { marginTop: 22 },
+  actionsBlock: { marginTop: 18 },
   exportRow: { flexDirection: "row", gap: 10 },
   exportButton: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 12,
-    borderRadius: spacing.cardRadius,
+    paddingHorizontal: 22,
+    borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.cardLine,
     backgroundColor: colors.cardBg,

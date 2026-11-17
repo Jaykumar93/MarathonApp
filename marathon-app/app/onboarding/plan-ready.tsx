@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import Svg, { Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -48,7 +49,8 @@ export default function PlanReady() {
   const totalPhaseWeeks = summary.phases.reduce((n, p) => n + p.weeks, 0) || 1;
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 32 }]}>
+    <View style={styles.screen}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={[styles.content, { paddingTop: insets.top + 24, paddingBottom: 16 }]}>
       <View style={styles.head}>
         <View style={{ flex: 1 }}>
           <Text style={styles.kicker}>
@@ -61,17 +63,16 @@ export default function PlanReady() {
 
       <Card style={{ gap: 8 }}>
         <View
-          style={styles.phaseBar}
           accessibilityRole="image"
           accessibilityLabel={`${summary.totalWeeks} weeks: ${summary.phases.map((p) => `${PHASE_LABEL[p.name]} ${p.weeks}`).join(", ")}`}
         >
-          {summary.phases.map((p, i) => (
-            <View key={p.name} style={[styles.phaseSeg, { flex: p.weeks / totalPhaseWeeks, opacity: 0.45 + 0.18 * i }]} />
-          ))}
+          <Svg width="100%" height={88} viewBox="0 0 300 88" preserveAspectRatio="none">
+            <Path d={phaseProfilePath(summary.phases, totalPhaseWeeks)} fill={colors.accentMark} />
+          </Svg>
         </View>
         <View style={styles.phaseLabels}>
           {summary.phases.map((p) => (
-            <Text key={p.name} style={styles.phaseLabel}>
+            <Text key={p.name} style={[styles.phaseLabel, { flex: p.weeks / totalPhaseWeeks }]} numberOfLines={1}>
               {PHASE_LABEL[p.name]}
             </Text>
           ))}
@@ -96,7 +97,7 @@ export default function PlanReady() {
             </View>
             {summary.predictedTimeSeconds != null && (
               <View style={{ alignItems: "flex-end" }}>
-                <Text style={styles.label}>PLAN IS BUILT AROUND</Text>
+                <Text style={styles.label}>PREDICTED</Text>
                 <Text style={[styles.goalValue, { color: colors.textDim }]}>{formatFinishTime(summary.predictedTimeSeconds)}</Text>
               </View>
             )}
@@ -109,15 +110,34 @@ export default function PlanReady() {
         </Card>
       )}
 
-      <View style={styles.cta}>
+    </ScrollView>
+      <View style={[styles.cta, { paddingBottom: Math.max(insets.bottom, 12) + 6 }]}>
         <PrimaryButton
           label="See my plan"
           onPress={() => router.replace(explainerSeen === false ? "/onboarding/meet-runs" : "/(tabs)")}
           disabled={explainerSeen === null}
         />
       </View>
-    </ScrollView>
+    </View>
   );
+}
+
+/** Decorative load profile: each phase's height steps up toward peak and down through taper, widths follow the real phase lengths. */
+const PHASE_HEIGHT: Record<string, number> = { base: 0.35, build: 0.6, peak: 0.92, taper: 0.45 };
+function phaseProfilePath(phases: Array<{ name: string; weeks: number }>, total: number): string {
+  const W = 300;
+  const H = 88;
+  const pts: Array<[number, number]> = [[0, H - (PHASE_HEIGHT[phases[0]?.name] ?? 0.4) * 0.8 * H]];
+  let x = 0;
+  for (const p of phases) {
+    const w = (p.weeks / total) * W;
+    const h = (PHASE_HEIGHT[p.name] ?? 0.5) * H;
+    pts.push([x + w * 0.5, H - h]);
+    x += w;
+  }
+  const last = phases[phases.length - 1];
+  pts.push([W, H - (PHASE_HEIGHT[last?.name] ?? 0.4) * 0.8 * H]);
+  return `M0 ${H} ` + pts.map(([px, py]) => `L${px.toFixed(1)} ${py.toFixed(1)}`).join(" ") + ` L${W} ${H} Z`;
 }
 
 function Stat({ value, label, colors }: { value: string; label: string; colors: Colors }) {
@@ -140,14 +160,14 @@ function createStyles(colors: Colors) {
     title: { fontFamily: fonts.dataBold, ...text("display"), color: colors.textPrimary, marginTop: 4 },
     phaseBar: { flexDirection: "row", gap: 3, height: 12 },
     phaseSeg: { backgroundColor: colors.accentMark, borderRadius: 4 },
-    phaseLabels: { flexDirection: "row", justifyContent: "space-between" },
+    phaseLabels: { flexDirection: "row" },
     phaseLabel: { fontFamily: fonts.body, ...text("caption"), color: colors.textDim },
     mono: { fontFamily: fonts.monoMedium, ...text("caption"), color: colors.textPrimary },
     statRow: { flexDirection: "row", gap: 8 },
     goalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" },
     label: { fontFamily: fonts.monoMedium, ...text("micro"), letterSpacing: 1, color: colors.textDim },
-    goalValue: { fontFamily: fonts.monoSemiBold, ...text("stat"), color: colors.textPrimary },
+    goalValue: { fontFamily: fonts.monoSemiBold, ...text("display"), color: colors.textPrimary },
     note: { fontFamily: fonts.body, ...text("small"), color: colors.textDim },
-    cta: { marginTop: 12 },
+    cta: { paddingHorizontal: spacing.screenPadding, paddingTop: 8 },
   });
 }

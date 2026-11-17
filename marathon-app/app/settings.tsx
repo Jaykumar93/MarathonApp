@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import Constants from "expo-constants";
 import { useAuth } from "../lib/auth/AuthContext";
 import { supabase } from "../lib/supabase";
-import { fonts, palette, spacing, type, text } from "../lib/theme";
+import { fonts, spacing, text } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
@@ -20,8 +20,8 @@ import { ScreenHeader, SCREEN_TOP_GAP, SCREEN_BOTTOM_GAP } from "../components/u
 import { Ionicons } from "@expo/vector-icons";
 
 const UNIT_OPTIONS = [
-  { value: "km" as const, label: "Kilometers" },
-  { value: "mi" as const, label: "Miles" },
+  { value: "km" as const, label: "km" },
+  { value: "mi" as const, label: "mi" },
 ];
 
 const VOICE_INTERVAL_PRESETS = [1, 2, 5, 10];
@@ -227,7 +227,7 @@ export default function Settings() {
 
   return (
     <ScrollView style={styles.screen} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: SCREEN_BOTTOM_GAP + insets.bottom }]}>
-      <ScreenHeader title="Profile & Settings" onBack={() => router.replace("/(tabs)")} backLabel="Home" />
+      <ScreenHeader title="Profile and settings" onBack={() => router.replace("/(tabs)")} backLabel="Home" />
 
       <SectionLabel>PROFILE</SectionLabel>
       <Card>
@@ -274,6 +274,7 @@ export default function Settings() {
       <SectionLabel>APP CONNECTIONS</SectionLabel>
       <Card>
         <View style={styles.row}>
+          <Ionicons name="heart-outline" size={22} color={colors.textPrimary} style={{ marginRight: 12 }} />
           <View style={{ flex: 1 }}>
             <Text style={styles.label}>Health Connect</Text>
             <Text style={styles.subLabel}>Auto-sync runs from Android</Text>
@@ -290,7 +291,9 @@ export default function Settings() {
                   OS hadn't actually granted it) with no other way to retry
                   once this no longer shows the plain Connect button. */}
               <Pressable accessibilityRole="button" onPress={handleConnectHealthConnect} disabled={connectingHealth} hitSlop={8}>
-                <Text style={styles.connectedLabel}>{connectingHealth ? "Syncing…" : "Connected · Sync now"}</Text>
+                <View style={styles.onPill}>
+                  <Text style={styles.connectedLabel}>{connectingHealth ? "SYNCING…" : "ON · SYNC NOW"}</Text>
+                </View>
               </Pressable>
               <Pressable accessibilityRole="button" onPress={handleDisconnectHealthConnect} hitSlop={8}>
                 <Text style={styles.disconnectLink}>Disconnect</Text>
@@ -310,15 +313,17 @@ export default function Settings() {
       <Card>
         <Pressable accessibilityRole="button" style={styles.row} onPress={() => router.push("/gear")}>
           <Text style={styles.label}>Shoes</Text>
-          <Text style={styles.connectLink}>Manage <Ionicons name="chevron-forward" size={12} color={colors.accentText} /></Text>
+          <Ionicons name="chevron-forward" size={20} color={colors.textPrimary} />
         </Pressable>
       </Card>
 
       <SectionLabel>PREFERENCES</SectionLabel>
       <Card>
-        <Text style={styles.label}>Distance unit</Text>
-        <View style={{ marginTop: 8, opacity: savingUnit ? 0.5 : 1 }}>
-          <ChipSelect options={UNIT_OPTIONS} value={profile?.distance_unit} onChange={handleUnitChange} />
+        <View style={styles.row}>
+          <Text style={styles.label}>Distance unit</Text>
+          <View style={{ opacity: savingUnit ? 0.5 : 1 }}>
+            <ChipSelect options={UNIT_OPTIONS} value={profile?.distance_unit} onChange={handleUnitChange} />
+          </View>
         </View>
 
         <View style={styles.divider} />
@@ -420,8 +425,8 @@ export default function Settings() {
         </View>
         <View style={styles.divider} />
         <Pressable accessibilityRole="button" style={styles.row} onPress={() => router.push("/privacy-policy")}>
-          <Text style={styles.label}>Privacy Policy</Text>
-          <Text style={styles.connectLink}>View <Ionicons name="chevron-forward" size={12} color={colors.accentText} /></Text>
+          <Text style={styles.labelStrong}>Privacy policy</Text>
+          <Ionicons name="chevron-forward" size={20} color={colors.textPrimary} />
         </Pressable>
       </Card>
 
@@ -437,17 +442,19 @@ function createStyles(colors: Colors) {
   screen: { flex: 1, backgroundColor: colors.screenBg },
   container: { padding: spacing.screenPadding, paddingTop: 24 },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6 },
-  label: { fontFamily: fonts.bodyMedium, fontSize: type.pDim, color: colors.textDim },
-  subLabel: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
-  value: { fontFamily: fonts.bodySemiBold, fontSize: type.pDim, color: colors.textPrimary },
-  comingSoon: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint },
-  connectedLabel: { fontFamily: fonts.bodySemiBold, fontSize: type.pFaint, color: colors.successText },
-  connectLink: { fontFamily: fonts.bodySemiBold, fontSize: type.pFaint, color: colors.accentText },
+  label: { fontFamily: fonts.body, ...text("body"), color: colors.textPrimary },
+  labelStrong: { fontFamily: fonts.body, ...text("body"), color: colors.textPrimary },
+  onPill: { backgroundColor: colors.successText + "22", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  subLabel: { fontFamily: fonts.body, ...text("small"), color: colors.textFaint, marginTop: 2 },
+  value: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
+  comingSoon: { fontFamily: fonts.body, ...text("small"), color: colors.textFaint },
+  connectedLabel: { fontFamily: fonts.monoSemiBold, ...text("micro"), color: colors.successText },
+  connectLink: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.accentText },
   disconnectLink: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.textFaint },
   divider: { height: 1, backgroundColor: colors.cardLine, marginVertical: 12 },
   fieldGap: { marginTop: 12 },
   inlineSave: { marginTop: 10 },
   errorText: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText, marginTop: 6 },
-  memberSince: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 12 },
+  memberSince: { fontFamily: fonts.body, ...text("small"), color: colors.textFaint, marginTop: 12 },
   });
 }

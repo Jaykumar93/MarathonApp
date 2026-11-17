@@ -85,7 +85,7 @@ export function CoachChart({ kind, activities, unit }: CoachChartProps) {
             <Polyline
               points={points.map((p) => `${p.x},${p.y}`).join(" ")}
               fill="none"
-              stroke={colors.accent}
+              stroke={colors.accentMark}
               strokeWidth={2.5}
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -95,8 +95,8 @@ export function CoachChart({ kind, activities, unit }: CoachChartProps) {
               const isActive = activeKey === p.weekStartIso;
               return (
                 <React.Fragment key={p.weekStartIso}>
-                  {isActive && <Circle cx={p.x} cy={p.y} r={7} fill={colors.accent} opacity={0.22} />}
-                  <Circle cx={p.x} cy={p.y} r={isActive ? 5 : isLast ? 3.5 : 2} fill={colors.accent} />
+                  {isActive && <Circle cx={p.x} cy={p.y} r={7} fill={colors.accentMark} opacity={0.22} />}
+                  <Circle cx={p.x} cy={p.y} r={isActive ? 5 : isLast ? 3.5 : 2} fill={colors.accentMark} />
                 </React.Fragment>
               );
             })}
@@ -147,7 +147,7 @@ export function CoachChart({ kind, activities, unit }: CoachChartProps) {
                 style={[
                   styles.barFill,
                   { height: Math.max(3, (p.km / (maxWeeklyKm * 1.15)) * BAR_ROW_HEIGHT) },
-                  { backgroundColor: i === currentWeekIndex ? colors.accent : colors.contour },
+                  { backgroundColor: colors.accentMark },
                   p.km === 0 && styles.barFillEmpty,
                   isActive && styles.barFillActive,
                 ]}
@@ -165,8 +165,8 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     wrap: {
       marginTop: 2,
-      padding: 10,
-      borderRadius: radius.md,
+      padding: 14,
+      borderRadius: 20,
       backgroundColor: colors.cardBg,
       borderWidth: 1,
       borderColor: colors.cardLine,
@@ -174,12 +174,12 @@ function createStyles(colors: Colors) {
       maxWidth: "90%",
       alignSelf: "flex-start",
     },
-    label: { fontFamily: fonts.bodyMedium, ...text("micro"), color: colors.textFaint },
+    label: { fontFamily: fonts.monoMedium, ...text("micro"), textTransform: "uppercase", letterSpacing: 1.1, color: colors.textDim },
     chartArea: { position: "relative" },
     pointHit: { position: "absolute", width: POINT_HIT_SIZE, height: POINT_HIT_SIZE },
     barRow: { flexDirection: "row", alignItems: "flex-end", height: BAR_ROW_HEIGHT, gap: 4 },
     barTrack: { flex: 1, height: "100%", justifyContent: "flex-end" },
-    barFill: { width: "100%", borderRadius: 2, minHeight: 2 },
+    barFill: { width: "100%", borderRadius: 4, minHeight: 2 },
     barFillEmpty: { opacity: 0.35 },
     barFillActive: { opacity: 1, borderWidth: 1.5, borderColor: colors.textPrimary },
     axisNote: { fontFamily: fonts.mono, ...text("micro"), color: colors.textFaint },

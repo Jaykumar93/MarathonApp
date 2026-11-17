@@ -3,9 +3,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
-import { fonts, palette, spacing, text } from "../lib/theme";
+import { fonts, spacing, text } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
-import { BrandMark } from "../components/ui/BrandMark";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { TextField } from "../components/ui/TextField";
 import { KeyboardAvoider } from "../components/ui/KeyboardAvoider";
@@ -54,10 +53,9 @@ export default function ResetPassword() {
   return (
     <KeyboardAvoider style={styles.flex}>
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.markRow}>
-          <BrandMark size={56} />
-        </View>
-        <Text style={styles.title}>Set a new password</Text>
+        <Text style={styles.title} accessibilityRole="header">
+          Set a new password
+        </Text>
         <Text style={styles.subtitle}>Choose something you haven't used on this account before.</Text>
 
         <View style={styles.form}>
@@ -108,8 +106,7 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: colors.screenBg },
     container: { flexGrow: 1, padding: spacing.screenPadding, justifyContent: "center", gap: 22 },
-    markRow: { alignItems: "center", marginBottom: 4 },
-    title: { fontFamily: fonts.dataBold, ...text("headline"), color: colors.textPrimary },
+    title: { fontFamily: fonts.dataBold, ...text("display"), color: colors.textPrimary },
     subtitle: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
     form: { gap: 14 },
     error: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText },

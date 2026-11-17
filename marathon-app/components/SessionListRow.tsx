@@ -1,21 +1,17 @@
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { fonts, type, text, radius } from "../lib/theme";
+import { useRouter } from "expo-router";
+import { fonts, text, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import type { PlanSessionRow } from "../lib/data/plans";
 import { useAuth } from "../lib/auth/AuthContext";
 import { formatDistance, formatPace } from "../lib/units";
-import { SESSION_TYPE_COLOR, SESSION_TYPE_LABEL, formatIntervalStructureSummary } from "../lib/sessionTypes";
+import { SESSION_TYPE_LABEL, formatIntervalStructureSummary } from "../lib/sessionTypes";
 import { todayIso } from "../lib/data/usePlanData";
+import { SessionCard } from "./SessionCard";
 
-function formatDate(iso: string): string {
-  const d = new Date(iso + "T00:00:00Z");
-  const day = d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
-  return `${day} ${d.getUTCDate()}`;
-}
-
-function isPastDate(iso: string): boolean {
-  return iso < todayIso();
+function dayName(iso: string): string {
+  return new Date(iso + "T00:00:00Z").toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
 }
 
 interface SessionListRowProps {
@@ -25,87 +21,60 @@ interface SessionListRowProps {
   onMarkDoneAnyway: (session: PlanSessionRow) => void;
 }
 
+/**
+ * One of this week's sessions, as a SessionCard: "TEMPO · TODAY" over "8.0 km at 5:12 /km".
+ * A missed session shows quietly with its two recovery actions inline ("Move to tomorrow" /
+ * "Mark done anyway") instead of a passive "missed" label; a finished one gets a check.
+ */
 export function SessionListRow({ session, isToday, onMoveToTomorrow, onMarkDoneAnyway }: SessionListRowProps) {
+  const router = useRouter();
   const { profile } = useAuth();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const unit = profile?.distance_unit ?? "km";
-  const isMissed =
-    session.status === "missed" || (isPastDate(session.session_date) && session.status === "pending");
+  const isMissed = session.status === "missed" || (session.session_date < todayIso() && session.status === "pending");
   const isDone = session.status === "completed";
-  const edgeColor = isMissed ? colors.missedBg : SESSION_TYPE_COLOR[session.session_type] ?? colors.contour;
-  const edgeOpacity = session.session_type === "long" && !isToday ? 0.4 : 1;
+  const typeLabel = (SESSION_TYPE_LABEL[session.session_type] ?? session.session_type).replace(" run", "").replace(" session", "").replace(" day", "");
 
-  const prep = session.prep_recovery as { prep?: string; recovery?: string } | null;
+  const caption = `${typeLabel} · ${isToday ? "today" : isMissed ? `${dayName(session.session_date)} · missed` : dayName(session.session_date)}`;
+  const main =
+    session.session_type === "rest"
+      ? "Rest day"
+      : [
+          session.planned_distance_meters ? formatDistance(session.planned_distance_meters / 1000, unit) : "",
+          session.planned_pace_seconds_per_km ? `at ${formatPace(session.planned_pace_seconds_per_km, unit)}` : "",
+        ]
+          .filter(Boolean)
+          .join(" ") || "Rest day";
 
   return (
-    <View style={styles.row}>
-      <View style={[styles.edge, { backgroundColor: edgeColor, opacity: edgeOpacity }]} />
-      <View style={styles.body}>
-        <Text style={[styles.title, isMissed && { color: colors.textFaint }]}>
-          {formatDate(session.session_date)} · {SESSION_TYPE_LABEL[session.session_type] ?? session.session_type}
-          {isToday ? " · Today" : ""}
-        </Text>
-        {session.session_type !== "rest" && (
-          <Text style={[styles.detail, isMissed && { color: colors.textFaint }]}>
-            {session.planned_distance_meters ? formatDistance(session.planned_distance_meters / 1000, unit) : ""}
-            {session.planned_pace_seconds_per_km
-              ? ` @ ${formatPace(session.planned_pace_seconds_per_km, unit)}`
-              : ""}
-          </Text>
-        )}
-        {session.interval_structure && (
-          <Text style={[styles.detail, isMissed && { color: colors.textFaint }]}>
-            {formatIntervalStructureSummary(session.interval_structure, unit)}
-          </Text>
-        )}
-        {isToday && prep?.prep && <Text style={styles.prepLine}>Prep: {prep.prep}</Text>}
-      </View>
-      <View style={styles.trailing}>
-        {isDone && <Text style={styles.doneLabel}>Done</Text>}
-        {!isDone && isMissed && (
-          <View style={styles.actionRow}>
-            <Pressable accessibilityRole="button" style={styles.actionBtn} onPress={() => onMoveToTomorrow(session)}>
-              <Text style={styles.actionText}>Move</Text>
-            </Pressable>
-            <Pressable accessibilityRole="button" style={styles.actionBtn} onPress={() => onMarkDoneAnyway(session)}>
-              <Text style={styles.actionText}>Done</Text>
-            </Pressable>
-          </View>
-        )}
-        {!isDone && !isMissed && !isToday && <Text style={styles.upcomingLabel}>Upcoming</Text>}
-      </View>
-    </View>
+    <SessionCard
+      type={session.session_type}
+      label={caption}
+      main={main}
+      sub={session.interval_structure ? formatIntervalStructureSummary(session.interval_structure, unit) : undefined}
+      muted={isMissed && !isDone}
+      trailing={isDone ? "check" : isMissed || session.session_type === "rest" ? "none" : "chevron"}
+      onPress={session.session_type !== "rest" && !isMissed ? () => router.push(`/planned-session?id=${session.id}`) : undefined}
+    >
+      {!isDone && isMissed && session.session_type !== "rest" ? (
+        <View style={styles.actions}>
+          <Pressable accessibilityRole="button" style={styles.action} onPress={() => onMoveToTomorrow(session)}>
+            <Text style={styles.actionText}>Move to tomorrow</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" style={styles.action} onPress={() => onMarkDoneAnyway(session)}>
+            <Text style={styles.actionText}>Mark done anyway</Text>
+          </Pressable>
+        </View>
+      ) : null}
+    </SessionCard>
   );
 }
 
 function createStyles(colors: Colors) {
   return StyleSheet.create({
-    row: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 11,
-      paddingVertical: 10,
-      paddingHorizontal: 4,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.cardLine,
-    },
-    edge: { width: 5, height: 28, borderRadius: 3 },
-    body: { flex: 1 },
-    title: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.textPrimary },
-    detail: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
-    prepLine: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
-    trailing: { alignItems: "flex-end" },
-    doneLabel: { fontFamily: fonts.mono, ...text("caption"), color: colors.textDim },
-    upcomingLabel: { fontFamily: fonts.mono, ...text("caption"), color: colors.textFaint },
-    actionRow: { flexDirection: "row", gap: 6 },
-    actionBtn: {
-      borderWidth: 1,
-      borderColor: colors.cardLine,
-      borderRadius: radius.sm,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-    },
-    actionText: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.secondaryAccent },
+    actions: { flexDirection: "row", gap: 8, marginTop: 10 },
+    action: { flex: 1, minHeight: 40, alignItems: "center", justifyContent: "center", borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.secondaryAccent },
+    actionText: { fontFamily: fonts.bodySemiBold, ...text("caption"), color: colors.secondaryAccent },
   });
 }

@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Platform, Text, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
-import { ChipSelect } from "../../components/ui/ChipSelect";
 import { PlanFeasibilityWarnings } from "../../components/PlanFeasibilityWarnings";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
 import { summarizePlan } from "../../lib/onboarding/planSummary";
@@ -13,7 +13,7 @@ import { createGoal, type CreateGoalInput } from "../../lib/data/goals";
 import { createPlanWithSessions } from "../../lib/data/plans";
 import { generatePlan, type GoalInput } from "../../lib/planEngine";
 import { healthConnectProvider } from "../../lib/health/healthConnectProvider";
-import { fonts, text } from "../../lib/theme";
+import { fonts, radius, text } from "../../lib/theme";
 import { useTheme } from "../../lib/theme/ThemeContext";
 
 export default function HealthData() {
@@ -43,12 +43,19 @@ export default function HealthData() {
 
   const healthSourceOptions = useMemo(
     () => [
-      { value: "manual" as const, label: "Log manually" },
-      { value: "health_connect" as const, label: healthConnectLabel, disabled: !healthConnectAvailable },
-      { value: "healthkit" as const, label: "HealthKit (iOS, coming later)", disabled: true },
+      {
+        value: "health_connect" as const,
+        title: healthConnectLabel,
+        desc: "Import runs from your watch",
+        icon: "heart-outline" as const,
+        disabled: !healthConnectAvailable,
+      },
+      { value: "manual" as const, title: "Log manually", desc: "Add runs yourself, anytime", icon: "add" as const, disabled: false },
+      { value: "healthkit" as const, title: "HealthKit (iOS, coming later)", desc: "Import runs from Apple Health", icon: "heart-outline" as const, disabled: true },
     ],
     [healthConnectAvailable, healthConnectLabel]
   );
+  const selectedSource = answers.healthDataSource ?? "manual";
 
   const goalInput: GoalInput = useMemo(
     () => ({
@@ -138,17 +145,45 @@ export default function HealthData() {
     <OnboardingStepLayout
       step={6}
       title="Connect your health data"
-      subtitle="Log manually, or connect Health Connect if it's available on this build - you can change this anytime from Settings."
+      subtitle="Log manually, or connect Health Connect if it's available on this build. You can change this anytime from Settings."
       onNext={handleFinish}
-      nextLabel="Create my plan"
+      nextLabel="Build my plan"
+      nextVariant="secondary"
       nextLoading={submitting}
       nextDisabled={submitting || !preview.ok}
     >
-      <ChipSelect
-        options={healthSourceOptions}
-        value={answers.healthDataSource ?? "manual"}
-        onChange={(v) => update({ healthDataSource: v })}
-      />
+      <View style={{ gap: 12 }}>
+        {healthSourceOptions.map((o) => {
+          const selected = o.value === selectedSource;
+          return (
+            <Pressable
+              key={o.value}
+              disabled={o.disabled}
+              onPress={() => update({ healthDataSource: o.value })}
+              accessibilityRole="radio"
+              accessibilityState={{ selected, disabled: o.disabled }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 16,
+                padding: 18,
+                borderRadius: radius.lg,
+                backgroundColor: colors.cardBg,
+                borderWidth: selected ? 2 : 1,
+                borderColor: selected ? colors.accentFill : colors.cardLine,
+                opacity: o.disabled ? 0.5 : 1,
+              }}
+            >
+              <Ionicons name={o.icon} size={24} color={colors.textPrimary} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: colors.textPrimary }}>{o.title}</Text>
+                <Text style={{ fontFamily: fonts.body, ...text("body"), color: colors.textDim }}>{o.desc}</Text>
+              </View>
+              {selected && <Ionicons name="checkmark-circle" size={22} color={colors.accentMark} />}
+            </Pressable>
+          );
+        })}
+      </View>
 
       <PlanFeasibilityWarnings preview={preview} />
 

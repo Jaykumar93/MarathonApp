@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Text } from "react-native";
+import { Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Card } from "../../components/ui/Card";
 import { useRouter } from "expo-router";
 import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
 import { TextField } from "../../components/ui/TextField";
@@ -14,6 +16,7 @@ export default function RaceLocation() {
   const { answers, update } = useOnboarding();
   const [city, setCity] = useState(answers.raceLocationName ?? "");
   const [geocoding, setGeocoding] = useState(false);
+  const savedName = answers.raceLocationName;
   const [error, setError] = useState<string | null>(null);
 
   async function commitAndGo() {
@@ -38,12 +41,21 @@ export default function RaceLocation() {
     <OnboardingStepLayout
       step={5}
       title="Where's race day?"
-      subtitle="Optional - only used to show a race-day weather forecast. Skip and add it later from Edit Plan."
+      subtitle="Optional. Only used to show a race-day weather forecast. Add it later from Edit plan."
       onNext={commitAndGo}
       onSkip={() => router.push("/onboarding/health-data")}
       nextLoading={geocoding}
     >
       <TextField label="City" value={city} onChangeText={setCity} placeholder="e.g. Chicago, IL" />
+      {savedName && city.trim().length > 0 && savedName.toLowerCase().startsWith(city.trim().toLowerCase()) && (
+        <Card style={{ marginBottom: 0, flexDirection: "row", gap: 14, alignItems: "center" }}>
+          <Ionicons name="location-outline" size={22} color={colors.textPrimary} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary }}>{savedName}</Text>
+            <Text style={{ fontFamily: fonts.body, ...text("body"), color: colors.textDim }}>Used for your race-day forecast</Text>
+          </View>
+        </Card>
+      )}
       {error && <Text style={{ fontFamily: fonts.body, ...text("small"), color: colors.dangerText }}>{error}</Text>}
     </OnboardingStepLayout>
   );

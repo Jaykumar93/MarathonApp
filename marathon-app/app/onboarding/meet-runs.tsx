@@ -7,6 +7,7 @@ import { SESSION_TYPE_COLOR } from "../../lib/sessionTypes";
 import { fonts, palette, radius, spacing, text } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
+import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
 import { RUNS_EXPLAINER_KEY } from "../../lib/onboarding/explainerFlag";
 
 const RUNS: Array<{ type: string; name: string; when: string; body: string }> = [
@@ -18,12 +19,16 @@ const RUNS: Array<{ type: string; name: string; when: string; body: string }> = 
   { type: "rest", name: "Rest", when: "2 or 3 days", body: "Planned, not skipped. This is when you adapt." },
 ];
 
+const LONG_DAY: Record<string, string> = { mon: "Monday", tue: "Tuesday", wed: "Wednesday", thu: "Thursday", fri: "Friday", sat: "Saturday", sun: "Sunday" };
+
 /** One screen explaining the six kinds of day in a plan, shown once after "Your plan is ready". Skippable. */
 export default function MeetRuns() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { answers } = useOnboarding();
+  const longRunWhen = answers.longRunDay ? `${LONG_DAY[answers.longRunDay] ?? "Weekends"}s` : "Weekends";
 
   async function finish() {
     try {
@@ -35,7 +40,8 @@ export default function MeetRuns() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 }]}>
+    <View style={styles.screen}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: 12 }]}>
       <View style={styles.top}>
         <Text style={styles.step}>Meet your runs</Text>
         <Text style={styles.skip} onPress={finish} accessibilityRole="button" accessibilityLabel="Skip">
@@ -47,15 +53,16 @@ export default function MeetRuns() {
         <View key={r.type} style={[styles.card, { borderLeftColor: SESSION_TYPE_COLOR[r.type] ?? palette.contour }]}>
           <View style={styles.cardHead}>
             <Text style={styles.name}>{r.name}</Text>
-            <Text style={styles.when}>{r.when}</Text>
+            <Text style={styles.when}>{r.type === "long" ? longRunWhen : r.when}</Text>
           </View>
           <Text style={styles.body}>{r.body}</Text>
         </View>
       ))}
-      <View style={{ marginTop: 8 }}>
-        <PrimaryButton label="Got it" onPress={finish} />
-      </View>
     </ScrollView>
+    <View style={{ paddingHorizontal: spacing.screenPadding, paddingTop: 8, paddingBottom: Math.max(insets.bottom, 12) + 6 }}>
+      <PrimaryButton label="Got it" onPress={finish} />
+    </View>
+    </View>
   );
 }
 
@@ -67,10 +74,10 @@ function createStyles(colors: Colors) {
     step: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.textFaint },
     skip: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textDim, padding: 8 },
     title: { fontFamily: fonts.dataBold, ...text("headline"), color: colors.textPrimary, marginBottom: 4 },
-    card: { backgroundColor: colors.cardBg, borderColor: colors.cardLine, borderWidth: 1, borderLeftWidth: 4, borderRadius: radius.md, paddingVertical: 10, paddingHorizontal: 14, gap: 2 },
+    card: { backgroundColor: colors.cardBg, borderColor: colors.cardLine, borderWidth: 1, borderLeftWidth: 5, borderRadius: radius.lg, paddingVertical: 12, paddingHorizontal: 16, gap: 4 },
     cardHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
     name: { fontFamily: fonts.dataBold, ...text("emphasis"), color: colors.textPrimary },
-    when: { fontFamily: fonts.monoMedium, ...text("micro"), color: colors.textFaint },
+    when: { fontFamily: fonts.monoMedium, ...text("caption"), color: colors.textFaint },
     body: { fontFamily: fonts.body, ...text("small"), color: colors.textDim },
   });
 }

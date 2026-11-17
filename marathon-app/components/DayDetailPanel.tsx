@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { fonts, text, radius, palette } from "../lib/theme";
+import { fonts, text, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { useSlideTransition } from "../lib/useSlideTransition";
 import type { PlanSessionRow } from "../lib/data/plans";
@@ -12,11 +12,13 @@ import { todayIso } from "../lib/data/usePlanData";
 import { formatDistance, formatPace } from "../lib/units";
 import { SESSION_TYPE_COLOR, SESSION_TYPE_LABEL, formatIntervalStructureSummary } from "../lib/sessionTypes";
 import { ActivityThumbnail } from "./ActivityThumbnail";
-import { PrimaryButton } from "./ui/PrimaryButton";
+import { sessionTypeTextColor } from "./SessionCard";
 
 function formatDateHeading(iso: string): string {
   const d = new Date(iso + "T00:00:00Z");
-  return d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
+  const weekday = d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
+  const month = d.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
+  return `${weekday} ${d.getUTCDate()} ${month}`;
 }
 
 function formatDuration(seconds: number): string {
@@ -26,156 +28,133 @@ function formatDuration(seconds: number): string {
   return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`;
 }
 
+/** One line on what each kind of run is for, shown when the session has no prep note of its own. */
+const TYPE_BLURB: Record<string, string> = {
+  easy: "Conversational pace. You should be able to chat.",
+  tempo: "Comfortably hard. Teaches you to hold pace.",
+  interval: "Fast reps with easy jogs between. Builds speed.",
+  long: "Slow and steady. Builds the endurance for race day.",
+  race: "The day it all points to.",
+};
+
 interface DayDetailPanelProps {
   date: string;
   session: PlanSessionRow | null;
   activities: ActivityRow[];
+  /** When given, a "Move day" chip appears on a pending session. */
+  onMoveToTomorrow?: (session: PlanSessionRow) => void;
 }
 
-/** One label-over-value column of a stats row. */
-function Stat({ label, value, styles }: { label: string; value: string; styles: ReturnType<typeof createStyles> }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue}>{value}</Text>
-    </View>
-  );
-}
-
-/** One logged run: a flat, tappable row (thumbnail, title, stats) - tap through to the full Run Summary. */
-function LoggedActivityRow({
-  activity,
-  unit,
-  first,
-}: {
-  activity: ActivityRow;
-  unit: "km" | "mi";
-  first: boolean;
-}) {
+/** One logged run: a flat, tappable row (thumbnail, title, mono stats) - tap through to the full Run Summary. */
+function LoggedActivityRow({ activity, unit, first }: { activity: ActivityRow; unit: "km" | "mi"; first: boolean }) {
   const router = useRouter();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const distanceKm = activity.distance_meters / 1000;
   const paceSecondsPerKm = distanceKm > 0 ? activity.duration_seconds / distanceKm : null;
-
   return (
-    <Pressable
-      style={[styles.loggedRow, !first && styles.divider]}
-      onPress={() => router.push(`/run-summary?id=${activity.id}`)}
-      accessibilityRole="button"
-    >
-      <View style={styles.loggedHeader}>
-        <ActivityThumbnail activity={activity} />
+    <Pressable style={[styles.loggedRow, !first && styles.divider]} onPress={() => router.push(`/run-summary?id=${activity.id}`)} accessibilityRole="button">
+      <ActivityThumbnail activity={activity} />
+      <View style={{ flex: 1 }}>
         <Text style={styles.loggedTitle}>
           {SESSION_TYPE_LABEL[activity.activity_type] ?? activity.activity_type}
-          {activity.rpe ? ` · RPE ${activity.rpe}` : ""}
+          {activity.rpe ? ` · effort ${activity.rpe}` : ""}
+        </Text>
+        <Text style={styles.loggedStats}>
+          {formatDistance(distanceKm, unit)} · {formatDuration(activity.duration_seconds)} · {formatPace(paceSecondsPerKm, unit)}
         </Text>
       </View>
-      <View style={styles.statsRow}>
-        <Stat label="DISTANCE" value={formatDistance(distanceKm, unit)} styles={styles} />
-        <Stat label="TIME" value={formatDuration(activity.duration_seconds)} styles={styles} />
-        <Stat label="PACE" value={formatPace(paceSecondsPerKm, unit)} styles={styles} />
-      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
     </Pressable>
   );
 }
 
 /**
- * The day's planned session as flat content - no bordered box inside the
- * card it sits in. The run type is a small colour dot beside its name, the
- * stats are one row, and on today's unfinished session the one orange thing
- * on Home appears: a full-width Start run button. "Session details" opens the
- * full planned-session screen for everything else about the workout.
+ * The selected day, as in the design: a card with a coloured left edge, the date and a run-type
+ * badge, the distance and pace in mono, a line on what the run is for, and two chips - Ask Coach
+ * and Move day. Tapping the card opens the full planned-session screen (where Start run lives).
+ * Runs already logged on the day follow underneath.
  */
-function PlannedSession({ session, unit, date }: { session: PlanSessionRow; unit: "km" | "mi"; date: string }) {
+export function DayDetailPanel({ date, session, activities, onMoveToTomorrow }: DayDetailPanelProps) {
   const router = useRouter();
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const prep = session.prep_recovery as { prep?: string; recovery?: string } | null;
-  const typeColor = SESSION_TYPE_COLOR[session.session_type] ?? colors.contour;
-  const typeLabel = SESSION_TYPE_LABEL[session.session_type] ?? session.session_type;
-  const isCompleted = session.status === "completed";
-  const canStart = date === todayIso() && !isCompleted;
-
-  return (
-    <View>
-      <View style={styles.plannedHeader}>
-        <View style={[styles.typeDot, { backgroundColor: typeColor }]} />
-        <Text style={styles.plannedTitle}>{typeLabel}</Text>
-        {isCompleted && (
-          <View style={styles.doneBadge} accessibilityLabel="Completed">
-            <Ionicons name="checkmark" size={14} color={palette.onAccent} />
-          </View>
-        )}
-      </View>
-      <View style={styles.statsRow}>
-        <Stat
-          label="DISTANCE"
-          value={session.planned_distance_meters ? formatDistance(session.planned_distance_meters / 1000, unit) : "—"}
-          styles={styles}
-        />
-        <Stat
-          label="DURATION"
-          value={session.planned_duration_seconds ? formatDuration(session.planned_duration_seconds) : "—"}
-          styles={styles}
-        />
-        <Stat label="PACE" value={formatPace(session.planned_pace_seconds_per_km, unit) || "—"} styles={styles} />
-      </View>
-      {session.interval_structure && (
-        <Text style={styles.intervalLine}>{formatIntervalStructureSummary(session.interval_structure, unit)}</Text>
-      )}
-      {prep?.prep && <Text style={styles.subLine}>Prep: {prep.prep}</Text>}
-
-      {canStart && (
-        <View style={styles.startWrap}>
-          <PrimaryButton label="Start run" onPress={() => router.push(`/active-run?planSessionId=${session.id}`)} />
-        </View>
-      )}
-      <Pressable
-        onPress={() => router.push(`/planned-session?id=${session.id}`)}
-        hitSlop={6}
-        style={styles.detailsLink}
-        accessibilityRole="button"
-        accessibilityLabel={`Session details for ${typeLabel}`}
-      >
-        <Text style={styles.detailsText}>Session details</Text>
-        <Ionicons name="chevron-forward" size={14} color={colors.accentText} />
-      </Pressable>
-    </View>
-  );
-}
-
-export function DayDetailPanel({ date, session, activities }: DayDetailPanelProps) {
   const { profile } = useAuth();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const unit = profile?.distance_unit ?? "km";
   const slideStyle = useSlideTransition(date);
-  const heading = date === todayIso() ? "Today" : formatDateHeading(date);
+  const isToday = date === todayIso();
+  const heading = isToday ? `Today, ${formatDateHeading(date)}` : formatDateHeading(date);
+  const hasSession = !!session && session.session_type !== "rest";
+
+  const prep = session?.prep_recovery as { prep?: string; recovery?: string } | null;
+  const type = session?.session_type ?? "rest";
+  const typeColor = SESSION_TYPE_COLOR[type] ?? colors.contour;
+  const isCompleted = session?.status === "completed";
+  const canMove = hasSession && !isCompleted && date >= todayIso() && !!onMoveToTomorrow;
 
   return (
     <Animated.View style={slideStyle}>
-      <Text style={styles.heading} accessibilityRole="header">
-        {heading}
-      </Text>
-
-      {session && session.session_type !== "rest" ? (
-        <PlannedSession session={session} unit={unit} date={date} />
+      {hasSession && session ? (
+        <View style={[styles.card, { borderLeftColor: typeColor }]}>
+          <Pressable
+            onPress={() => router.push(`/planned-session?id=${session.id}`)}
+            accessibilityRole="button"
+            accessibilityLabel={`${SESSION_TYPE_LABEL[type] ?? type} on ${heading}, open session details`}
+            style={{ gap: 6 }}
+          >
+          <View style={styles.headRow}>
+            <Text style={styles.heading}>{heading}</Text>
+            <View style={[styles.badge, { backgroundColor: `${typeColor}26` }]}>
+              <Text style={[styles.badgeText, { color: sessionTypeTextColor(type, colors) }]}>{(SESSION_TYPE_LABEL[type] ?? type).replace(" run", "").replace(" session", "").toUpperCase()}</Text>
+            </View>
+          </View>
+          <Text style={styles.big}>
+            {session.planned_distance_meters ? formatDistance(session.planned_distance_meters / 1000, unit) : session.planned_duration_seconds ? formatDuration(session.planned_duration_seconds) : "-"}
+            {session.planned_pace_seconds_per_km ? ` at ${formatPace(session.planned_pace_seconds_per_km, unit)}` : ""}
+          </Text>
+          {session.interval_structure ? <Text style={styles.sub}>{formatIntervalStructureSummary(session.interval_structure, unit)}</Text> : null}
+          <Text style={styles.sub}>{prep?.prep ?? TYPE_BLURB[type] ?? ""}</Text>
+          </Pressable>
+          <View style={styles.chips}>
+            <Pressable
+              style={styles.chip}
+              hitSlop={4}
+              accessibilityRole="button"
+              accessibilityLabel="Ask the coach about this workout"
+              onPress={() =>
+                router.push(`/(tabs)/coach?planSessionId=${session.id}&prefill=${encodeURIComponent("Can you walk me through this workout?")}`)
+              }
+            >
+              <Ionicons name="chatbox-outline" size={16} color={colors.accentText} />
+              <Text style={[styles.chipText, { color: colors.accentText }]}>Ask Coach</Text>
+            </Pressable>
+            {canMove && session ? (
+              <Pressable style={styles.chip} hitSlop={4} accessibilityRole="button" accessibilityLabel="Move this session to tomorrow" onPress={() => onMoveToTomorrow?.(session)}>
+                <Text style={styles.chipText}>Move day</Text>
+              </Pressable>
+            ) : null}
+            {isCompleted ? (
+              <View style={styles.doneChip}>
+                <Ionicons name="checkmark" size={14} color={colors.successText} />
+                <Text style={[styles.chipText, { color: colors.successText }]}>Done</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
       ) : (
-        <Text style={styles.emptyLine}>{session ? "Rest day - nothing planned." : "No session planned this day."}</Text>
+        <View style={[styles.card, { borderLeftColor: colors.cardLine }]}>
+          <Text style={styles.heading}>{heading}</Text>
+          <Text style={styles.sub}>{session ? "Rest day. Nothing planned." : "No session planned this day."}</Text>
+        </View>
       )}
 
-      {activities.length > 0 ? (
-        <View style={styles.loggedBlock}>
-          <Text style={styles.sectionName}>Logged</Text>
+      {activities.length > 0 && (
+        <View style={styles.loggedCard}>
+          <Text style={styles.loggedLabel}>LOGGED</Text>
           {activities.map((a, i) => (
             <LoggedActivityRow key={a.id} activity={a} unit={unit} first={i === 0} />
           ))}
         </View>
-      ) : (
-        <Text style={[styles.emptyLine, session && session.session_type !== "rest" ? styles.emptyAfterPlan : null]}>
-          No run logged for this day yet.
-        </Text>
       )}
     </Animated.View>
   );
@@ -183,41 +162,42 @@ export function DayDetailPanel({ date, session, activities }: DayDetailPanelProp
 
 function createStyles(colors: Colors) {
   return StyleSheet.create({
-    heading: { fontFamily: fonts.dataBold, ...text("title"), color: colors.textPrimary, marginBottom: 10 },
-    plannedHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
-    typeDot: { width: 10, height: 10, borderRadius: radius.pill },
-    plannedTitle: { flex: 1, fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: colors.textPrimary },
-    doneBadge: {
-      width: 24,
-      height: 24,
-      borderRadius: radius.pill,
-      backgroundColor: colors.success,
-      alignItems: "center",
-      justifyContent: "center",
+    card: {
+      backgroundColor: colors.cardBg,
+      borderColor: colors.cardLine,
+      borderWidth: 1,
+      borderLeftWidth: 4,
+      borderRadius: radius.lg,
+      borderTopLeftRadius: 4,
+      borderBottomLeftRadius: 4,
+      padding: 14,
+      gap: 6,
+      marginBottom: 10,
     },
-    statsRow: { flexDirection: "row" },
-    stat: { flex: 1 },
-    statLabel: { fontFamily: fonts.monoMedium, ...text("micro"), color: colors.textFaint, marginBottom: 2 },
-    statValue: { fontFamily: fonts.monoSemiBold, ...text("emphasis"), color: colors.textPrimary },
-    subLine: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint, marginTop: 10 },
-    intervalLine: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.textDim, marginTop: 10 },
-    startWrap: { marginTop: 14 },
-    detailsLink: {
+    headRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    heading: { fontFamily: fonts.dataBold, ...text("emphasis"), color: colors.textPrimary },
+    badge: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3 },
+    badgeText: { fontFamily: fonts.monoMedium, ...text("micro"), letterSpacing: 0.6 },
+    big: { fontFamily: fonts.monoSemiBold, ...text("stat"), color: colors.textPrimary, marginTop: 4 },
+    sub: { fontFamily: fonts.body, ...text("small"), color: colors.textDim },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
+    chip: {
       flexDirection: "row",
       alignItems: "center",
-      alignSelf: "flex-start",
-      gap: 2,
-      minHeight: 36,
-      marginTop: 4,
+      gap: 6,
+      minHeight: 44,
+      paddingHorizontal: 16,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      borderColor: colors.cardLine,
     },
-    detailsText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.accentText },
-    emptyLine: { fontFamily: fonts.body, ...text("small"), color: colors.textFaint },
-    emptyAfterPlan: { marginTop: 8 },
-    loggedBlock: { marginTop: 12 },
-    sectionName: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.textDim, marginBottom: 4 },
-    loggedRow: { paddingVertical: 10 },
+    chipText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.textPrimary },
+    doneChip: { flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44, paddingHorizontal: 8 },
+    loggedCard: { backgroundColor: colors.cardBg, borderColor: colors.cardLine, borderWidth: 1, borderRadius: radius.lg, paddingHorizontal: 14, paddingTop: 12, marginBottom: 10 },
+    loggedLabel: { fontFamily: fonts.monoMedium, ...text("micro"), letterSpacing: 1.1, color: colors.textDim, marginBottom: 2 },
+    loggedRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
     divider: { borderTopWidth: 1, borderTopColor: colors.cardLine },
-    loggedHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-    loggedTitle: { flexShrink: 1, fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.textPrimary },
+    loggedTitle: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
+    loggedStats: { fontFamily: fonts.monoMedium, ...text("caption"), color: colors.textDim, marginTop: 2 },
   });
 }

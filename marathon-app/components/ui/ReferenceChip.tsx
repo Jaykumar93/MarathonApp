@@ -18,6 +18,7 @@ export function ReferenceChip({ label, onPress }: ReferenceChipProps) {
   if (!onPress) {
     return (
       <View style={styles.chip}>
+        <Ionicons name="flag-outline" size={16} color={colors.accentText} />
         <Text style={styles.text}>{label}</Text>
       </View>
     );
@@ -25,8 +26,8 @@ export function ReferenceChip({ label, onPress }: ReferenceChipProps) {
 
   return (
     <Pressable style={styles.chip} onPress={onPress} hitSlop={4} accessibilityRole="button" accessibilityLabel={label}>
+      <Ionicons name="flag-outline" size={16} color={colors.accentText} />
       <Text style={styles.text}>{label}</Text>
-      <Ionicons name="chevron-forward" size={14} color={colors.secondaryAccent} />
     </Pressable>
   );
 }
@@ -36,14 +37,14 @@ function createStyles(colors: Colors) {
     chip: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 3,
+      gap: 8,
       backgroundColor: colors.cardBg,
       borderWidth: 1,
       borderColor: colors.cardLine,
       borderRadius: radius.pill,
-      paddingVertical: 5,
-      paddingHorizontal: 10,
+      paddingVertical: 8,
+      paddingHorizontal: 14,
     },
-    text: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.textDim },
+    text: { fontFamily: fonts.bodyMedium, ...text("small"), color: colors.accentText },
   });
 }

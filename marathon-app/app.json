@@ -2,7 +2,7 @@
   "expo": {
     "name": "Cursus",
     "slug": "marathonapp",
-    "scheme": "stryde",
+    "scheme": ["cursus", "stryde"],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

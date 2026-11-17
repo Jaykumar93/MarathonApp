@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from "react";
-import { Text, View } from "react-native";
+import { Text } from "react-native";
 import { useRouter } from "expo-router";
-import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
-import { ChipSelect } from "../../components/ui/ChipSelect";
+import { OnboardingStepLayout, PillChips } from "../../components/OnboardingStepLayout";
 import { TextField } from "../../components/ui/TextField";
 import { DateField } from "../../components/ui/DateField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
@@ -14,7 +13,7 @@ import { todayIso } from "../../lib/data/usePlanData";
 const DISTANCE_OPTIONS = [
   { value: 5, label: "5K" },
   { value: 10, label: "10K" },
-  { value: 21.0975, label: "Half marathon" },
+  { value: 21.0975, label: "Half" },
   { value: 42.195, label: "Marathon" },
   { value: 50, label: "50K ultra" },
 ];
@@ -65,23 +64,18 @@ export default function RaceTarget() {
     <OnboardingStepLayout
       step={1}
       title="What are you training for?"
-      subtitle="Pick a distance and race date - this shapes your whole plan."
+      subtitle="Pick a distance and race date. This shapes your whole plan."
       onNext={handleNext}
       nextDisabled={!canContinue}
     >
-      <View>
-        <Text style={{ fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textDim, marginBottom: 8 }}>
-          Distance
-        </Text>
-        <ChipSelect
-          options={DISTANCE_OPTIONS}
-          value={isCustom ? undefined : answers.raceDistanceKm}
-          onChange={(v) => {
-            update({ raceDistanceKm: v });
-            setCustomDistance("");
-          }}
-        />
-      </View>
+      <PillChips
+        options={DISTANCE_OPTIONS}
+        value={isCustom ? undefined : answers.raceDistanceKm}
+        onChange={(v) => {
+          update({ raceDistanceKm: v });
+          setCustomDistance("");
+        }}
+      />
       <TextField
         label="Or enter a custom distance (km)"
         value={customDistance}
@@ -91,7 +85,7 @@ export default function RaceTarget() {
           if (!Number.isNaN(n) && n > 0) update({ raceDistanceKm: n });
         }}
         keyboardType="decimal-pad"
-        placeholder="e.g. 15 or 100"
+        placeholder="42.2"
       />
       <DateField label="Race date" value={goalDate} onChange={setGoalDate} />
       {isPastDate && (

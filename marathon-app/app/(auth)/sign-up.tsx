@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
-import { fonts, palette, spacing, text, fs } from "../../lib/theme";
+import { fonts, spacing, text, fs } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
-import { BrandMark } from "../../components/ui/BrandMark";
+import { BrandLockup } from "../../components/ui/Wordmark";
+import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { TextField } from "../../components/ui/TextField";
 import { KeyboardAvoider } from "../../components/ui/KeyboardAvoider";
@@ -13,6 +14,7 @@ import { KeyboardAvoider } from "../../components/ui/KeyboardAvoider";
 const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
 
 export default function SignUp() {
+  const router = useRouter();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [fullName, setFullName] = useState("");
@@ -81,9 +83,7 @@ export default function SignUp() {
     return (
       <View style={[styles.flex, styles.container]}>
         <View style={styles.markRow}>
-          <BrandMark size={72} />
-          <Text style={styles.brandName}>cursus</Text>
-          <Text style={styles.brandKicker}>PRE-DAWN RUN</Text>
+          <BrandLockup size={26} />
         </View>
         <Text style={styles.title}>Check your email</Text>
         <Text style={styles.subtitle}>
@@ -98,14 +98,11 @@ export default function SignUp() {
 
   return (
     <KeyboardAvoider style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.markRow}>
-          <BrandMark size={72} />
-          <Text style={styles.brandName}>cursus</Text>
-          <Text style={styles.brandKicker}>PRE-DAWN RUN</Text>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View>
+          <ScreenHeader title="Create your account" onBack={() => (router.canGoBack() ? router.back() : router.replace("/sign-in"))} />
+          <Text style={styles.subtitle}>Free to use. You'll join the waitlist first - access is approved manually.</Text>
         </View>
-        <Text style={styles.title}>Create your account</Text>
-        <Text style={styles.subtitle}>You'll join the waitlist first - access is approved manually.</Text>
 
         <View style={styles.form}>
           <TextField label="Full name" value={fullName} onChangeText={setFullName} autoComplete="name" autoCapitalize="words" required />
@@ -141,6 +138,9 @@ export default function SignUp() {
               {error}
             </Text>
           )}
+        </View>
+
+        <View style={styles.bottom}>
           <Text style={styles.consentText}>
             By creating an account, you agree to our{" "}
             <Link href="/privacy-policy" style={styles.consentLink}>
@@ -154,13 +154,12 @@ export default function SignUp() {
             loading={loading}
             disabled={!fullName || !email || !username || !password}
           />
-        </View>
-
-        <View style={styles.footerRow}>
-          <Text style={styles.footerText}>Already have an account? </Text>
-          <Link href="/sign-in" style={styles.footerLink}>
-            Sign in
-          </Link>
+          <View style={styles.footerRow}>
+            <Text style={styles.footerText}>Have an account? </Text>
+            <Link href="/sign-in" style={styles.footerLink}>
+              Sign in
+            </Link>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoider>
@@ -170,18 +169,17 @@ export default function SignUp() {
 function createStyles(colors: Colors) {
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: colors.screenBg },
-    container: { flexGrow: 1, padding: spacing.screenPadding, justifyContent: "center", gap: 22 },
-    markRow: { alignItems: "center", gap: 6, marginBottom: 10 },
-    brandName: { fontFamily: fonts.dataBold, ...text("display"), color: colors.textPrimary, letterSpacing: -0.6, marginTop: 2 },
-    brandKicker: { fontFamily: fonts.mono, ...text("micro"), color: colors.textFaint, letterSpacing: 2.5, textTransform: "uppercase" },
+    container: { flexGrow: 1, padding: spacing.screenPadding, paddingTop: spacing.screenPadding + 16, gap: 16 },
+    bottom: { marginTop: "auto", gap: 12, paddingTop: 8 },
+    markRow: { flexDirection: "row", alignItems: "center" },
     title: { fontFamily: fonts.dataBold, ...text("display"), color: colors.textPrimary },
     subtitle: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
     form: { gap: 14 },
     error: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText },
-    footerRow: { flexDirection: "row", justifyContent: "center" },
+    footerRow: { flexDirection: "row", justifyContent: "center", paddingBottom: 4 },
     footerText: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
     footerLink: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accentText },
-    consentText: { fontFamily: fonts.body, fontSize: fs.caption, includeFontPadding: false, color: colors.textFaint, lineHeight: 16 },
+    consentText: { fontFamily: fonts.body, fontSize: fs.caption, includeFontPadding: false, color: colors.textFaint, lineHeight: 16, textAlign: "center" },
     consentLink: { fontFamily: fonts.bodySemiBold, color: colors.accentText },
   });
 }

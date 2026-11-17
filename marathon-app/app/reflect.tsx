@@ -26,7 +26,7 @@ import {
 } from "../lib/reflection/insight";
 import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
 import { formatDistance, formatPace } from "../lib/units";
-import { fonts, inputText, radius, spacing, text } from "../lib/theme";
+import { fonts, inputText, palette, radius, spacing, text } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
@@ -306,7 +306,7 @@ export default function Reflect() {
             </>
           )}
 
-          <Text style={styles.sectionLabel}>NOTES (OPTIONAL)</Text>
+          <Text style={styles.notesLabel}>Notes (optional)</Text>
           <TextInput
             style={styles.input}
             value={notes}
@@ -352,6 +352,7 @@ export default function Reflect() {
               plan={comparison.plannedEffort != null ? String(comparison.plannedEffort) : null}
               fraction={feel != null && comparison.plannedEffort ? feelToRpe(feel) / comparison.plannedEffort : null}
               colors={colors}
+              tone="violet"
             />
           </Card>
 
@@ -400,8 +401,17 @@ export default function Reflect() {
           {applyState === "none" && <Text style={styles.confirmation}>There's no later session of that type to change.</Text>}
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <View style={styles.cta}>
-            <PrimaryButton label="Done" onPress={leave} />
+          <View style={styles.footerLinks}>
+            <Pressable onPress={() => router.push(`/share-run?id=${activity.id}`)} hitSlop={10} accessibilityRole="button">
+              <Text style={styles.footerLink}>Share run</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => router.push(`/(tabs)/coach?activityId=${activity.id}&prefill=${encodeURIComponent("What do you think of this run?")}`)}
+              hitSlop={10}
+              accessibilityRole="button"
+            >
+              <Text style={styles.footerLink}>Ask Coach</Text>
+            </Pressable>
           </View>
         </>
       )}
@@ -410,39 +420,40 @@ export default function Reflect() {
 }
 
 function Chip({ label, on, onPress, colors, warn }: { label: string; on: boolean; onPress: () => void; colors: Colors; warn?: boolean }) {
-  const accent = warn ? colors.dangerText : colors.accentText;
+  const warnColor = colors.warningText;
+  const fill = on && !warn;
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: on }}
       style={{
-        paddingVertical: 9,
-        paddingHorizontal: 14,
+        paddingVertical: 12,
+        paddingHorizontal: 18,
         borderRadius: radius.pill,
-        borderWidth: 1.5,
-        borderColor: on ? accent : colors.cardLine,
-        backgroundColor: on ? colors.cardBg : "transparent",
+        borderWidth: 1,
+        borderColor: warn ? (on ? palette.warning : colors.warningBorder) : fill ? palette.accentFill : colors.cardLine,
+        backgroundColor: fill ? palette.accentFill : warn && on ? colors.warningBg : colors.cardBg,
       }}
     >
-      <Text style={{ fontFamily: fonts.bodyMedium, ...text("small"), color: on ? accent : colors.textDim }}>{label}</Text>
+      <Text style={{ fontFamily: fonts.bodyMedium, ...text("emphasis"), color: fill ? palette.onAccent : warn ? warnColor : colors.textPrimary }}>{label}</Text>
     </Pressable>
   );
 }
 
-function Bar({ label, actual, plan, fraction, colors }: { label: string; actual: string; plan: string | null; fraction: number | null; colors: Colors }) {
+function Bar({ label, actual, plan, fraction, colors, tone }: { label: string; actual: string; plan: string | null; fraction: number | null; colors: Colors; tone?: "violet" }) {
   const pct = fraction == null ? 0 : Math.min(1, Math.max(0, fraction)) * 100;
   return (
     <View style={{ gap: 5, marginTop: 10 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
         <Text style={{ fontFamily: fonts.body, ...text("small"), color: colors.textDim }}>{label}</Text>
-        <Text style={{ fontFamily: fonts.monoMedium, ...text("small"), color: colors.textPrimary }}>
+        <Text style={{ fontFamily: fonts.monoSemiBold, ...text("emphasis"), color: colors.textPrimary }}>
           {actual}
-          {plan ? <Text style={{ color: colors.textFaint }}> / {plan}</Text> : null}
+          {plan ? <Text style={{ color: colors.textFaint, fontFamily: fonts.mono }}> / {plan}</Text> : null}
         </Text>
       </View>
       <View style={{ height: 6, borderRadius: 3, backgroundColor: colors.terrainFuture, overflow: "hidden" }}>
-        <View style={{ width: `${pct}%`, height: "100%", borderRadius: 3, backgroundColor: colors.accentMark }} />
+        <View style={{ width: `${pct}%`, height: "100%", borderRadius: 3, backgroundColor: tone === "violet" ? colors.accentMark : palette.success }} />
       </View>
     </View>
   );
@@ -452,13 +463,13 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.screenBg },
     center: { alignItems: "center", justifyContent: "center", gap: 12 },
-    content: { paddingHorizontal: spacing.screenPadding, gap: 12 },
+    content: { paddingHorizontal: spacing.screenPadding, gap: 12, flexGrow: 1 },
     topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", minHeight: 32 },
-    stepText: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.textFaint },
-    skip: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textDim },
-    done: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accentText },
+    stepText: { fontFamily: fonts.body, ...text("body"), color: colors.textFaint },
+    skip: { fontFamily: fonts.bodyMedium, ...text("emphasis"), color: colors.textDim },
+    done: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: colors.accentText },
     title: { fontFamily: fonts.dataBold, ...text("headline"), color: colors.textPrimary },
-    sub: { fontFamily: fonts.monoMedium, ...text("caption"), color: colors.textDim },
+    sub: { fontFamily: fonts.monoMedium, ...text("body"), color: colors.textDim },
     body: { fontFamily: fonts.body, ...text("body"), color: colors.textDim, textAlign: "center" },
     pikaCard: { alignItems: "center", paddingVertical: 18, gap: 4 },
     feelWord: { fontFamily: fonts.dataBold, ...text("headline"), color: colors.textPrimary, marginTop: 6 },
@@ -469,8 +480,11 @@ function createStyles(colors: Colors) {
     faint: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint },
     hintCard: { flexDirection: "row", gap: 10, alignItems: "center" },
     hintText: { flex: 1, fontFamily: fonts.body, ...text("small"), color: colors.textDim },
-    cta: { marginTop: 12, alignSelf: "stretch" },
-    sectionLabel: { fontFamily: fonts.monoMedium, ...text("micro"), letterSpacing: 1, color: colors.textDim, marginTop: 6 },
+    cta: { marginTop: "auto", paddingTop: 12, alignSelf: "stretch" },
+    footerLinks: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 22, paddingTop: 12, marginTop: "auto" },
+    footerLink: { fontFamily: fonts.bodyMedium, ...text("emphasis"), color: colors.textDim },
+    notesLabel: { fontFamily: fonts.body, ...text("small"), color: colors.textDim, marginTop: 6, marginBottom: -4 },
+    sectionLabel: { fontFamily: fonts.monoMedium, ...text("small"), letterSpacing: 1.4, textTransform: "uppercase", color: colors.textDim, marginTop: 6 },
     chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     input: {
       minHeight: 84,

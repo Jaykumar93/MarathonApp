@@ -49,9 +49,12 @@ export default function PersonalBestScreen() {
       </View>
 
       <View style={styles.center}>
-        <Pika expression="pb" size={170} label="Pika celebrates" />
+        <Pika expression="pb" size={190} label="Pika celebrates" />
         <Text style={styles.label}>{PERSONAL_BEST_LABEL[pbKind].toUpperCase()}</Text>
-        <Text style={styles.big}>{big}</Text>
+        <View style={styles.bigRow}>
+          <Text style={styles.big}>{isDistance ? big.replace(unit, "") : big}</Text>
+          {isDistance && big ? <Text style={styles.bigUnit}>{unit}</Text> : null}
+        </View>
         {was ? <Text style={styles.sub}>Up from {was}.</Text> : null}
       </View>
 
@@ -67,12 +70,14 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.screenBg, paddingHorizontal: spacing.screenPadding, gap: 12 },
     top: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", minHeight: 32 },
-    kicker: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.textFaint },
-    done: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accentText, padding: 8 },
+    kicker: { fontFamily: fonts.bodyMedium, ...text("emphasis"), color: colors.textFaint },
+    done: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: colors.accentText, padding: 8 },
     center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8 },
-    label: { fontFamily: fonts.monoMedium, ...text("micro"), letterSpacing: 1.2, color: colors.accentText, marginTop: 8 },
-    big: { fontFamily: fonts.monoSemiBold, ...text("hero"), color: colors.textPrimary },
+    bigRow: { flexDirection: "row", alignItems: "flex-end", gap: 6 },
+    bigUnit: { fontFamily: fonts.bodyBold, fontSize: 26, lineHeight: 52, includeFontPadding: false, color: colors.textDim },
+    label: { fontFamily: fonts.monoMedium, ...text("emphasis"), letterSpacing: 2, color: colors.accentText, marginTop: 8 },
+    big: { fontFamily: fonts.monoMedium, fontSize: 72, lineHeight: 80, includeFontPadding: false, color: colors.textPrimary },
     sub: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
-    later: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textDim, textAlign: "center", padding: 8 },
+    later: { fontFamily: fonts.bodyMedium, ...text("emphasis"), color: colors.textDim, textAlign: "center", padding: 8 },
   });
 }

@@ -23,33 +23,38 @@ export function BackLink({ onPress, label = "Back" }: { onPress: () => void; lab
 }
 
 /**
- * The back row + title every pushed screen (settings, gear, edit-plan,
- * run-summary, ...) opens with. The chevron is an icon rather than the "‹"
- * character the screens used to type: that glyph came from the system font,
- * so it was a different shape and weight on iOS and Android.
+ * The header every pushed screen opens with, as in the design: a back chevron, the
+ * title in the display face on the same row, and an optional action on the right.
+ * (The chevron is an icon, not a typed "<": that glyph came from the system font and
+ * differed between iOS and Android.)
  */
 export function ScreenHeader({
   title,
   onBack,
-  backLabel,
   right,
 }: {
   title?: string;
   onBack: () => void;
-  /** Defaults to "Back" - Settings goes to Home, so it says so. */
+  /** Kept so existing call sites compile; the design shows the chevron alone, with no "Back" word. */
   backLabel?: string;
-  /** Optional action aligned to the right of the back row (Mark all read, Edit, ...). */
+  /** Optional action aligned to the right of the row (Mark all read, Edit, ...). */
   right?: React.ReactNode;
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   return (
-    <View>
-      <View style={styles.topRow}>
-        <BackLink onPress={onBack} label={backLabel} />
-        {right}
-      </View>
-      {title ? <Text style={styles.title}>{title}</Text> : null}
+    <View style={styles.headerRow}>
+      <Pressable onPress={onBack} hitSlop={12} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
+        <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+      </Pressable>
+      {title ? (
+        <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
+          {title}
+        </Text>
+      ) : (
+        <View style={{ flex: 1 }} />
+      )}
+      {right}
     </View>
   );
 }
@@ -59,6 +64,8 @@ function createStyles(colors: Colors) {
     topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", minHeight: 32, marginBottom: 10 },
     back: { flexDirection: "row", alignItems: "center", marginLeft: -4 },
     backLabel: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textDim },
-    title: { fontFamily: fonts.dataBold, ...text("title"), color: colors.textPrimary, marginBottom: 18 },
+    headerRow: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 36, marginBottom: 14 },
+    backBtn: { marginLeft: -6, padding: 2 },
+    title: { flex: 1, fontFamily: fonts.dataBold, ...text("title"), color: colors.textPrimary },
   });
 }

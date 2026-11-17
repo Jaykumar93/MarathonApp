@@ -9,7 +9,7 @@ import { SESSION_TYPE_COLOR } from "../lib/sessionTypes";
 import { palette, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 
-const SIZE = 40;
+const SIZE = 46;
 const MAP_PADDING = 6;
 
 const ACTIVITY_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -112,6 +112,8 @@ function createStyles(colors: Colors) {
       width: SIZE,
       height: SIZE,
       borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.cardLine,
       alignItems: "center",
       justifyContent: "center",
       overflow: "hidden",

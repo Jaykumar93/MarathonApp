@@ -21,10 +21,10 @@ function buildSegments(structure: IntervalStructure): Segment[] {
 }
 
 const SEGMENT_COLOR: Record<Segment["kind"], string> = {
-  warmup: "rgba(255,255,255,0.5)",
-  rep: palette.interval,
-  recovery: "rgba(62,142,126,0.9)",
-  cooldown: "rgba(255,255,255,0.5)",
+  warmup: palette.accentGlow,
+  rep: palette.intervalLift,
+  recovery: palette.success,
+  cooldown: palette.accentGlow,
 };
 
 interface RunProgressBarProps {
@@ -81,7 +81,7 @@ export function RunProgressBar({ structure, distanceCoveredMeters, plannedDistan
   return (
     <View style={styles.row}>
       <View style={[trackStyle, { flexGrow: 1 }]}>
-        <View style={[styles.fill, { width: `${overallFraction * 100}%`, backgroundColor: palette.accent }]} />
+        <View style={[styles.fill, { width: `${overallFraction * 100}%`, backgroundColor: palette.accentLift }]} />
       </View>
     </View>
   );
@@ -91,15 +91,15 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: 3, marginBottom: 14 },
   track: {
     height: 7,
-    borderRadius: 4,
+    borderRadius: 999,
     backgroundColor: darkSurface.line,
     overflow: "hidden",
   },
   trackCompact: {
-    height: 5,
-    borderRadius: 3,
+    height: 7,
+    borderRadius: 999,
     backgroundColor: darkSurface.line,
     overflow: "hidden",
   },
-  fill: { height: "100%", borderRadius: 4 },
+  fill: { height: "100%", borderRadius: 999 },
 });

@@ -1,0 +1,48 @@
+01 Splash
+02 Sign in
+03 Sign up
+04 Forgot password
+05 Waitlist
+06 1 · Race target
+07 2 · Race location
+08 3 · Fitness
+09 4 · Calibration
+10 5 · Training days
+11 6 · Health data
+12 Building plan
+13 Plan ready
+14 Meet your runs
+15 Home
+16 Home, scrolled
+17 Plan
+18 Track (always dark)
+19 Activity · history
+20 Activity · trends
+21 Activity · empty
+22 Coach
+23 Planned session
+24 Interval session
+25 Ready to run
+26 Countdown
+27 Active run · live
+28 Active run · expanded
+29 Active run · interval rep
+30 Active run · recovery jog
+31 Active run · paused
+32 Run finished
+33 Run finished · discard
+34 Run summary
+35 Reflect 1 · effort
+36 Reflect 2 · notes
+37 Reflect 3 · insight
+38 Personal best
+39 Share run
+40 Log a run
+41 Race day
+42 Settings
+43 Edit plan
+44 Gear
+45 Notifications
+46 Notifications · empty
+47 Privacy
+48 Admin · waitlist

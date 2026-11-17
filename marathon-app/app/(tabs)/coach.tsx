@@ -23,6 +23,7 @@ import { ReferenceChip } from "../../components/ui/ReferenceChip";
 import { CoachChart } from "../../components/ui/CoachChart";
 import { CoachMessageBody } from "../../components/ui/CoachMessageBody";
 import { KeyboardAvoider } from "../../components/ui/KeyboardAvoider";
+import { TabHeader } from "../../components/ui/TabHeader";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function formatDuration(seconds: number): string {
@@ -67,6 +68,8 @@ const MIN_RUNS_FOR_CHART = 3;
 // real progress, just approximates its actual stages in order.
 const THINKING_STEPS = ["Reading your training data...", "Checking the knowledge base...", "Putting together a reply..."];
 const THINKING_STEP_INTERVAL_MS = 1800;
+
+const SUGGESTIONS = ["How is my training going?", "Fix my pacing", "Am I ready for race day?"];
 
 function pickChartKind(question: string, activities: ActivityRow[]): "pace" | "mileage" | null {
   if (activities.filter((a) => a.distance_meters > 0).length < MIN_RUNS_FOR_CHART) return null;
@@ -405,16 +408,20 @@ export default function Coach() {
 
   return (
     <KeyboardAvoider style={styles.flex} offset={90}>
-      <View style={styles.toolbarRow}>
-        <Pressable style={styles.toolbarButton} onPress={startNewChat} hitSlop={8} accessibilityRole="button" accessibilityLabel="Start a new chat">
-          <Ionicons name="add-circle-outline" size={14} color={colors.textDim} />
-          <Text style={styles.toolbarButtonText}>New chat</Text>
-        </Pressable>
-        <Pressable style={styles.toolbarButton} onPress={openHistory} hitSlop={8} accessibilityRole="button" accessibilityLabel="View past conversations">
-          <Ionicons name="time-outline" size={14} color={colors.textDim} />
-          <Text style={styles.toolbarButtonText}>History</Text>
-        </Pressable>
-      </View>
+      <TabHeader
+        title="Coach"
+        right={
+          <>
+            <Pressable onPress={startNewChat} hitSlop={8} accessibilityRole="button" accessibilityLabel="Start a new chat">
+              <Ionicons name="add-circle-outline" size={22} color={colors.textDim} />
+            </Pressable>
+            <Pressable onPress={openHistory} hitSlop={8} accessibilityRole="button" accessibilityLabel="View past conversations">
+              <Ionicons name="time-outline" size={22} color={colors.textDim} />
+            </Pressable>
+            <Pika expression="easy" size={34} />
+          </>
+        }
+      />
       <FlatList
         ref={listRef}
         data={messages}
@@ -425,10 +432,10 @@ export default function Coach() {
         onContentSizeChange={scrollToEnd}
         ListEmptyComponent={
           loadingHistory ? (
-            <ActivityIndicator color={colors.accent} style={styles.emptyState} />
+            <ActivityIndicator color={colors.accentMark} style={styles.emptyState} />
           ) : (
             <View style={styles.emptyState}>
-              <Pika expression="easy" size={96} />
+              <Pika expression="easy" size={120} />
               <Text style={styles.emptyTitle}>Ask your coach</Text>
               <Text style={styles.emptyBody}>
                 Pacing, fueling, recovery, tapering, or how a specific run went - ask anything about your training.
@@ -448,12 +455,21 @@ export default function Coach() {
         }
       />
       {error && <Text style={styles.errorText}>{error}</Text>}
+      {!sending && !input && (
+        <View style={styles.suggestRow}>
+          {SUGGESTIONS.map((s) => (
+            <Pressable key={s} style={styles.suggestChip} onPress={() => handleSend(s)} accessibilityRole="button">
+              <Text style={styles.suggestText}>{s}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
       <View style={styles.inputRow}>
         <TextInput
           style={styles.input}
           value={input}
           onChangeText={setInput}
-          placeholder="Ask about your training..."
+          placeholder="Ask about your training"
           placeholderTextColor={colors.textFaint}
           multiline
           editable={!sending}
@@ -465,7 +481,7 @@ export default function Coach() {
           accessibilityRole="button"
           accessibilityLabel="Send"
         >
-          <Ionicons name="arrow-up" size={20} color={palette.onAccent} />
+          <Ionicons name="chevron-forward" size={22} color={palette.onAccent} />
         </Pressable>
       </View>
 
@@ -537,25 +553,25 @@ export default function Coach() {
 function createStyles(colors: Colors) {
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: colors.screenBg },
-    toolbarRow: {
-      flexDirection: "row",
-      justifyContent: "flex-end",
-      gap: 2,
-      paddingHorizontal: spacing.screenPadding - 6,
-      paddingTop: 4,
-      paddingBottom: 2,
+    listContent: { flexGrow: 1, paddingHorizontal: spacing.screenPadding, paddingVertical: 8, gap: 12 },
+    suggestRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: spacing.screenPadding, paddingTop: 8 },
+    suggestChip: {
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      borderColor: colors.cardLine,
+      backgroundColor: colors.cardBg,
+      paddingVertical: 9,
+      paddingHorizontal: 14,
     },
-    toolbarButton: { flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 3, paddingHorizontal: 6, borderRadius: radius.sm },
-    toolbarButtonText: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.textDim },
-    listContent: { flexGrow: 1, padding: spacing.screenPadding, gap: 12 },
+    suggestText: { fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textPrimary },
     emptyState: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, paddingTop: 60, paddingHorizontal: 20 },
     emptyTitle: { fontFamily: fonts.dataBold, ...text("title"), color: colors.textPrimary },
     emptyBody: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: colors.textDim, textAlign: "center", lineHeight: 19 },
     rowUser: { alignItems: "flex-end", gap: 6 },
     rowAssistant: { alignItems: "flex-start", gap: 6 },
-    bubble: { maxWidth: "85%", borderRadius: radius.lg, paddingVertical: 10, paddingHorizontal: 14 },
-    bubbleUser: { backgroundColor: colors.accentFill, borderBottomRightRadius: 4 },
-    bubbleAssistant: { backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.cardLine, borderBottomLeftRadius: 4 },
+    bubble: { maxWidth: "85%", borderRadius: 20, paddingVertical: 12, paddingHorizontal: 16 },
+    bubbleUser: { backgroundColor: colors.accentFill, borderBottomRightRadius: 20 },
+    bubbleAssistant: { backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.cardLine, borderBottomLeftRadius: 20 },
     thinkingBubble: { flexDirection: "row", alignItems: "center", gap: 8 },
     thinkingText: { fontFamily: fonts.body, ...text("small"), color: colors.textDim },
     chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, maxWidth: "90%" },
@@ -572,9 +588,9 @@ function createStyles(colors: Colors) {
     },
     input: {
       flex: 1,
-      minHeight: 44,
+      minHeight: 48,
       maxHeight: 120,
-      borderRadius: radius.md,
+      borderRadius: radius.lg,
       borderWidth: 1,
       borderColor: colors.cardLine,
       backgroundColor: colors.inputBg,
@@ -585,9 +601,9 @@ function createStyles(colors: Colors) {
       color: colors.textPrimary,
     },
     sendButton: {
-      width: 44,
-      height: 44,
-      borderRadius: radius.pill,
+      width: 48,
+      height: 48,
+      borderRadius: radius.lg,
       backgroundColor: colors.accentFill,
       alignItems: "center",
       justifyContent: "center",

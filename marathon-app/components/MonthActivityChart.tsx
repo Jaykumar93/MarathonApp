@@ -131,9 +131,9 @@ function createStyles(colors: Colors) {
     barCol: { alignItems: "center", width: 16, position: "relative" },
     barTrack: { height: 50, width: 8, justifyContent: "flex-end" },
     bar: { width: 8, borderRadius: 3, minHeight: 2 },
-    barFilled: { backgroundColor: colors.accent },
+    barFilled: { backgroundColor: colors.accentMark },
     barEmpty: { backgroundColor: colors.cardLine },
-    barSelected: { backgroundColor: colors.contour },
+    barSelected: { backgroundColor: colors.secondaryAccent },
     dayLabel: { fontFamily: fonts.mono, ...text("micro"), color: colors.textFaint, marginTop: 4 },
     dayLabelToday: { color: colors.accentText, fontFamily: fonts.monoSemiBold },
   });

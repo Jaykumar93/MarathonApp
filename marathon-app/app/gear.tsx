@@ -6,7 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../lib/auth/AuthContext";
 import { createShoe, getShoes, retireShoe, type ShoeRow } from "../lib/data/shoes";
 import { formatDistance } from "../lib/units";
-import { fonts, spacing, type, text } from "../lib/theme";
+import { fonts, spacing, text, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
@@ -76,7 +76,15 @@ export default function Gear() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: SCREEN_BOTTOM_GAP + insets.bottom }]}>
-      <ScreenHeader title="Gear" onBack={goBack} />
+      <ScreenHeader
+        title="Gear"
+        onBack={goBack}
+        right={
+          <Pressable accessibilityRole="button" accessibilityLabel="Add a shoe" onPress={() => setAdding(true)} hitSlop={8}>
+            <Ionicons name="add" size={26} color={colors.textPrimary} />
+          </Pressable>
+        }
+      />
       <Text style={styles.subtitle}>Track shoe mileage - a nudge shows once a shoe passes its retirement distance.</Text>
 
       {!loading &&
@@ -86,24 +94,35 @@ export default function Gear() {
           return (
             <Card key={shoe.id} style={shoe.retired ? styles.retiredCard : undefined}>
               <View style={styles.shoeRow}>
+                <Ionicons name="footsteps-outline" size={22} color={colors.textPrimary} style={styles.shoeIcon} />
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.shoeName, shoe.retired && styles.retiredText]}>{shoe.name}</Text>
                   {!!shoe.brand && <Text style={[styles.shoeBrand, shoe.retired && styles.retiredText]}>{shoe.brand}</Text>}
+                  <Text style={[styles.mileageText, overThreshold && !shoe.retired && styles.mileageTextWarning]}>
+                    {shoe.retired
+                      ? `Retired · ${formatDistance(shoe.cumulative_distance_km, unit)}`
+                      : `${formatDistance(shoe.cumulative_distance_km, unit)} of ${formatDistance(shoe.retirement_threshold_km, unit)}`}
+                  </Text>
                 </View>
-                <Pressable accessibilityRole="button" onPress={() => handleToggleRetire(shoe)} hitSlop={8}>
-                  <Text style={styles.retireLink}>{shoe.retired ? "Un-retire" : "Retire"}</Text>
-                </Pressable>
+                {!shoe.retired && (
+                  <View style={[styles.statusPill, overThreshold ? styles.statusWarn : progress >= 0.85 ? styles.statusWarn : styles.statusGood]}>
+                    <Text style={[styles.statusText, overThreshold || progress >= 0.85 ? styles.statusTextWarn : styles.statusTextGood]}>
+                      {overThreshold ? "PAST DUE" : progress >= 0.85 ? "NEARLY DONE" : "GOOD"}
+                    </Text>
+                  </View>
+                )}
               </View>
 
-              <View style={styles.progressTrack}>
-                <View
-                  style={[styles.progressFill, { width: `${progress * 100}%` }, overThreshold && styles.progressFillOver]}
-                />
-              </View>
-              <Text style={[styles.mileageText, overThreshold && !shoe.retired && styles.mileageTextWarning]}>
-                {formatDistance(shoe.cumulative_distance_km, unit)} of {formatDistance(shoe.retirement_threshold_km, unit)}
-                {overThreshold && !shoe.retired ? " · past due for retirement" : ""}
-              </Text>
+              {!shoe.retired && (
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[styles.progressFill, { width: `${progress * 100}%` }, (overThreshold || progress >= 0.85) && styles.progressFillOver]}
+                  />
+                </View>
+              )}
+              <Pressable accessibilityRole="button" onPress={() => handleToggleRetire(shoe)} hitSlop={8} style={styles.retireWrap}>
+                <Text style={styles.retireLink}>{shoe.retired ? "Un-retire" : "Retire"}</Text>
+              </Pressable>
             </Card>
           );
         })}
@@ -137,10 +156,12 @@ export default function Gear() {
           </View>
         </Card>
       ) : (
-        <Pressable accessibilityRole="button" style={styles.addRow} onPress={() => setAdding(true)}>
-          <Ionicons name="add-circle-outline" size={20} color={colors.accentText} />
-          <Text style={styles.addRowText}>Add a shoe</Text>
-        </Pressable>
+        shoes.length === 0 && (
+          <Pressable accessibilityRole="button" style={styles.addRow} onPress={() => setAdding(true)}>
+            <Ionicons name="add-circle-outline" size={20} color={colors.accentText} />
+            <Text style={styles.addRowText}>Add a shoe</Text>
+          </Pressable>
+        )
       )}
     </ScrollView>
   );
@@ -150,19 +171,27 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.screenBg },
     container: { padding: spacing.screenPadding, paddingTop: 24, paddingBottom: 40 },
-    subtitle: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim, marginBottom: 18 },
-    retiredCard: { opacity: 0.55 },
-    shoeRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 10 },
+    subtitle: { fontFamily: fonts.body, ...text("body"), color: colors.textDim, marginBottom: 14 },
+    retiredCard: { opacity: 0.7 },
+    shoeRow: { flexDirection: "row", alignItems: "center", marginBottom: 10, gap: 12 },
+    shoeIcon: { marginTop: 2 },
     shoeName: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: colors.textPrimary },
-    shoeBrand: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
-    retiredText: { color: colors.textFaint },
+    shoeBrand: { fontFamily: fonts.body, ...text("small"), color: colors.textFaint, marginTop: 1 },
+    retiredText: { color: colors.textDim },
+    retireWrap: { alignSelf: "flex-start", marginTop: 10 },
     retireLink: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.secondaryAccent },
-    progressTrack: { height: 6, borderRadius: 3, backgroundColor: colors.cardLine, overflow: "hidden" },
-    progressFill: { height: "100%", backgroundColor: colors.contour, borderRadius: 3 },
+    statusPill: { borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 5 },
+    statusGood: { backgroundColor: colors.successText + "22" },
+    statusWarn: { backgroundColor: colors.warningBg },
+    statusText: { fontFamily: fonts.monoSemiBold, ...text("small") },
+    statusTextGood: { color: colors.successText },
+    statusTextWarn: { color: colors.warningText },
+    progressTrack: { height: 8, borderRadius: 4, backgroundColor: colors.cardLine, overflow: "hidden" },
+    progressFill: { height: "100%", backgroundColor: colors.accentMark, borderRadius: 4 },
     progressFillOver: { backgroundColor: colors.warning },
-    mileageText: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 6 },
-    mileageTextWarning: { color: colors.warningText, fontFamily: fonts.bodyMedium },
-    emptyText: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textFaint, marginBottom: 16 },
+    mileageText: { fontFamily: fonts.mono, ...text("small"), color: colors.textDim, marginTop: 2 },
+    mileageTextWarning: { color: colors.warningText },
+    emptyText: { fontFamily: fonts.body, ...text("body"), color: colors.textFaint, marginBottom: 16 },
     fieldGap: { marginTop: 12 },
     addActions: { flexDirection: "row", gap: 10, marginTop: 16 },
     addRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10 },

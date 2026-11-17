@@ -11,7 +11,7 @@ interface BlockProfileProps {
   actualWeeklyVolumesKm?: number[];
   /** 1-indexed current week. */
   currentWeek: number;
-  variant: "mini" | "hero";
+  variant: "mini" | "hero" | "terrain";
 }
 
 function buildPoints(weeklyVolumesKm: number[], width: number, height: number, padY: number, max: number) {
@@ -35,14 +35,36 @@ function pointsToPath(points: { x: number; y: number }[]): string {
 
 export function BlockProfile({ weeklyVolumesKm, actualWeeklyVolumesKm, currentWeek, variant }: BlockProfileProps) {
   const { colors } = useTheme();
-  const width = variant === "mini" ? 300 : 280;
+  const width = variant === "mini" || variant === "terrain" ? 300 : 280;
   // The hero is taller with more vertical padding so the "Peak" and "Today"
   // labels have headroom above and below the line.
-  const height = variant === "mini" ? 50 : 92;
-  const padY = variant === "mini" ? 6 : 24;
+  const height = variant === "mini" ? 50 : variant === "terrain" ? 76 : 92;
+  const padY = variant === "mini" ? 6 : variant === "terrain" ? 10 : 24;
   const max = Math.max(...weeklyVolumesKm, ...(actualWeeklyVolumesKm ?? []), 0.001);
 
   const points = buildPoints(weeklyVolumesKm, width, height, padY, max);
+
+  if (variant === "terrain") {
+    // The block as filled terrain, as in the design: the whole planned profile in a quiet
+    // tint, the part already behind you in violet, and a finish flag on the last point.
+    if (points.length === 0) return <View style={{ height }} />;
+    const currentIdx = Math.min(Math.max(currentWeek - 1, 0), points.length - 1);
+    const area = (pts: { x: number; y: number }[]) =>
+      `M${pts[0].x.toFixed(1)},${height} ${pts.map((p) => `L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")} L${pts[pts.length - 1].x.toFixed(1)},${height} Z`;
+    const last = points[points.length - 1];
+    return (
+      <View style={{ height }}>
+        <Svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+          <Path d={area(points)} fill={colors.terrainFuture} />
+          {currentIdx > 0 && <Path d={area(points.slice(0, currentIdx + 1))} fill={colors.accentMark} />}
+        </Svg>
+        <Svg width={16} height={26} viewBox="0 0 16 26" style={{ position: "absolute", right: 0, top: Math.max(0, last.y - 24) }}>
+          <Path d="M2 0V26" stroke={colors.textPrimary} strokeWidth={2} strokeLinecap="round" />
+          <Path d="M2 1L15 6L2 11Z" fill={colors.textPrimary} />
+        </Svg>
+      </View>
+    );
+  }
 
   if (variant === "mini") {
     const currentIndex = Math.min(Math.max(currentWeek - 1, 0), points.length - 1);

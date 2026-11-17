@@ -3,7 +3,8 @@ import { Animated, Dimensions, PanResponder, Pressable, StyleSheet, Text, View, 
 import type { RunLeg } from "../lib/intervalProgress";
 import type { PlanSessionRow } from "../lib/data/plans";
 import { formatDistance, formatMeters, formatPace } from "../lib/units";
-import { fonts, palette, text, fs, radius, darkSurface } from "../lib/theme";
+import { fonts, palette, text, radius, darkSurface } from "../lib/theme";
+import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
 import { RunProgressBar } from "./RunProgressBar";
 import { HoldToStopButton } from "./ui/HoldToStopButton";
 
@@ -27,14 +28,34 @@ function legMessage(leg: RunLeg, unit: "km" | "mi"): string {
     case "warmup":
       return `${formatMeters(leg.metersRemainingInLeg)} easy, then reps begin`;
     case "rep":
-      return `${formatMeters(leg.metersRemainingInLeg)} to go @ ${formatPace(leg.paceSecondsPerKm, unit)}`;
+      return `${formatMeters(leg.metersRemainingInLeg).replace(/(\d)(m|km)$/, "$1 $2")} to go at ${paceOnly(leg.paceSecondsPerKm, unit)}`;
     case "recovery":
-      return `${formatMeters(leg.metersRemainingInLeg)} easy jog @ ${formatPace(leg.paceSecondsPerKm, unit)}`;
+      return `${formatMeters(leg.metersRemainingInLeg).replace(/(\d)(m|km)$/, "$1 $2")} easy jog at ${paceOnly(leg.paceSecondsPerKm, unit)}`;
     case "cooldown":
       return `${formatMeters(leg.metersRemainingInLeg)} easy to finish`;
     case "complete":
       return "Nice work - hit Stop when you're ready.";
   }
+}
+
+/** "5:12/km" -> "5:12" */
+function paceOnly(secondsPerKm: number | null, unit: "km" | "mi"): string {
+  return formatPace(secondsPerKm, unit).replace(`/${unit}`, "");
+}
+
+/** Where the current pace sits against the goal: green (ahead) on the left, amber (behind) on the right, goal at the centre notch. */
+function PaceGauge({ deltaSeconds }: { deltaSeconds: number | null }) {
+  const clamped = Math.max(-30, Math.min(30, deltaSeconds ?? 0));
+  const pos = 50 + (clamped / 30) * 50; // ahead (negative delta) sits left of the notch
+  const dotLeft = `${pos}%` as const;
+  return (
+    <View style={styles.gauge} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <View style={[styles.gaugeHalf, styles.gaugeAhead]} />
+      <View style={[styles.gaugeHalf, styles.gaugeBehind]} />
+      <View style={styles.gaugeNotch} />
+      {deltaSeconds != null && <View style={[styles.gaugeDot, { left: dotLeft }]} />}
+    </View>
+  );
 }
 
 function formatElapsed(totalSeconds: number): string {
@@ -191,7 +212,14 @@ export function ActiveRunSheet({
   const collapsedOpacity = progress.interpolate({ inputRange: [0, 0.4], outputRange: [1, 0], extrapolate: "clamp" });
   const expandedOpacity = progress.interpolate({ inputRange: [0.6, 1], outputRange: [0, 1], extrapolate: "clamp" });
 
-  const showPlannedNote = !!plannedSession && plannedSession.session_type !== "rest" && !currentLeg;
+  const planned = plannedSession && plannedSession.session_type !== "rest" ? plannedSession : null;
+  // A plain (non-interval) planned run gets the same one-line "what's next" box as an interval leg.
+  const remainingKm = planned?.planned_distance_meters ? Math.max(0, planned.planned_distance_meters / 1000 - distanceKm) : null;
+  const showSteadyBox = !!planned && !currentLeg;
+  // Pace to compare the live pace against: the rep pace during a rep, the session target otherwise; none for recovery/warm-up legs.
+  const goalPace = currentLeg ? (currentLeg.kind === "rep" ? currentLeg.paceSecondsPerKm : null) : targetPaceSecondsPerKm;
+  const goalDelta = goalPace != null && currentPace != null ? currentPace - goalPace : null;
+  const distNumber = formatDistance(distanceKm, unit).replace(unit, "");
 
   return (
     <Animated.View style={[styles.sheet, { height }]} {...panResponder.panHandlers}>
@@ -219,8 +247,8 @@ export function ActiveRunSheet({
             <Text style={[styles.collapsedSideLabel, styles.distanceLabel]}>{unit.toUpperCase()}</Text>
           </View>
           <View style={styles.collapsedPaceCenter}>
-            <Text style={[styles.collapsedPaceValue, phase === "paused" && styles.timeValue]}>{currentPace != null ? formatPace(currentPace, unit).replace(`/${unit}`, "") : "--:--"}</Text>
-            <Text style={[styles.collapsedPaceLabel, phase === "paused" && styles.pausedLabel]}>{phase === "paused" ? "PAUSED" : `PACE / ${unit.toUpperCase()}`}</Text>
+            <Text style={[styles.collapsedPaceValue, phase === "paused" && styles.pausedValue]}>{currentPace != null ? formatPace(currentPace, unit).replace(`/${unit}`, "") : "--:--"}</Text>
+            <Text style={[styles.collapsedPaceLabel, phase === "paused" && styles.pausedLabel]}>{phase === "paused" ? "PAUSED" : "PACE"}</Text>
           </View>
           <View style={styles.collapsedSideRight}>
             <Text style={[styles.collapsedSideValue, styles.timeValue]}>{formatElapsed(elapsedSeconds)}</Text>
@@ -244,9 +272,38 @@ export function ActiveRunSheet({
         />
 
         {currentLeg && (
-          <View style={[styles.intervalBox, currentLeg.kind === "recovery" && styles.intervalBoxRecovery]}>
-            <Text style={styles.intervalKind}>{legKindLabel(currentLeg)}</Text>
+          <View
+            style={[
+              styles.intervalBox,
+              currentLeg.kind === "recovery" && styles.intervalBoxRecovery,
+              (currentLeg.kind === "warmup" || currentLeg.kind === "cooldown" || currentLeg.kind === "complete") && styles.steadyBox,
+            ]}
+          >
+            <Text
+              style={[
+                styles.intervalKind,
+                currentLeg.kind === "rep" && { color: palette.intervalLift },
+                currentLeg.kind === "recovery" && { color: palette.success },
+                (currentLeg.kind === "warmup" || currentLeg.kind === "cooldown" || currentLeg.kind === "complete") && { color: palette.accentGlow },
+              ]}
+            >
+              {legKindLabel(currentLeg)}
+            </Text>
             <Text style={styles.intervalMessage}>{legMessage(currentLeg, unit)}</Text>
+          </View>
+        )}
+        {showSteadyBox && planned && (
+          <View style={[styles.intervalBox, styles.steadyBox]}>
+            <Text style={[styles.intervalKind, { color: palette.accentGlow }]}>
+              {(SESSION_TYPE_LABEL[planned.session_type] ?? planned.session_type).split(" ")[0].toUpperCase()}
+            </Text>
+            <Text style={styles.intervalMessage}>
+              {remainingKm != null
+                ? remainingKm > 0
+                  ? `${(unit === "mi" ? remainingKm * 0.621371 : remainingKm).toFixed(1)} ${unit} to go${targetPaceSecondsPerKm ? ` at ${paceOnly(targetPaceSecondsPerKm, unit)}` : ""}`
+                  : "Target distance reached"
+                : "Run at your own pace"}
+            </Text>
           </View>
         )}
 
@@ -254,7 +311,7 @@ export function ActiveRunSheet({
           <View style={styles.statCard}>
             <Text style={[styles.statLabel, styles.distanceLabel]}>DIST</Text>
             <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-              {formatDistance(distanceKm, unit)}
+              {distNumber}
             </Text>
           </View>
           <View style={styles.statCard}>
@@ -271,29 +328,23 @@ export function ActiveRunSheet({
           </View>
         </View>
 
-        {showPlannedNote && (
-          <View style={styles.plannedNote}>
-            <Text style={styles.plannedNoteText}>
-              Fulfilling today's {plannedSession!.session_type} run
-              {plannedSession!.planned_distance_meters ? ` · ${formatDistance(plannedSession!.planned_distance_meters / 1000, unit)}` : ""}
-            </Text>
-          </View>
-        )}
-
         <View style={styles.centerPaceWrap}>
-          <Text style={styles.paceValue}>{currentPace != null ? formatPace(currentPace, unit).replace(`/${unit}`, "") : "--:--"}</Text>
+          <Text style={[styles.paceValue, phase === "paused" && styles.pausedValue]}>{currentPace != null ? paceOnly(currentPace, unit) : "--:--"}</Text>
           <Text style={styles.paceLabel}>CURRENT PACE / {unit.toUpperCase()}</Text>
-          {targetPaceSecondsPerKm != null && !currentLeg && (
-            <Text style={styles.paceTarget}>
-              Goal {formatPace(targetPaceSecondsPerKm, unit)}
-              {paceDeltaSecondsPerKm != null && (
-                <Text style={paceDeltaSecondsPerKm <= 0 ? styles.paceAhead : styles.paceBehind}>
-                  {" "}
-                  ({paceDeltaSecondsPerKm <= 0 ? "-" : "+"}
-                  {Math.round(Math.abs(paceDeltaSecondsPerKm))}s)
-                </Text>
-              )}
-            </Text>
+          {goalPace != null && (
+            <>
+              <PaceGauge deltaSeconds={goalDelta} />
+              <Text style={styles.paceTarget}>
+                {currentLeg ? "Rep goal" : "Goal"} {paceOnly(goalPace, unit)}
+                {goalDelta != null && (
+                  <Text style={goalDelta <= 0 ? styles.paceAhead : styles.paceBehind}>
+                    {" "}
+                    ({goalDelta <= 0 ? "-" : "+"}
+                    {Math.round(Math.abs(goalDelta))}s)
+                  </Text>
+                )}
+              </Text>
+            </>
           )}
         </View>
 
@@ -326,14 +377,15 @@ const styles = StyleSheet.create({
   collapsedStatsRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 14 },
   collapsedSideLeft: { alignItems: "flex-start" },
   collapsedSideRight: { alignItems: "flex-end" },
-  collapsedSideValue: { fontFamily: fonts.monoSemiBold, ...text("headline"), color: darkSurface.text },
+  collapsedSideValue: { fontFamily: fonts.monoMedium, ...text("headline"), color: palette.bone },
   // Distance is the number the sheet is "about" (violet label); time is secondary (dimmed value) so the two never read as one.
   distanceLabel: { color: palette.accentGlow },
   timeValue: { color: darkSurface.textDim },
   pausedLabel: { color: palette.warning },
+  pausedValue: { color: darkSurface.textDim },
   collapsedSideLabel: { fontFamily: fonts.monoMedium, ...text("micro"), letterSpacing: 1, color: darkSurface.textFaint, marginTop: 3 },
   collapsedPaceCenter: { alignItems: "center" },
-  collapsedPaceValue: { fontFamily: fonts.monoSemiBold, fontSize: fs.hero, includeFontPadding: false, color: darkSurface.text, lineHeight: 44 },
+  collapsedPaceValue: { fontFamily: fonts.monoMedium, fontSize: 44, includeFontPadding: false, color: palette.bone, lineHeight: 48 },
   collapsedPaceLabel: { fontFamily: fonts.monoMedium, ...text("micro"), letterSpacing: 1, color: darkSurface.textFaint, marginTop: 4 },
 
   expandedContent: { position: "absolute", left: 0, right: 0, top: 20, bottom: 20, paddingHorizontal: 20 },
@@ -346,27 +398,32 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(240,122,182,0.14)",
     borderWidth: 1,
     borderColor: "rgba(240,122,182,0.4)",
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     paddingVertical: 12,
     alignItems: "center",
     marginBottom: 14,
   },
-  intervalBoxRecovery: { backgroundColor: "rgba(62,142,126,0.14)", borderColor: "rgba(62,142,126,0.35)" },
-  intervalKind: { fontFamily: fonts.monoSemiBold, ...text("micro"), letterSpacing: 1, color: darkSurface.text, marginBottom: 4 },
+  intervalBoxRecovery: { backgroundColor: "rgba(79,178,134,0.14)", borderColor: "rgba(79,178,134,0.4)" },
+  steadyBox: { backgroundColor: "rgba(138,114,255,0.16)", borderColor: "rgba(138,114,255,0.5)" },
+  intervalKind: { fontFamily: fonts.monoSemiBold, ...text("emphasis"), letterSpacing: 1.5, color: darkSurface.text, marginBottom: 2 },
   intervalMessage: { fontFamily: fonts.bodySemiBold, ...text("body"), color: darkSurface.text },
 
   statRow: { flexDirection: "row", gap: 8, marginBottom: 14 },
-  statCard: { flex: 1, backgroundColor: darkSurface.card, borderRadius: radius.md, paddingVertical: 15, alignItems: "center" },
-  statLabel: { fontFamily: fonts.monoMedium, ...text("caption"), letterSpacing: 1, color: darkSurface.textFaint, marginBottom: 5 },
+  statCard: { flex: 1, backgroundColor: darkSurface.card, borderWidth: 1, borderColor: darkSurface.line, borderRadius: radius.lg, paddingVertical: 15, paddingHorizontal: 4, alignItems: "center" },
+  statLabel: { fontFamily: fonts.monoMedium, ...text("emphasis"), letterSpacing: 1, color: darkSurface.textDim, marginBottom: 5 },
   statValue: { fontFamily: fonts.monoSemiBold, ...text("headline"), color: darkSurface.text },
 
-  plannedNote: { marginBottom: 8, alignItems: "center" },
-  plannedNoteText: { fontFamily: fonts.body, ...text("caption"), color: darkSurface.textFaint, textAlign: "center" },
+  gauge: { width: "100%", height: 12, marginTop: 22, justifyContent: "center" },
+  gaugeHalf: { position: "absolute", top: 1, height: 10, width: "50%", borderRadius: 999 },
+  gaugeAhead: { left: 0, backgroundColor: "rgba(79,178,134,0.25)" },
+  gaugeBehind: { right: 0, backgroundColor: "rgba(242,183,5,0.25)" },
+  gaugeNotch: { position: "absolute", left: "50%", top: -1, width: 2, height: 14, marginLeft: -1, backgroundColor: darkSurface.text },
+  gaugeDot: { position: "absolute", width: 20, height: 20, borderRadius: 10, marginLeft: -10, top: -4, backgroundColor: palette.success },
 
   centerPaceWrap: { flex: 1, alignItems: "center", justifyContent: "center" },
-  paceValue: { fontFamily: fonts.monoSemiBold, fontSize: fs.numeral, includeFontPadding: false, color: darkSurface.text, lineHeight: 66 },
-  paceLabel: { fontFamily: fonts.monoMedium, ...text("caption"), letterSpacing: 1.5, color: darkSurface.textFaint, marginTop: 6 },
-  paceTarget: { fontFamily: fonts.body, ...text("small"), color: darkSurface.textDim, marginTop: 10 },
+  paceValue: { fontFamily: fonts.monoMedium, fontSize: 84, includeFontPadding: false, color: palette.bone, lineHeight: 92 },
+  paceLabel: { fontFamily: fonts.monoMedium, ...text("emphasis"), letterSpacing: 2, color: darkSurface.textDim, marginTop: 8 },
+  paceTarget: { fontFamily: fonts.body, ...text("body"), color: darkSurface.textDim, marginTop: 16 },
   paceAhead: { color: palette.success, fontFamily: fonts.bodySemiBold },
   paceBehind: { color: palette.warning, fontFamily: fonts.bodySemiBold },
 
