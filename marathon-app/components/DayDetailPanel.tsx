@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { coachHref } from "../lib/coach/autoSend";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { PressableScale as Pressable } from "./ui/PressableScale";
 import { useRouter } from "expo-router";
@@ -123,7 +124,7 @@ export function DayDetailPanel({ date, session, activities, onMoveToTomorrow }: 
               accessibilityRole="button"
               accessibilityLabel="Ask the coach about this workout"
               onPress={() =>
-                router.push(`/(tabs)/coach?planSessionId=${session.id}&prefill=${encodeURIComponent("Can you walk me through this workout?")}`)
+                router.push(coachHref({ planSessionId: session.id }, "Can you walk me through this workout?"))
               }
             >
               <Ionicons name="chatbox-outline" size={16} color={colors.accentText} />

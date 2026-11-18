@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { coachHref } from "../lib/coach/autoSend";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { PressableScale as Pressable } from "../components/ui/PressableScale";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -407,7 +408,7 @@ export default function Reflect() {
               <Text style={styles.footerLink}>Share run</Text>
             </Pressable>
             <Pressable
-              onPress={() => router.push(`/(tabs)/coach?activityId=${activity.id}&prefill=${encodeURIComponent("What do you think of this run?")}`)}
+              onPress={() => router.push(coachHref({ activityId: activity.id }, "What do you think of this run?"))}
               hitSlop={10}
               accessibilityRole="button"
             >

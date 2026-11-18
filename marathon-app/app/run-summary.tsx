@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { coachHref } from "../lib/coach/autoSend";
 import { Image, Modal, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Pressable as RNPressable } from "react-native";
 import { PressableScale as Pressable } from "../components/ui/PressableScale";
@@ -359,9 +360,10 @@ export default function RunSummary() {
             style={styles.askCoachRow}
             onPress={() =>
               router.push(
-                `/(tabs)/coach?activityId=${activity.id}&prefill=${encodeURIComponent(
+                coachHref(
+                  { activityId: activity.id },
                   planSession && planSession.session_type !== "rest" ? "How did this run compare to plan?" : "What do you think of this run?"
-                )}`
+                )
               )
             }
             hitSlop={8}

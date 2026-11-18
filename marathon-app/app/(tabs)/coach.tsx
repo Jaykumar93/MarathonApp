@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { consumeCoachAutoSend } from "../../lib/coach/autoSend";
 import { ActivityIndicator, FlatList, Modal, StyleSheet, Text, TextInput, View } from "react-native";
 import { Pressable as RNPressable } from "react-native";
 import { PressableScale as Pressable } from "../../components/ui/PressableScale";
@@ -197,7 +198,9 @@ export default function Coach() {
       // its own memoized identity when [activityId, planSessionId,
       // prefill] change, not on every render - by the time it might fire,
       // it could be holding a stale handleSend from an earlier render.
-      if (params.prefill) setAutoSendPending(true);
+      // Only when an in-app Ask Coach button armed it - a cursus:// link from
+      // outside the app just fills the box and leaves sending to the runner.
+      if (params.prefill && consumeCoachAutoSend(params.prefill)) setAutoSendPending(true);
     }, [params.activityId, params.planSessionId, params.prefill])
   );
 

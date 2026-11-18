@@ -96,6 +96,6 @@ Deno.serve(async (req) => {
     return jsonResponse({ script });
   } catch (e) {
     console.error("generate-run-script failed:", e);
-    return jsonResponse({ error: e instanceof Error ? e.message : "Something went wrong." }, 500);
+    return jsonResponse({ error: "Something went wrong. Please try again." }, 500);
   }
 });

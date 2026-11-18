@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { coachHref } from "../lib/coach/autoSend";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { PressableScale as Pressable } from "../components/ui/PressableScale";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -243,7 +244,7 @@ export default function PlannedSessionDetail() {
         {session.session_type !== "rest" && (
           <Pressable
             onPress={() =>
-              router.push(`/(tabs)/coach?planSessionId=${session.id}&prefill=${encodeURIComponent("Can you walk me through this workout?")}`)
+              router.push(coachHref({ planSessionId: session.id }, "Can you walk me through this workout?"))
             }
             style={styles.coachChip}
             accessibilityRole="button"
