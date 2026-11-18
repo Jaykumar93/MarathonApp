@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { embed } from "./embeddings.ts";
-import { runAgentTurn, type HistoryTurn } from "./llm.ts";
+import { CoachUnavailableError, runAgentTurn, type HistoryTurn } from "./llm.ts";
 import { needsWebSearch } from "./needsWebSearch.ts";
 import { buildSystemPrompt } from "./prompt.ts";
 import { executeTool, TOOL_DEFS } from "./tools.ts";
@@ -265,6 +265,9 @@ Deno.serve(async (req) => {
     // function's own logs only - echoing it to the client would leak upstream
     // and schema detail (security audit F5).
     console.error("coach-chat error:", e);
+    if (e instanceof CoachUnavailableError) {
+      return jsonResponse({ error: "The coach is busy right now. Please try again in a moment." }, 503);
+    }
     return jsonResponse({ error: "Something went wrong. Please try again." }, 500);
   }
 });

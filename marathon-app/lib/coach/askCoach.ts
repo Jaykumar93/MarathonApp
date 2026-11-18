@@ -38,6 +38,26 @@ export async function askCoach(message: string, context?: AskCoachContext): Prom
       skipPersistence: context?.skipPersistence,
     },
   });
-  if (error) throw error;
+  if (error) throw new Error(await coachErrorMessage(error));
   return data as CoachReply;
+}
+
+/**
+ * supabase-js reports any non-2xx reply as a generic "Edge Function returned a
+ * non-2xx status code". The coach function sends a short, safe message in the
+ * body ("The coach is busy right now...", the daily-limit notice), so read it
+ * out and show that instead.
+ */
+async function coachErrorMessage(error: unknown): Promise<string> {
+  const fallback = "Couldn't reach the coach - try again.";
+  const context = (error as { context?: unknown } | null)?.context;
+  if (context && typeof (context as Response).json === "function") {
+    try {
+      const body = (await (context as Response).clone().json()) as { error?: unknown };
+      if (typeof body?.error === "string" && body.error.trim()) return body.error;
+    } catch {
+      // Not JSON (or already read) - fall through to the generic text.
+    }
+  }
+  return fallback;
 }

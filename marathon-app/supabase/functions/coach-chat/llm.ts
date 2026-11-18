@@ -73,9 +73,39 @@ type ThinkingLevel = "low" | "medium";
 type StepFn = (systemPrompt: string, messages: AgentMessage[], toolDefs: ToolDef[], thinkingLevel: ThinkingLevel) => Promise<StepResult>;
 
 const GEMINI_MODEL = "gemini-flash-latest";
+// A lighter Gemini that answers in about a second even when the full Flash is
+// overloaded (it was hanging with no reply while this one answered instantly).
+const GEMINI_LITE_MODEL = "gemini-flash-lite-latest";
 const GROQ_MODEL = "openai/gpt-oss-120b";
 
-async function geminiStep(systemPrompt: string, messages: AgentMessage[], toolDefs: ToolDef[], thinkingLevel: ThinkingLevel): Promise<StepResult> {
+// Without a timeout an overloaded provider can hold the request open until the
+// platform kills it, and the fallback never starts - the app just spins. Every
+// provider call now has a deadline, so a hang becomes a quick fall-through.
+const GEMINI_TIMEOUT_MS = 15_000;
+const GEMINI_LITE_TIMEOUT_MS = 20_000;
+const GROQ_TIMEOUT_MS = 25_000;
+
+/** Raised when every provider failed - the caller turns this into a friendly "busy" reply, not a raw error. */
+export class CoachUnavailableError extends Error {
+  constructor(message = "The coach is busy right now") {
+    super(message);
+    this.name = "CoachUnavailableError";
+  }
+}
+
+function makeGeminiStep(model: string, timeoutMs: number, withThinking: boolean): StepFn {
+  return (systemPrompt, messages, toolDefs, thinkingLevel) => geminiStep(model, timeoutMs, withThinking, systemPrompt, messages, toolDefs, thinkingLevel);
+}
+
+async function geminiStep(
+  model: string,
+  timeoutMs: number,
+  withThinking: boolean,
+  systemPrompt: string,
+  messages: AgentMessage[],
+  toolDefs: ToolDef[],
+  thinkingLevel: ThinkingLevel
+): Promise<StepResult> {
   const apiKey = Deno.env.get("GEMINI_API_KEY");
   if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
 
@@ -94,8 +124,9 @@ async function geminiStep(systemPrompt: string, messages: AgentMessage[], toolDe
     return { role: "user", parts: m.results.map((r) => ({ functionResponse: { name: r.name, response: { result: r.result }, ...(r.id ? { id: r.id } : {}) } })) };
   });
 
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
     method: "POST",
+    signal: AbortSignal.timeout(timeoutMs),
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: systemPrompt }] },
@@ -103,7 +134,8 @@ async function geminiStep(systemPrompt: string, messages: AgentMessage[], toolDe
       // gemini-flash-latest currently resolves to 3.8 Flash, confirmed live
       // against Google's docs - "minimal" isn't supported on this model, so
       // "low" is the floor, one step under the "medium" default.
-      generationConfig: { thinkingConfig: { thinkingLevel } },
+      // The lite model doesn't take a thinking level, so only the full Flash gets one.
+      ...(withThinking ? { generationConfig: { thinkingConfig: { thinkingLevel } } } : {}),
       ...(toolDefs.length ? { tools: [{ functionDeclarations: toGeminiFunctionDeclarations(toolDefs) }] } : {}),
     }),
   });
@@ -157,6 +189,7 @@ async function groqStep(systemPrompt: string, messages: AgentMessage[], toolDefs
 
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
+    signal: AbortSignal.timeout(GROQ_TIMEOUT_MS),
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: GROQ_MODEL,
@@ -249,6 +282,13 @@ async function runLoop(
   throw new Error("Agent loop exceeded max iterations without a final answer");
 }
 
+// The full Flash is tried first, then the lighter Gemini, then Groq. If the full
+// Flash just failed (timeout or overload), later requests on this warm instance
+// skip straight to the lighter model for a couple of minutes instead of paying
+// its timeout again on every question.
+let flashSkipUntil = 0;
+const FLASH_COOLDOWN_MS = 120_000;
+
 export async function runAgentTurn(
   systemPrompt: string,
   history: HistoryTurn[],
@@ -256,10 +296,19 @@ export async function runAgentTurn(
   toolDefs: ToolDef[],
   runTool: (name: string, args: Record<string, unknown>) => Promise<unknown>
 ): Promise<AgentTurnResult> {
-  try {
-    return await runLoop(geminiStep, "gemini", systemPrompt, history, userMessage, toolDefs, runTool);
-  } catch (e) {
-    console.error("Gemini agent loop failed, falling back to Groq:", e);
-    return await runLoop(groqStep, "groq", systemPrompt, history, userMessage, toolDefs, runTool);
+  const attempts: { provider: string; step: StepFn; isFlash?: boolean }[] = [
+    { provider: "gemini", step: makeGeminiStep(GEMINI_MODEL, GEMINI_TIMEOUT_MS, true), isFlash: true },
+    { provider: "gemini-lite", step: makeGeminiStep(GEMINI_LITE_MODEL, GEMINI_LITE_TIMEOUT_MS, false) },
+    { provider: "groq", step: groqStep },
+  ];
+  for (const attempt of attempts) {
+    if (attempt.isFlash && Date.now() < flashSkipUntil) continue;
+    try {
+      return await runLoop(attempt.step, attempt.provider, systemPrompt, history, userMessage, toolDefs, runTool);
+    } catch (e) {
+      if (attempt.isFlash) flashSkipUntil = Date.now() + FLASH_COOLDOWN_MS;
+      console.error(`${attempt.provider} agent loop failed, trying the next provider:`, e);
+    }
   }
+  throw new CoachUnavailableError();
 }
