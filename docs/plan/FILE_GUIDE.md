@@ -24,7 +24,7 @@
 | [design.md](../design.md) | The "Pre-Dawn Run" design system spec (philosophy, color rationale, typography, component patterns). `lib/theme.ts` is this doc turned into code — when a design detail isn't obvious from `theme.ts` alone, check here. |
 | [marathon-app-final.html](../marathon-app-final.html) | Static HTML/CSS mockup of the finished app — the visual source of truth Task 4's screens were built from (exact colors/spacing/markup were extracted from this, not re-guessed). Reference for any screen not yet built. |
 | [marathon-app-wireframes.html](../marathon-app-wireframes.html) | Earlier low-fidelity wireframes, superseded by `marathon-app-final.html` for anything both cover. |
-| [brand/](../brand/) | SVG source for the Stryde logo mark and generated app-icon assets (icon, adaptive icon layers, splash, favicon). |
+| [brand/](../brand/) | SVG source for the Cursus logo mark, wordmark and Pika mascot (`cursus-final/`) plus the retired Stryde marks, and the generated app-icon assets (icon, adaptive icon layers, splash, favicon). |
 
 ## Planning & handoff docs (`docs/plan/`)
 
@@ -138,7 +138,7 @@
 
 | File | What it's for |
 |---|---|
-| [app.json](../../marathon-app/app.json) | Expo app manifest — name ("Stryde"), EAS project id, icon/splash paths, installed plugins (`expo-location` added in Task 6, with a plain-language permission description per PRD §7). No `react-native-maps` config plugin/Google Maps API key yet - that's part of the deferred map work, see `docs/plan/06-gps-tracking-active-run.md`. |
+| [app.json](../../marathon-app/app.json) | Expo app manifest — name ("Cursus", renamed from Stryde; the Android package id and `stryde://` scheme are kept on purpose), EAS project id, icon/splash paths, installed plugins (`expo-location` added in Task 6, with a plain-language permission description per PRD §7). No `react-native-maps` config plugin/Google Maps API key yet - that's part of the deferred map work, see `docs/plan/06-gps-tracking-active-run.md`. |
 | [package.json](../../marathon-app/package.json) | Dependencies + scripts (`npm test`, `npm run plan:try` for the standalone plan-engine CLI tool). |
 | [.npmrc](../../marathon-app/.npmrc) | `legacy-peer-deps=true` — works around an `expo-router` bundled-devtools peer-dependency conflict found during Task 4. |
 | [.env.example](../../marathon-app/.env.example) | Template for the two required env vars (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`); `.env` itself is gitignored. |

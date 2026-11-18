@@ -211,7 +211,8 @@ Where to read more: [`marathon-app/DESIGN.md`](marathon-app/DESIGN.md) (the writ
     ├── mockup-shots/             Rendered mockup, every screen in light and dark
     ├── brand/                    Logo, mark, Pika and icon sources
     ├── cursus-design.html        The full interactive mockup
-    └── stryde-docs-updated.html  Engineering write-up (pre-rename)
+    ├── cursus-docs.html          Engineering write-up (HTML)
+    └── Cursus-Engineering-Docs.pdf  The same write-up as a PDF
 ```
 
 ## Getting started
@@ -319,7 +320,7 @@ npx eas-cli build --platform android --profile production
 | [`docs/AppContext.md`](docs/AppContext.md) | Context document: decisions and constraints |
 | [`docs/design.md`](docs/design.md) and [`marathon-app/DESIGN.md`](marathon-app/DESIGN.md) | The design system |
 | [`marathon-app/PRODUCT.md`](marathon-app/PRODUCT.md) | Users, purpose, principles, brand commitments |
-| [`docs/stryde-docs-updated.html`](https://htmlpreview.github.io/?https://github.com/Jaykumar93/MarathonApp/blob/main/docs/stryde-docs-updated.html) | The full engineering write-up: architecture diagrams, the plan engine's maths, the coach's retrieval design and its evolution, the schema, and bugs found along the way (written before the rename) |
+| [`docs/cursus-docs.html`](https://htmlpreview.github.io/?https://github.com/Jaykumar93/MarathonApp/blob/main/docs/cursus-docs.html) and [`docs/Cursus-Engineering-Docs.pdf`](docs/Cursus-Engineering-Docs.pdf) | The full engineering write-up: vision and the rename, design language, architecture diagrams, the plan engine's maths, the coach's retrieval design and its reliability, the schema, the security review, and bugs found along the way. The same content as a web page and as a PDF |
 | [`docs/privacy-policy.md`](docs/privacy-policy.md) | The privacy policy |
 
 ## Project status

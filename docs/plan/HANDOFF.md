@@ -4,7 +4,7 @@
 
 *Written for whichever agent picks this up next. Task 4 itself is Done, committed, and documented normally (see [04-navigation-home-plan.md](04-navigation-home-plan.md) / [implementation/04-navigation-home-plan.md](implementation/04-navigation-home-plan.md)). This doc covers a follow-on batch of feature requests made immediately after Task 4 was marked Done — before that work could be pushed, the user asked for three more rounds of changes in quick succession. None of this batch is committed yet. This is not a formal MAIN_PLAN task; it's a batch of user-requested additions layered onto Task 4's surfaces.*
 
-**Repo:** `C:\MarathonAPP`, app code under `marathon-app/`. App is called **Stryde** (renamed from generic "marathon-app" during Task 4 — see that implementation log's Branding section).
+**Repo:** `C:\MarathonAPP`, app code under `marathon-app/`. App is called **Cursus** (renamed from Stryde in Task 9 — see [implementation/09-cursus-rebrand-redesign.md](implementation/09-cursus-rebrand-redesign.md); Stryde itself was renamed from generic "marathon-app" during Task 4). The Android package id `com.jaykumar093.stryde` is kept on purpose.
 
 ---
 
