@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, StyleSheet, Text, View } from "react-native";
+import { Pressable as RNPressable } from "react-native";
+import { PressableScale as Pressable } from "../../components/ui/PressableScale";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -267,7 +269,7 @@ function TrackScreen() {
 
       <Modal visible={choiceOpen} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setChoiceOpen(false)}>
         <View style={styles.modalWrap}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setChoiceOpen(false)} />
+          <RNPressable style={styles.modalBackdrop} onPress={() => setChoiceOpen(false)} />
           <View style={[styles.modalSheet, { paddingBottom: Math.max(28, insets.bottom + 16) }]}>
             <Text style={styles.modalTitle}>What are you running?</Text>
 

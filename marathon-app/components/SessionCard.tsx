@@ -1,5 +1,6 @@
 import React, { useMemo, type ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { PressableScale as Pressable } from "./ui/PressableScale";
 import { Ionicons } from "@expo/vector-icons";
 import { fonts, radius, text } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";

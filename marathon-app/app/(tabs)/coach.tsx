@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Modal, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable as RNPressable } from "react-native";
+import { PressableScale as Pressable } from "../../components/ui/PressableScale";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../lib/auth/AuthContext";
@@ -487,7 +489,7 @@ export default function Coach() {
 
       <Modal visible={historyOpen} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setHistoryOpen(false)}>
         <View style={styles.modalWrap}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setHistoryOpen(false)} />
+          <RNPressable style={styles.modalBackdrop} onPress={() => setHistoryOpen(false)} />
           <View style={[styles.historySheet, { paddingBottom: Math.max(28, insets.bottom + 16) }]}>
             <Text style={styles.historyTitle}>Past conversations</Text>
             {conversations.length === 0 ? (

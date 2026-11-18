@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { PressableScale as Pressable } from "./ui/PressableScale";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { fonts, palette, radius, spacing, text } from "../lib/theme";

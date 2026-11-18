@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { PressableScale as Pressable } from "../components/ui/PressableScale";
 import { Pika } from "../components/mascot/Pika";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";

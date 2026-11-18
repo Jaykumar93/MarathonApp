@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { PressableScale as Pressable } from "../components/ui/PressableScale";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";

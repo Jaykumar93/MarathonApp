@@ -1,8 +1,8 @@
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Animated, Pressable, type ColorValue, type GestureResponderEvent, type StyleProp, type ViewStyle } from "react-native";
+import { Animated, Pressable, View, type ColorValue, type GestureResponderEvent, type StyleProp, type ViewStyle } from "react-native";
 import { fonts, text, palette } from "../../lib/theme";
 import { useTheme } from "../../lib/theme/ThemeContext";
 
@@ -10,8 +10,8 @@ type IoniconName = keyof typeof Ionicons.glyphMap;
 
 // Same transform-only press feedback as PrimaryButton/ChipSelect - a tab
 // tap should feel just as immediate as any other button in the app.
-const PRESS_IN = { toValue: 0.9, useNativeDriver: true, speed: 50, bounciness: 0 };
-const PRESS_OUT = { toValue: 1, useNativeDriver: true, speed: 24, bounciness: 6 };
+const PRESS_IN = { toValue: 0.86, useNativeDriver: true, speed: 60, bounciness: 0 };
+const PRESS_OUT = { toValue: 1, useNativeDriver: true, speed: 22, bounciness: 10 };
 
 // Overrides the default tab-bar button (which has no press feedback of its
 // own) via React Navigation's `tabBarButton` escape hatch. Spreads every other
@@ -46,9 +46,32 @@ function AnimatedTabButton({ children, style, onPressIn, onPressOut, ...rest }: 
 }
 
 // Line icons in both states, as in the design: the active tab is told apart by
-// the violet colour and a heavier label, not by a filled glyph.
+// the violet colour and a heavier label, not by a filled glyph. On top of that,
+// the active icon pops up with a spring and a soft pill grows in behind it, so
+// switching tabs feels alive. Transform and opacity only (native driver).
+function TabIcon({ name, color, focused }: { name: IoniconName; color: ColorValue; focused: boolean }) {
+  const progress = useRef(new Animated.Value(focused ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.spring(progress, { toValue: focused ? 1 : 0, useNativeDriver: true, speed: 16, bounciness: 12 }).start();
+  }, [focused, progress]);
+  const pillScale = progress.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] });
+  const pillOpacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0, 0.16] });
+  const iconScale = progress.interpolate({ inputRange: [0, 1], outputRange: [1, 1.14] });
+  const iconLift = progress.interpolate({ inputRange: [0, 1], outputRange: [0, -1] });
+  return (
+    <View style={{ width: 48, height: 28, alignItems: "center", justifyContent: "center" }}>
+      <Animated.View
+        style={{ position: "absolute", width: 48, height: 28, borderRadius: 14, backgroundColor: color, opacity: pillOpacity, transform: [{ scale: pillScale }] }}
+      />
+      <Animated.View style={{ transform: [{ translateY: iconLift }, { scale: iconScale }] }}>
+        <Ionicons name={name} size={22} color={color} />
+      </Animated.View>
+    </View>
+  );
+}
+
 function icon(name: IoniconName) {
-  return ({ color }: { color: ColorValue }) => <Ionicons name={name} size={22} color={color} />;
+  return ({ color, focused }: { color: ColorValue; focused: boolean }) => <TabIcon name={name} color={color} focused={focused} />;
 }
 
 /**

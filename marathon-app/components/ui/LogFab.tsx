@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
-import { Pressable, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
+import { PressableScale as Pressable } from "./PressableScale";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTheme, type Colors, type ThemeShadows } from "../../lib/theme/ThemeContext";

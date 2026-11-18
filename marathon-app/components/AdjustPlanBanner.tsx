@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { PressableScale as Pressable } from "./ui/PressableScale";
 import { fonts, text, radius, palette } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import type { AdjustmentProposal } from "../lib/data/planAdjustment";

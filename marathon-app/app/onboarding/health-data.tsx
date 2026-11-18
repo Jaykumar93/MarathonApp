@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Platform, Pressable, Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
+import { PressableScale as Pressable } from "../../components/ui/PressableScale";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";

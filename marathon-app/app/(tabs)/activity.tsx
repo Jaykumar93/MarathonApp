@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable as RNPressable } from "react-native";
+import { PressableScale as Pressable } from "../../components/ui/PressableScale";
 import { Pika } from "../../components/mascot/Pika";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth/AuthContext";
@@ -271,7 +273,7 @@ export default function Activity() {
                 on web, it's a native-only responder API). Keeping the
                 backdrop's tap-to-close area completely separate from the
                 sheet's own content sidesteps that entirely. */}
-            <Pressable accessibilityRole="button" style={styles.modalBackdrop} onPress={() => setFiltersOpen(false)} />
+            <RNPressable accessibilityRole="button" style={styles.modalBackdrop} onPress={() => setFiltersOpen(false)} />
             <View style={[styles.modalSheet, { paddingBottom: Math.max(28, insets.bottom + 16) }]}>
               <ScrollView>
                 <Text style={styles.modalTitle}>Filters</Text>

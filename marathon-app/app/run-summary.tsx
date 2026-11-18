@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Image, Modal, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable as RNPressable } from "react-native";
+import { PressableScale as Pressable } from "../components/ui/PressableScale";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -472,7 +474,7 @@ export default function RunSummary() {
 
       <Modal visible={confirmingDelete} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setConfirmingDelete(false)}>
         <View style={styles.modalWrap}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setConfirmingDelete(false)} />
+          <RNPressable style={styles.modalBackdrop} onPress={() => setConfirmingDelete(false)} />
           <View style={[styles.confirmSheet, { paddingBottom: Math.max(28, insets.bottom + 16) }]}>
             <View style={styles.alertIcon}>
               <Ionicons name="warning" size={22} color={colors.danger} />

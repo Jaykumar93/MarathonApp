@@ -17,8 +17,8 @@ const LABEL_STYLE = { primary: "primaryLabel", secondary: "secondaryLabel", dang
 // transform + opacity only (compositor-friendly, no layout thrash) - a
 // quick, slightly-stiff press-in so the tap reads as instant, and a
 // bouncier release so letting go doesn't feel abrupt.
-const PRESS_IN = { toValue: 0.97, useNativeDriver: true, speed: 50, bounciness: 0 };
-const PRESS_OUT = { toValue: 1, useNativeDriver: true, speed: 24, bounciness: 6 };
+const PRESS_IN = { toValue: 0.95, useNativeDriver: true, speed: 60, bounciness: 0 };
+const PRESS_OUT = { toValue: 1, useNativeDriver: true, speed: 22, bounciness: 8 };
 
 export function PrimaryButton({ label, onPress, disabled, loading, variant = "primary" }: ButtonProps) {
   const { colors } = useTheme();

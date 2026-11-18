@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, StyleSheet } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet } from "react-native";
+import { PressableScale as Pressable } from "./ui/PressableScale";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../lib/auth/AuthContext";
 import { supabase } from "../lib/supabase";

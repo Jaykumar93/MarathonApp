@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
+import { PressableScale as Pressable } from "./PressableScale";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { fonts, text, radius, palette } from "../../lib/theme";

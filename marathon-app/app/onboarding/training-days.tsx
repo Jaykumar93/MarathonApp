@@ -1,5 +1,6 @@
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { PressableScale as Pressable } from "../../components/ui/PressableScale";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { OnboardingStepLayout, PillChips, GroupLabel } from "../../components/OnboardingStepLayout";
@@ -81,7 +82,7 @@ export default function TrainingDays() {
         <Card style={{ marginBottom: 0, gap: 4 }}>
           <GroupLabel>Your week</GroupLabel>
           <Text style={{ fontFamily: fonts.monoSemiBold, ...text("emphasis"), color: colors.textPrimary }}>
-            {runs} {runs === 1 ? "run" : "runs"} · long run on {longRun.full}
+            {runs} {runs === 1 ? "run" : "runs"} ï¿½ long run on {longRun.full}
           </Text>
         </Card>
       )}
