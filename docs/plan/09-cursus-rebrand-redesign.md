@@ -148,7 +148,7 @@ Everything below that touches a live service is a **runbook for you to approve s
 - [x] `PRODUCT.md`: product name Cursus; Brand Commitments rewritten (palette, fonts, profile-line mark, Pika rules; Pre-Dawn Run retired).
 - [x] `DESIGN.md` rewritten from the shipped tokens (`lib/theme.ts`, `lib/theme/colors.ts`) and `.impeccable/design.json` regenerated (13 colour ramps, 8 components, new narrative). Written by hand from the code, not with the Impeccable `document` command; run that command later if a canonical regeneration is wanted.
 - [x] `docs/design.md`: Cursus palette, type, Pika rules and mockup file; time-of-day language removed. `docs/AppContext.md` and `docs/marathon-app-prd.md` name and palette references updated.
-- Rewritten 2026-11-18 as `docs/cursus-docs.html` plus `docs/Cursus-Engineering-Docs.pdf` (the old `stryde-docs-updated.html` was removed). Left as historical on purpose: `docs/marathon-app-final.html`, wireframes and `theme-variations.html` (old design artefacts), and the old `docs/brand/stryde-*.svg`.
+- Rewritten 2026-11-18 as `docs/cursus-docs.html` plus `docs/Cursus-Engineering-Docs.pdf` (the old `stryde-docs-updated.html` is kept unchanged because it is linked from outside the repo). Left as historical on purpose: `docs/marathon-app-final.html`, wireframes and `theme-variations.html` (old design artefacts), and the old `docs/brand/stryde-*.svg`.
 - [ ] Write `implementation/09-cursus-rebrand-redesign.md` when Task 9 is Done, and flip MAIN_PLAN.
 
 ### Phase 8 — QA and release (2–3 days)

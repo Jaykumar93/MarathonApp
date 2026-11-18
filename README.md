@@ -212,7 +212,8 @@ Where to read more: [`marathon-app/DESIGN.md`](marathon-app/DESIGN.md) (the writ
     ├── brand/                    Logo, mark, Pika and icon sources
     ├── cursus-design.html        The full interactive mockup
     ├── cursus-docs.html          Engineering write-up (HTML)
-    └── Cursus-Engineering-Docs.pdf  The same write-up as a PDF
+    ├── Cursus-Engineering-Docs.pdf  The same write-up as a PDF
+    └── stryde-docs-updated.html  The earlier write-up under the Stryde name (kept, it is linked from outside)
 ```
 
 ## Getting started
@@ -321,6 +322,7 @@ npx eas-cli build --platform android --profile production
 | [`docs/design.md`](docs/design.md) and [`marathon-app/DESIGN.md`](marathon-app/DESIGN.md) | The design system |
 | [`marathon-app/PRODUCT.md`](marathon-app/PRODUCT.md) | Users, purpose, principles, brand commitments |
 | [`docs/cursus-docs.html`](https://htmlpreview.github.io/?https://github.com/Jaykumar93/MarathonApp/blob/main/docs/cursus-docs.html) and [`docs/Cursus-Engineering-Docs.pdf`](docs/Cursus-Engineering-Docs.pdf) | The full engineering write-up: vision and the rename, design language, architecture diagrams, the plan engine's maths, the coach's retrieval design and its reliability, the schema, the security review, and bugs found along the way. The same content as a web page and as a PDF |
+| [`docs/stryde-docs-updated.html`](https://htmlpreview.github.io/?https://github.com/Jaykumar93/MarathonApp/blob/main/docs/stryde-docs-updated.html) | The original engineering write-up, written when the app was called Stryde (orange palette, Ridge Echo mark). Kept unchanged because it is linked from outside the repo. The current version is `cursus-docs.html` |
 | [`docs/privacy-policy.md`](docs/privacy-policy.md) | The privacy policy |
 
 ## Project status
