@@ -3,6 +3,7 @@ import type { RoutePoint } from "../gpsStats";
 import type { PlanSessionRow } from "./plans";
 import type { FinalRunStats } from "../runTracking/RunTrackingContext";
 
+// Intentionally still "stryde": this is a stored-data key, not a brand string. Renaming it would orphan a runner's unsynced data on update (docs/plan/09-cursus-rebrand-redesign.md, Phase 5).
 const STORAGE_KEY = "stryde:pendingFinishedRun";
 
 // Long enough to survive "went to take a photo and came back a minute

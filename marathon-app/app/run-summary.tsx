@@ -1,18 +1,21 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { coachHref } from "../lib/coach/autoSend";
+import { Image, Modal, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable as RNPressable } from "react-native";
+import { PressableScale as Pressable } from "../components/ui/PressableScale";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Circle, Polyline } from "react-native-svg";
 import { useAuth } from "../lib/auth/AuthContext";
-import { deleteActivity, getActivityById, updateActivity, type ActivityRow, type UpdateActivityInput } from "../lib/data/activities";
+import { deleteActivity, getActivityById, getAllActivities, updateActivity, type ActivityRow, type UpdateActivityInput } from "../lib/data/activities";
 import { getShoes, type ShoeRow } from "../lib/data/shoes";
 import { getPlanSessionById, type PlanSessionRow } from "../lib/data/plans";
 import { formatDistance, formatPace } from "../lib/units";
 import { formatHms, parseHms } from "../lib/timeFormat";
 import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
 import { projectRoute } from "../lib/routeShape";
-import type { RoutePoint } from "../lib/gpsStats";
+import type { RoutePoint, Split } from "../lib/gpsStats";
 import { fonts, spacing, type, text, inputText, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
@@ -20,6 +23,10 @@ import { ScreenHeader, SCREEN_TOP_GAP } from "../components/ui/ScreenHeader";
 import { ChipSelect } from "../components/ui/ChipSelect";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PhotoPicker } from "../components/ui/PhotoPicker";
+import { FeelFace } from "../components/reflection/FeelFace";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { detectPersonalBests } from "../lib/personalBests";
+import { FEEL_LABEL, feelToRpe, type Feel } from "../lib/reflection/insight";
 
 const ROUTE_VIEW_WIDTH = 300;
 const ROUTE_VIEW_HEIGHT = 170;
@@ -88,6 +95,31 @@ export default function RunSummary() {
     getShoes(session.user.id).then(setShoes);
   }, [session?.user?.id]);
 
+  // A run saved in the last day and a half that sets a record opens the celebration, once
+  // per run (the flag is kept on the device so re-opening it from history never re-fires).
+  useEffect(() => {
+    if (!activity || !session?.user?.id) return;
+    if (Date.now() - new Date(activity.start_time).getTime() > 36 * 3600 * 1000) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const key = `cursus:pbShown:${activity.id}`;
+        if (await AsyncStorage.getItem(key)) return;
+        const all = await getAllActivities(session.user.id);
+        const pbs = detectPersonalBests(all, activity);
+        await AsyncStorage.setItem(key, "1");
+        if (cancelled || pbs.length === 0) return;
+        const pb = pbs[0];
+        router.push(`/personal-best?id=${activity.id}&kind=${pb.kind}&value=${pb.value}&previous=${pb.previous}`);
+      } catch {
+        // celebrating is a nicety - never block the summary on it
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activity?.id, session?.user?.id]);
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -117,6 +149,14 @@ export default function RunSummary() {
     : [];
   const isTracked = routePoints.length > 0;
   const projectedRoute = routePoints.length >= 2 ? projectRoute(routePoints, ROUTE_VIEW_WIDTH, ROUTE_VIEW_HEIGHT, 16) : [];
+
+  const splits: Split[] = Array.isArray(activity.splits)
+    ? (activity.splits as Split[]).filter((sp) => typeof sp?.km === "number" && typeof sp?.seconds === "number" && sp.distanceMeters > 0)
+    : [];
+  const splitPaces = splits.map((sp) => sp.seconds / (sp.distanceMeters / 1000));
+  const fastestSplit = splitPaces.length > 1 ? Math.min(...splitPaces) : null;
+  const distNum = unit === "mi" ? distanceKm * 0.621371 : distanceKm;
+  const paceNum = formatPace(paceSecondsPerKm, unit).replace(/\/(km|mi)$/, "");
 
   async function confirmDelete() {
     if (!activity) return;
@@ -180,12 +220,20 @@ export default function RunSummary() {
         contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: 96 + insets.bottom }]}
       >
         <ScreenHeader
+          title="Run summary"
           onBack={goBack}
           right={
             !editing ? (
-              <Pressable onPress={startEditing} hitSlop={10} accessibilityLabel="Edit run details">
-                <Ionicons name="pencil-outline" size={18} color={colors.textDim} />
-              </Pressable>
+              <View style={styles.headerActions}>
+                <Pressable onPress={startEditing} hitSlop={10} accessibilityLabel="Edit run details">
+                  <Ionicons name="pencil-outline" size={20} color={colors.textPrimary} />
+                </Pressable>
+                {projectedRoute.length >= 2 && (
+                  <Pressable onPress={() => router.push(`/share-run?id=${activity.id}`)} hitSlop={10} accessibilityLabel="Share this run">
+                    <Ionicons name="share-outline" size={22} color={colors.textPrimary} />
+                  </Pressable>
+                )}
+              </View>
             ) : undefined
           }
         />
@@ -199,85 +247,17 @@ export default function RunSummary() {
             placeholderTextColor={colors.textFaint}
           />
         ) : (
-          <>
-            <Text style={styles.header}>Nice work — saved.</Text>
-            {activity.name && <Text style={styles.nameLine}>{activity.name}</Text>}
-          </>
+          activity.name && <Text style={styles.nameLine}>{activity.name}</Text>
         )}
         <Text style={styles.dateLine}>{formatDateHeading(activity.start_time.slice(0, 10))}</Text>
 
-        <View style={styles.statRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>DISTANCE</Text>
-            {editing && !isTracked ? (
-              <TextInput
-                style={styles.statInput}
-                value={editDistanceKm}
-                onChangeText={setEditDistanceKm}
-                keyboardType="decimal-pad"
-              />
-            ) : (
-              <Text style={styles.statValue}>{formatDistance(distanceKm, unit)}</Text>
-            )}
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>DURATION</Text>
-            {editing && !isTracked ? (
-              <TextInput
-                style={styles.statInput}
-                value={editDuration}
-                onChangeText={setEditDuration}
-                keyboardType="numbers-and-punctuation"
-              />
-            ) : (
-              <Text style={styles.statValue}>{formatDuration(activity.duration_seconds)}</Text>
-            )}
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>PACE</Text>
-            <Text style={styles.statValue}>{formatPace(paceSecondsPerKm, unit)}</Text>
-          </View>
-        </View>
-        {editing && isTracked && (
-          <Text style={styles.trackedNote}>Distance and time come from GPS tracking and can't be edited.</Text>
-        )}
-
-        {!editing && (
-          <Pressable
-            style={styles.askCoachRow}
-            onPress={() =>
-              router.push(
-                `/(tabs)/coach?activityId=${activity.id}&prefill=${encodeURIComponent(
-                  planSession && planSession.session_type !== "rest" ? "How did this run compare to plan?" : "What do you think of this run?"
-                )}`
-              )
-            }
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Ask the coach about this run"
-          >
-            <Ionicons name="chatbubble-ellipses-outline" size={17} color={colors.secondaryAccent} />
-            <Text style={styles.askCoachText}>Ask the coach about this run</Text>
-          </Pressable>
-        )}
-
         {projectedRoute.length >= 2 && (
-          <Card>
-            <View style={styles.routeCardHeader}>
-              <Text style={styles.cardTitle}>Route</Text>
-              <Pressable
-                onPress={() => router.push(`/share-run?id=${activity.id}`)}
-                hitSlop={8}
-                accessibilityLabel="Share this run"
-              >
-                <Ionicons name="share-outline" size={19} color={colors.textDim} />
-              </Pressable>
-            </View>
+          <View style={styles.routeCard}>
             <Svg width="100%" height={ROUTE_VIEW_HEIGHT} viewBox={`0 0 ${ROUTE_VIEW_WIDTH} ${ROUTE_VIEW_HEIGHT}`}>
               <Polyline
                 points={projectedRoute.map((p) => `${p.x},${p.y}`).join(" ")}
                 fill="none"
-                stroke={colors.accent}
+                stroke={colors.accentMark}
                 strokeWidth={3}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -290,17 +270,109 @@ export default function RunSummary() {
                 fill={colors.textPrimary}
               />
             </Svg>
-            <View style={styles.routeLegend}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
-                <Text style={styles.legendText}>Start</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: colors.textPrimary }]} />
-                <Text style={styles.legendText}>Finish</Text>
-              </View>
+          </View>
+        )}
+
+        <View style={styles.statRow}>
+          <View style={styles.statCard}>
+            <Text style={[styles.statLabel, { color: colors.accentText }]}>{editing && !isTracked ? `DIST · ${unit.toUpperCase()}` : "DIST"}</Text>
+            {editing && !isTracked ? (
+              <TextInput
+                style={styles.statInput}
+                value={editDistanceKm}
+                onChangeText={setEditDistanceKm}
+                keyboardType="decimal-pad"
+              />
+            ) : (
+              <Text style={styles.statValue}>{distNum.toFixed(2)}</Text>
+            )}
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>TIME</Text>
+            {editing && !isTracked ? (
+              <TextInput
+                style={styles.statInput}
+                value={editDuration}
+                onChangeText={setEditDuration}
+                keyboardType="numbers-and-punctuation"
+              />
+            ) : (
+              <Text style={[styles.statValue, { color: colors.textDim }]}>{formatDuration(activity.duration_seconds)}</Text>
+            )}
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>PACE</Text>
+            <Text style={styles.statValue}>{paceNum || "--"}</Text>
+          </View>
+        </View>
+        {editing && isTracked && (
+          <Text style={styles.trackedNote}>Distance and time come from GPS tracking and can't be edited.</Text>
+        )}
+
+        {!editing && splits.length > 0 && (
+          <Card style={styles.splitsCard}>
+            <View style={[styles.splitRow, styles.splitHead]}>
+              <Text style={[styles.splitCell, styles.splitKm, styles.splitHeadText]}>{unit.toUpperCase()}</Text>
+              <Text style={[styles.splitCell, styles.splitPace, styles.splitHeadText]}>PACE</Text>
+            </View>
+            {splits.map((sp, i) => {
+              const fastest = fastestSplit != null && splitPaces[i] === fastestSplit;
+              const secsPerUnit = unit === "mi" ? splitPaces[i] / 0.621371 : splitPaces[i];
+              const m = Math.floor(secsPerUnit / 60);
+              const sc = Math.round(secsPerUnit % 60);
+              return (
+                <View key={sp.km} style={styles.splitRow}>
+                  <Text style={[styles.splitCell, styles.splitKm, fastest && { color: colors.accentText }]}>{sp.km}</Text>
+                  <Text style={[styles.splitCell, styles.splitPace, fastest && { color: colors.accentText }]}>
+                    {sc === 60 ? `${m + 1}:00` : `${m}:${String(sc).padStart(2, "0")}`}
+                  </Text>
+                </View>
+              );
+            })}
+          </Card>
+        )}
+
+        {!editing && activity.rpe == null && activity.reflected_at == null && (
+          <Card style={styles.reflectCard}>
+            <View style={styles.reflectHeader}>
+              <Text style={styles.reflectTitle}>How did it feel?</Text>
+              <Text style={styles.reflectHint}>10 seconds</Text>
+            </View>
+            <View style={styles.reflectFaces}>
+              {([1, 2, 3, 4, 5] as Feel[]).map((f) => (
+                <Pressable
+                  key={f}
+                  onPress={() => router.push(`/reflect?id=${activity.id}&feel=${f}`)}
+                  hitSlop={4}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${FEEL_LABEL[f]}, effort ${feelToRpe(f)} of 10`}
+                  style={styles.reflectFace}
+                >
+                  <FeelFace feel={f} size={38} />
+                </Pressable>
+              ))}
             </View>
           </Card>
+        )}
+
+        {!editing && (
+          <Pressable
+            style={styles.askCoachRow}
+            onPress={() =>
+              router.push(
+                coachHref(
+                  { activityId: activity.id },
+                  planSession && planSession.session_type !== "rest" ? "How did this run compare to plan?" : "What do you think of this run?"
+                )
+              )
+            }
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Ask the coach about this run"
+          >
+            <Ionicons name="chatbubble-ellipses-outline" size={17} color={colors.secondaryAccent} />
+            <Text style={styles.askCoachText}>Ask the coach about this run</Text>
+          </Pressable>
         )}
 
         {planSession && planSession.session_type !== "rest" && (
@@ -394,24 +466,17 @@ export default function RunSummary() {
 
       {/* Pinned to the screen's bottom edge, not the scroll content - same reasoning as planned-session.tsx's Start button and the delete-confirm sheet below. Hidden while editing - Cancel/Save live inline above instead, since Done/Delete don't apply mid-edit. */}
       {!editing && (
-        <View style={[styles.buttonRow, styles.buttonRowFixed, { bottom: insets.bottom + 24 }]}>
-          <View style={{ flex: 1 }}>
-            <PrimaryButton label="Done" onPress={() => router.replace("/(tabs)/activity")} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <PrimaryButton
-              label={deleting ? "Deleting…" : "Delete"}
-              variant="dangerOutline"
-              onPress={() => setConfirmingDelete(true)}
-              disabled={deleting}
-            />
-          </View>
+        <View style={[styles.buttonRowFixed, { bottom: insets.bottom + 18 }]}>
+          <PrimaryButton label="Done" onPress={() => router.replace("/(tabs)/activity")} />
+          <Pressable onPress={() => setConfirmingDelete(true)} disabled={deleting} hitSlop={8} accessibilityRole="button" style={styles.deleteLink}>
+            <Text style={styles.deleteLinkText}>{deleting ? "Deleting…" : "Delete run"}</Text>
+          </Pressable>
         </View>
       )}
 
       <Modal visible={confirmingDelete} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setConfirmingDelete(false)}>
         <View style={styles.modalWrap}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setConfirmingDelete(false)} />
+          <RNPressable style={styles.modalBackdrop} onPress={() => setConfirmingDelete(false)} />
           <View style={[styles.confirmSheet, { paddingBottom: Math.max(28, insets.bottom + 16) }]}>
             <View style={styles.alertIcon}>
               <Ionicons name="warning" size={22} color={colors.danger} />
@@ -440,13 +505,22 @@ function createStyles(colors: Colors) {
   container: { padding: spacing.screenPadding, paddingTop: 20, gap: 4 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
   body: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
-  header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary, textAlign: "center" },
-  nameLine: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary, textAlign: "center", marginTop: 4 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 16 },
+  nameLine: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: colors.textPrimary, marginTop: 2 },
+  routeCard: { backgroundColor: colors.cardBg, borderRadius: spacing.cardRadius, borderWidth: 1, borderColor: colors.cardLine, overflow: "hidden", marginBottom: 10 },
+  splitsCard: { paddingVertical: 6, paddingHorizontal: 12 },
+  splitRow: { flexDirection: "row", paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.cardLine },
+  splitHead: { paddingVertical: 8 },
+  splitHeadText: { color: colors.textDim },
+  splitCell: { fontFamily: fonts.monoMedium, ...text("body"), color: colors.textPrimary },
+  splitKm: { flex: 1 },
+  splitPace: { flex: 1, textAlign: "right" },
+  deleteLink: { alignSelf: "center", paddingVertical: 10, marginTop: 4 },
+  deleteLinkText: { fontFamily: fonts.bodyMedium, ...text("body"), color: colors.dangerText },
   nameInput: {
     fontFamily: fonts.bodySemiBold,
     ...inputText("emphasis"),
     color: colors.textPrimary,
-    textAlign: "center",
     borderWidth: 1,
     borderColor: colors.cardLine,
     borderRadius: radius.md,
@@ -458,27 +532,28 @@ function createStyles(colors: Colors) {
     fontFamily: fonts.body,
     ...text("small"),
     color: colors.textDim,
-    textAlign: "center",
-    marginTop: 6,
-    marginBottom: 18,
+    marginTop: 2,
+    marginBottom: 14,
   },
   photoRow: { flexDirection: "row", gap: 8, marginTop: 4, marginBottom: 4, justifyContent: "center" },
   photoThumb: { width: 84, height: 84, borderRadius: radius.md },
   photoEditSection: { marginTop: 4, marginBottom: 8 },
   fieldLabel: { fontFamily: fonts.bodyMedium, ...inputText("small"), color: colors.textDim, marginBottom: 8 },
   fieldGap: { marginTop: 12 },
-  statRow: { flexDirection: "row", gap: 8, marginBottom: 6 },
+  statRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
   statCard: {
     flex: 1,
     backgroundColor: colors.cardBg,
     borderRadius: spacing.cardRadius,
+    borderWidth: 1,
+    borderColor: colors.cardLine,
     paddingVertical: 12,
     alignItems: "center",
   },
-  statLabel: { fontFamily: fonts.monoMedium, fontSize: type.statLabel, color: colors.textFaint, marginBottom: 4 },
-  statValue: { fontFamily: fonts.dataBold, fontSize: type.statValue, color: colors.textPrimary },
+  statLabel: { fontFamily: fonts.monoMedium, ...text("emphasis"), letterSpacing: 1, color: colors.textDim, marginBottom: 4 },
+  statValue: { fontFamily: fonts.monoSemiBold, ...text("title"), color: colors.textPrimary },
   statInput: {
-    fontFamily: fonts.dataBold,
+    fontFamily: fonts.monoSemiBold,
     fontSize: type.statValue,
     color: colors.textPrimary,
     textAlign: "center",
@@ -486,6 +561,12 @@ function createStyles(colors: Colors) {
     minWidth: 50,
   },
   trackedNote: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, textAlign: "center", marginBottom: 10 },
+  reflectCard: { marginBottom: 10, gap: 10 },
+  reflectHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  reflectTitle: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
+  reflectHint: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint },
+  reflectFaces: { flexDirection: "row", justifyContent: "space-between" },
+  reflectFace: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
   askCoachRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, marginBottom: 10 },
   askCoachText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.secondaryAccent },
   cardTitle: { fontFamily: fonts.bodyBold, ...text("small"), color: colors.textPrimary, marginBottom: 6 },
@@ -535,7 +616,7 @@ function createStyles(colors: Colors) {
     justifyContent: "center",
     marginBottom: 12,
   },
-  confirmTitle: { fontFamily: fonts.bodyBold, ...text("emphasis"), color: colors.danger, marginBottom: 4 },
+  confirmTitle: { fontFamily: fonts.bodyBold, ...text("emphasis"), color: colors.dangerText, marginBottom: 4 },
   confirmBody: { fontFamily: fonts.body, ...text("body"), color: colors.textDim, marginBottom: 16 },
   });
 }

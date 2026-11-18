@@ -169,7 +169,7 @@ Five-tab bar: **Home, Plan, Track, Activity, Coach**. Track is a dedicated, alwa
 
 ## 10. Design System
 
-Confirmed direction: **Pre-Dawn Run** palette (Predawn/Frost base, Course Marking orange, Contour Ink, Negative Split green, Caution Flare amber). Two signature elements — the **Block Profile** (training block rendered as terrain) and the **Pace Band** (race-bracelet-styled live pacing) — plus a load-bearing **weekly calendar strip** (type-colored day cells) that emerged during design refinement.
+Confirmed direction: **Cursus** (the profile line): Ink/Bone base, Ultraviolet accent, Glacier, Moss, Rose for intervals and Marigold for warnings, with the Pika mascot. This replaced the earlier Pre-Dawn Run orange palette. Two signature elements — the **Block Profile** (training block rendered as terrain) and the **Pace Band** (race-bracelet-styled live pacing) — plus a load-bearing **weekly calendar strip** (type-colored day cells) that emerged during design refinement.
 
 Full/light dark mode is a user-toggleable app-wide theme (Settings → Preferences), with one deliberate exception: Active Run stays permanently dark regardless of the toggle, for outdoor legibility.
 
@@ -213,7 +213,7 @@ Full detail, component specs, and dark-mode rules: see `design.md`.
 | Track tab vs. FAB | Kept as a dedicated tab | Needs to work independently of whether today has a scheduled session |
 | Post-run RPE/notes | Moved after Save, fully skippable | Zero friction immediately after finishing a run |
 | Missed sessions | Inline recovery actions, neutral styling | Avoids guilt-tinted UX; gives an actual next step |
-| Color palette | Pre-Dawn Run confirmed over 3 alternates | Best balance of daily-use calm and distinctiveness |
+| Color palette | Cursus violet palette replaced Pre-Dawn Run orange | The orange sat too close to a major competitor's colour; violet is distinctive and holds contrast in both themes |
 | Dark mode scope | Full app-wide toggle, with Active Run as a fixed exception | User requested "everywhere"; Active Run's outdoor-use case justified as a deliberate, disclosed exception |
 | iOS distribution | Deferred to Phase 2, TestFlight over free sideloading | Sideloading's 7-day cycle is too much friction for sustained testing |
 | RAG knowledge base sourcing | Self-authored summaries only | Avoids reproducing copyrighted training-plan content |

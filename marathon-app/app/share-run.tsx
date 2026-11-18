@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { PressableScale as Pressable } from "../components/ui/PressableScale";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ViewShot, { type ViewShotRef } from "react-native-view-shot";
@@ -124,7 +125,7 @@ export default function ShareRun() {
     setDownloading(true);
     try {
       const uri = await viewShotRef.current.capture();
-      const filename = `stryde-${template}-${activity.start_time.slice(0, 10)}-${Date.now()}.png`;
+      const filename = `cursus-${template}-${activity.start_time.slice(0, 10)}-${Date.now()}.png`;
       const saved = await saveImageToDevice(uri, filename);
       if (saved) showNotice("Saved - find it in the folder you picked.");
     } catch {
@@ -215,12 +216,12 @@ export default function ShareRun() {
   return (
     <View style={[styles.screen, { paddingTop: SCREEN_TOP_GAP + insets.top }]}>
       <View style={styles.topRow}>
-        <ScreenHeader onBack={goBack} />
+        <ScreenHeader title="Share" onBack={goBack} />
       </View>
 
       <ScrollView
         style={styles.scrollFlex}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 + insets.bottom }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 32 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.previewWrap}>
@@ -288,6 +289,24 @@ export default function ShareRun() {
           </View>
         )}
 
+        <View style={styles.actionsBlock}>
+          {notice && <Text style={styles.notice}>{notice}</Text>}
+          <PrimaryButton
+            label={sharing ? "Preparing…" : "Share"}
+            onPress={handleShare}
+            disabled={sharing || downloading || !shareAvailable}
+            loading={sharing}
+          />
+          <View style={{ height: 10 }} />
+          <PrimaryButton
+            label={downloading ? "Saving…" : "Download image"}
+            variant="secondary"
+            onPress={handleDownload}
+            disabled={downloading || sharing}
+            loading={downloading}
+          />
+        </View>
+
         {activity.notes && (
           <View style={styles.descriptionBlock}>
             <SectionLabel>Description</SectionLabel>
@@ -322,28 +341,6 @@ export default function ShareRun() {
         {!shareAvailable && <Text style={styles.unavailableNote}>Sharing isn't available in this preview - it'll work on your device.</Text>}
       </ScrollView>
 
-      <View style={[styles.shareButtonWrap, { paddingBottom: insets.bottom + 16 }]}>
-        {notice && <Text style={styles.notice}>{notice}</Text>}
-        <View style={styles.buttonRow}>
-          <View style={styles.buttonSlot}>
-            <PrimaryButton
-              label={downloading ? "Saving…" : "Download"}
-              variant="secondary"
-              onPress={handleDownload}
-              disabled={downloading || sharing}
-              loading={downloading}
-            />
-          </View>
-          <View style={styles.buttonSlot}>
-            <PrimaryButton
-              label={sharing ? "Preparing…" : "Share"}
-              onPress={handleShare}
-              disabled={sharing || downloading || !shareAvailable}
-              loading={sharing}
-            />
-          </View>
-        </View>
-      </View>
     </View>
   );
 }
@@ -370,6 +367,8 @@ function createStyles(colors: Colors) {
   swipeHint: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint, textAlign: "center", marginTop: 2 },
   transparentHint: { fontFamily: fonts.body, ...text("caption"), color: colors.textFaint, textAlign: "center", marginTop: 8, paddingHorizontal: 12 },
   toggleRow: {
+    borderWidth: 1,
+    borderColor: colors.cardLine,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -382,14 +381,15 @@ function createStyles(colors: Colors) {
   toggleLabel: { fontFamily: fonts.bodyMedium, ...text("body"), color: colors.textPrimary },
   descriptionBlock: { marginTop: 18 },
   descriptionText: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: colors.textDim, lineHeight: 19 },
-  exportBlock: { marginTop: 18 },
+  exportBlock: { marginTop: 22 },
+  actionsBlock: { marginTop: 18 },
   exportRow: { flexDirection: "row", gap: 10 },
   exportButton: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 12,
-    borderRadius: spacing.cardRadius,
+    paddingHorizontal: 22,
+    borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.cardLine,
     backgroundColor: colors.cardBg,

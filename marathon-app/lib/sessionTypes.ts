@@ -21,9 +21,9 @@ export const SESSION_TYPE_LABEL: Record<string, string> = {
 export const SESSION_TYPE_COLOR: Record<string, string> = {
   easy: palette.success,
   tempo: palette.accent,
-  interval: palette.accent,
+  interval: palette.interval,
   long: palette.contour,
-  race: palette.accent,
+  race: palette.race,
 };
 
 /** Compact one-line summary of a planned interval workout's actual shape, e.g. "6 x 600m @ 4:40/km, 300m jog recovery" - shown wherever a session with a real interval_structure appears (Plan tab, Day Detail). */

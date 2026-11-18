@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { PressableScale as Pressable } from "../components/ui/PressableScale";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../lib/auth/AuthContext";
 import { getAllProfiles, setUserApproval, type AdminProfileRow } from "../lib/data/admin";
-import { fonts, spacing, type, text, radius, palette } from "../lib/theme";
+import { fonts, spacing, text, radius, palette } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
@@ -39,7 +40,7 @@ function UserRow({
       </View>
       {row.status === "approved" ? (
         <Pressable accessibilityRole="button" style={styles.revokeChip} onPress={() => onRequestAction(row.id, "revoke")}>
-          <Text style={styles.revokeChipText}>Revoke</Text>
+          <Text style={styles.revokeChipText}>Remove</Text>
         </Pressable>
       ) : (
         <Pressable accessibilityRole="button" style={styles.approveChip} onPress={() => onRequestAction(row.id, "approve")}>
@@ -194,29 +195,23 @@ function createStyles(colors: Colors) {
     screen: { flex: 1, backgroundColor: colors.screenBg, paddingHorizontal: spacing.screenPadding },
     scrollFlex: { flex: 1 },
     scrollContent: { paddingBottom: 24 },
-    emptyText: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, paddingVertical: 4 },
-    errorText: { fontFamily: fonts.body, ...text("small"), color: colors.danger, marginBottom: 8 },
+    emptyText: { fontFamily: fonts.body, ...text("small"), color: colors.textFaint, paddingVertical: 4 },
+    errorText: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText, marginBottom: 8 },
     divider: { height: 1, backgroundColor: colors.cardLine, marginVertical: 10 },
     userRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     userInfo: { flex: 1 },
-    userName: { fontFamily: fonts.bodySemiBold, fontSize: type.pDim, color: colors.textPrimary },
-    userEmail: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textDim, marginTop: 2 },
-    userDate: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
+    userName: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: colors.textPrimary },
+    userEmail: { fontFamily: fonts.body, ...text("body"), color: colors.textDim, marginTop: 2 },
+    userDate: { fontFamily: fonts.body, ...text("small"), color: colors.textFaint, marginTop: 2 },
     approveChip: {
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      borderRadius: radius.md,
+      paddingHorizontal: 20,
+      paddingVertical: 11,
+      borderRadius: radius.pill,
       backgroundColor: colors.accentFill,
     },
-    approveChipText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: palette.onAccent },
-    revokeChip: {
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      borderRadius: radius.md,
-      borderWidth: 1.5,
-      borderColor: colors.danger,
-    },
-    revokeChipText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.danger },
+    approveChipText: { fontFamily: fonts.bodySemiBold, ...text("body"), color: palette.onAccent },
+    revokeChip: { paddingHorizontal: 4, paddingVertical: 8 },
+    revokeChipText: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
     confirmOverlay: {
       position: "absolute",
       top: 0,
@@ -242,7 +237,7 @@ function createStyles(colors: Colors) {
       borderWidth: 0,
     },
     confirmTitle: { fontFamily: fonts.bodyBold, ...text("emphasis"), color: colors.textPrimary },
-    confirmBody: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textDim, marginBottom: 4 },
+    confirmBody: { fontFamily: fonts.body, ...text("small"), color: colors.textDim, marginBottom: 4 },
     confirmButtons: { gap: 8, marginTop: 6 },
   });
 }

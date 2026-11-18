@@ -17,8 +17,8 @@ const LABEL_STYLE = { primary: "primaryLabel", secondary: "secondaryLabel", dang
 // transform + opacity only (compositor-friendly, no layout thrash) - a
 // quick, slightly-stiff press-in so the tap reads as instant, and a
 // bouncier release so letting go doesn't feel abrupt.
-const PRESS_IN = { toValue: 0.97, useNativeDriver: true, speed: 50, bounciness: 0 };
-const PRESS_OUT = { toValue: 1, useNativeDriver: true, speed: 24, bounciness: 6 };
+const PRESS_IN = { toValue: 0.95, useNativeDriver: true, speed: 60, bounciness: 0 };
+const PRESS_OUT = { toValue: 1, useNativeDriver: true, speed: 22, bounciness: 8 };
 
 export function PrimaryButton({ label, onPress, disabled, loading, variant = "primary" }: ButtonProps) {
   const { colors } = useTheme();
@@ -76,12 +76,12 @@ function createStyles(colors: Colors) {
     },
     primary: { backgroundColor: colors.accentFill },
     secondary: { backgroundColor: "transparent", borderWidth: 1.5, borderColor: colors.secondaryAccent },
-    danger: { backgroundColor: colors.danger },
+    danger: { backgroundColor: colors.dangerFill },
     dangerOutline: { backgroundColor: "transparent", borderWidth: 1.5, borderColor: colors.danger },
     disabled: { opacity: 0.5 },
     label: { fontFamily: fonts.bodySemiBold, ...text("emphasis") },
     primaryLabel: { color: palette.onAccent },
     secondaryLabel: { color: colors.secondaryAccent },
-    dangerOutlineLabel: { color: colors.danger },
+    dangerOutlineLabel: { color: colors.dangerText },
   });
 }

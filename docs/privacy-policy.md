@@ -1,8 +1,8 @@
-# Stryde Privacy Policy
+# Cursus Privacy Policy
 
 **Effective date:** September 9, 2026
 
-Stryde is a marathon training app built and run by a single independent developer, currently in a manually-approved early-access phase (Android only, distributed by direct link rather than the Play Store). This policy describes what data the app collects, why, and where it goes. It's written to match what the app actually does today, not a generic template - if a section changes in a way that matters, this document changes with it.
+Cursus is a marathon training app built and run by a single independent developer, currently in a manually-approved early-access phase (Android only, distributed by direct link rather than the Play Store). This policy describes what data the app collects, why, and where it goes. It's written to match what the app actually does today, not a generic template - if a section changes in a way that matters, this document changes with it.
 
 ## What we collect
 
@@ -19,7 +19,7 @@ Stryde is a marathon training app built and run by a single independent develope
 
 **Location.** While a run is actively being tracked, the app collects GPS location - including in the background, if you grant that permission - to record your route, distance, and pace. Location is not collected at any other time.
 
-**AI Coach conversations.** Any question you ask Stryde's AI coach, plus the specific pieces of your own training data needed to answer it (e.g. the run you're asking about, or your recent weekly mileage). See "Third parties" below for where this is sent.
+**AI Coach conversations.** Any question you ask Cursus's AI coach, plus the specific pieces of your own training data needed to answer it (e.g. the run you're asking about, or your recent weekly mileage). See "Third parties" below for where this is sent.
 
 **Push notification data.** If you enable notifications: an Expo push token identifying your device, and your device's timezone (used only to send the daily reminder at your own chosen local hour, not the server's).
 
@@ -66,7 +66,7 @@ Your data is kept for as long as your account is active. There is currently no s
 
 ## Children's privacy
 
-Stryde is not directed at, and is not knowingly used by, children under 13. If you believe a child has created an account, contact us and we'll remove it.
+Cursus is not directed at, and is not knowingly used by, children under 13. If you believe a child has created an account, contact us and we'll remove it.
 
 ## Changes to this policy
 

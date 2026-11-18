@@ -1,5 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { PressableScale as Pressable } from "../components/ui/PressableScale";
+import { Pika } from "../components/mascot/Pika";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,7 +14,7 @@ import {
   markNotificationRead,
   type NotificationRow,
 } from "../lib/data/notifications";
-import { fonts, spacing, type, text, fs, radius } from "../lib/theme";
+import { fonts, spacing, text, radius } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { ScreenHeader, SCREEN_TOP_GAP, SCREEN_BOTTOM_GAP } from "../components/ui/ScreenHeader";
@@ -92,17 +94,15 @@ export default function Notifications() {
 
       {!loading && notifications.length === 0 && (
         <View style={styles.emptyState}>
-          <View style={styles.emptyIconCircle}>
-            <Ionicons name="notifications-outline" size={22} color={colors.textFaint} />
-          </View>
-          <Text style={styles.emptyTitle}>You're all caught up</Text>
-          <Text style={styles.emptySub}>Missed-run reminders will show up here.</Text>
+          <Pika expression="easy" size={150} />
+          <Text style={styles.emptyTitle}>All caught up</Text>
+          <Text style={styles.emptySub}>Plan changes and reminders will appear here.</Text>
         </View>
       )}
 
       {GROUP_ORDER.filter((g) => grouped[g].length > 0).map((group) => (
         <View key={group}>
-          <SectionLabel style={{ marginTop: 16 }}>{group}</SectionLabel>
+          <SectionLabel style={{ marginTop: 10 }}>{group}</SectionLabel>
           {grouped[group].map((notification) => (
             <Pressable
               accessibilityRole="button"
@@ -119,7 +119,7 @@ export default function Notifications() {
               >
                 {!notification.read && <View style={styles.unreadBar} />}
                 <View style={styles.iconWrap}>
-                  <Ionicons name={NOTIFICATION_ICON[notification.type]} size={17} color={colors.warningText} />
+                  <Ionicons name={NOTIFICATION_ICON[notification.type]} size={22} color={colors.textPrimary} />
                 </View>
                 <View style={styles.cardBody}>
                   <View style={styles.rowTop}>
@@ -163,15 +163,15 @@ function createStyles(colors: Colors) {
     screen: { flex: 1, backgroundColor: colors.screenBg },
     container: { padding: spacing.screenPadding, paddingBottom: 40 },
     markPill: {
-      backgroundColor: `${colors.accent}1A`,
+      backgroundColor: `${colors.accentMark}1A`,
       borderWidth: 1,
-      borderColor: `${colors.accent}40`,
+      borderColor: `${colors.accentMark}40`,
       borderRadius: radius.pill,
       paddingVertical: 5,
       paddingHorizontal: 11,
     },
     markPillText: { fontFamily: fonts.bodySemiBold, ...text("caption"), color: colors.accentText },
-    emptyState: { alignItems: "center", paddingTop: 50, gap: 10 },
+    emptyState: { alignItems: "center", paddingTop: 120, gap: 10, paddingHorizontal: 40 },
     emptyIconCircle: {
       width: 52,
       height: 52,
@@ -182,13 +182,13 @@ function createStyles(colors: Colors) {
       alignItems: "center",
       justifyContent: "center",
     },
-    emptyTitle: { fontFamily: fonts.bodyBold, ...text("body"), color: colors.textPrimary },
-    emptySub: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, textAlign: "center" },
-    card: { flexDirection: "row", gap: 11, alignItems: "flex-start" },
+    emptyTitle: { fontFamily: fonts.dataBold, ...text("headline"), color: colors.textPrimary, marginTop: 10 },
+    emptySub: { fontFamily: fonts.body, ...text("body"), color: colors.textDim, textAlign: "center" },
+    card: { flexDirection: "row", gap: 14, alignItems: "center" },
     // A light wash of the accent - the same orange as the unread bar - rather than the
     // warning yellow, which stacked into a heavy brown wall when most rows were unread.
-    unreadCard: { backgroundColor: `${colors.accent}14` },
-    readCard: { opacity: 0.55 },
+    unreadCard: { backgroundColor: `${colors.accentMark}14` },
+    readCard: {},
     unreadBar: {
       position: "absolute",
       left: 0,
@@ -199,19 +199,17 @@ function createStyles(colors: Colors) {
       backgroundColor: colors.accent,
     },
     iconWrap: {
-      width: 34,
-      height: 34,
-      borderRadius: radius.md,
-      backgroundColor: `${colors.warning}1F`,
+      width: 28,
+      height: 28,
       alignItems: "center",
       justifyContent: "center",
       flexShrink: 0,
     },
     cardBody: { flex: 1 },
     rowTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 2 },
-    title: { fontFamily: fonts.bodyBold, ...text("body"), color: colors.textPrimary, flexShrink: 1 },
+    title: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: colors.textPrimary, flexShrink: 1 },
     timestamp: { fontFamily: fonts.mono, ...text("caption"), color: colors.textFaint, flexShrink: 0 },
-    body: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: colors.textDim, lineHeight: 19 },
-    readText: { color: colors.textFaint },
+    body: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
+    readText: { color: colors.textDim },
   });
 }

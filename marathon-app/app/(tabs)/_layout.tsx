@@ -1,39 +1,27 @@
-import { useMemo, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { Tabs, useRouter } from "expo-router";
+import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Animated, ColorValue, Pressable, StyleSheet, Text, View, type GestureResponderEvent, type StyleProp, type ViewStyle } from "react-native";
-import { useAuth } from "../../lib/auth/AuthContext";
-import { fonts, type, text, radius, palette } from "../../lib/theme";
-import { useTheme, type Colors, type ThemeShadows } from "../../lib/theme/ThemeContext";
-import { HealthSyncButton } from "../../components/HealthSyncButton";
-import { NotificationBell } from "../../components/NotificationBell";
+import { Animated, Pressable, View, type ColorValue, type GestureResponderEvent, type StyleProp, type ViewStyle } from "react-native";
+import { fonts, text, palette } from "../../lib/theme";
+import { useTheme } from "../../lib/theme/ThemeContext";
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
 // Same transform-only press feedback as PrimaryButton/ChipSelect - a tab
 // tap should feel just as immediate as any other button in the app.
-const PRESS_IN = { toValue: 0.88, useNativeDriver: true, speed: 50, bounciness: 0 };
-const PRESS_OUT = { toValue: 1, useNativeDriver: true, speed: 24, bounciness: 6 };
+const PRESS_IN = { toValue: 0.86, useNativeDriver: true, speed: 60, bounciness: 0 };
+const PRESS_OUT = { toValue: 1, useNativeDriver: true, speed: 22, bounciness: 10 };
 
 // Overrides the default tab-bar button (which has no press feedback of its
-// own) via React Navigation's `tabBarButton` escape hatch - `tabBarIcon`
-// alone only controls the icon content, not the pressable wrapper around
-// the whole tab. Spreads every other prop straight through (href, role,
-// accessibility state, etc.) rather than cherry-picking a subset - this
-// wrapper only ever wants to *add* the press animation, never to drop
-// whatever React Navigation/expo-router itself relies on to make the tab
-// behave like a real link on web.
+// own) via React Navigation's `tabBarButton` escape hatch. Spreads every other
+// prop straight through (href, role, accessibility state, etc.) - this wrapper
+// only ever *adds* the press animation.
 interface TabBarButtonProps {
   children?: ReactNode;
   style?: StyleProp<ViewStyle>;
   onPressIn?: ((e: GestureResponderEvent) => void) | null;
   onPressOut?: ((e: GestureResponderEvent) => void) | null;
-  // React Navigation's real BottomTabBarButtonProps carries several more
-  // fields (href, onPress, accessibilityState/Role, testID, a `ref`
-  // typed against its own View, ...) that aren't worth redeclaring one by
-  // one here (and whose `ref` type doesn't structurally match Pressable's
-  // own) - passed through as-is via `rest` instead.
   [key: string]: unknown;
 }
 
@@ -52,203 +40,78 @@ function AnimatedTabButton({ children, style, onPressIn, onPressOut, ...rest }: 
         onPressOut?.(e);
       }}
     >
-      <Animated.View style={{ flex: 1, alignItems: "center", justifyContent: "center", transform: [{ scale }] }}>
-        {children}
-      </Animated.View>
+      <Animated.View style={{ flex: 1, alignItems: "center", justifyContent: "center", transform: [{ scale }] }}>{children}</Animated.View>
     </Pressable>
   );
 }
 
-// Outline while inactive, filled on the active tab - minimal at rest,
-// with the fill as the click/active signal rather than a heavier stroke.
-function TabIcon({ name, focused, color }: { name: IoniconName; focused: boolean; color: ColorValue }) {
-  return <Ionicons name={focused ? (name.replace("-outline", "") as IoniconName) : name} size={20} color={color} />;
-}
-
-// Track gets its own raised, circular treatment (like a camera-tab in a
-// typical bottom nav) rather than sitting flush in the row like every
-// other tab - it's the one screen that starts a live, full-screen
-// activity (GPS tracking), so it earns a visually distinct entry point.
-// A plain ring (a record/shutter-button look) rather than an Ionicon glyph
-// - sidesteps the icon-font's own asymmetric glyph padding entirely (an
-// actual centering problem the arrow icon had) and reads as "start
-// recording" at a glance, matching what Track's screen actually does.
-function RaisedTabIcon() {
-  const { colors, shadows } = useTheme();
-  const styles = useMemo(() => createRaisedStyles(colors, shadows), [colors, shadows]);
+// Line icons in both states, as in the design: the active tab is told apart by
+// the violet colour and a heavier label, not by a filled glyph. On top of that,
+// the active icon pops up with a spring and a soft pill grows in behind it, so
+// switching tabs feels alive. Transform and opacity only (native driver).
+function TabIcon({ name, color, focused }: { name: IoniconName; color: ColorValue; focused: boolean }) {
+  const progress = useRef(new Animated.Value(focused ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.spring(progress, { toValue: focused ? 1 : 0, useNativeDriver: true, speed: 16, bounciness: 12 }).start();
+  }, [focused, progress]);
+  const pillScale = progress.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] });
+  const pillOpacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0, 0.16] });
+  const iconScale = progress.interpolate({ inputRange: [0, 1], outputRange: [1, 1.14] });
+  const iconLift = progress.interpolate({ inputRange: [0, 1], outputRange: [0, -1] });
   return (
-    <View style={styles.circle}>
-      <View style={styles.ring} />
+    <View style={{ width: 48, height: 28, alignItems: "center", justifyContent: "center" }}>
+      <Animated.View
+        style={{ position: "absolute", width: 48, height: 28, borderRadius: 14, backgroundColor: color, opacity: pillOpacity, transform: [{ scale: pillScale }] }}
+      />
+      <Animated.View style={{ transform: [{ translateY: iconLift }, { scale: iconScale }] }}>
+        <Ionicons name={name} size={22} color={color} />
+      </Animated.View>
     </View>
   );
 }
 
-// Profile access lives in the shared tab header (not on any one screen) so
-// it's reachable from every tab - including Home/Plan when they're showing
-// NoPlanPrompt instead of real plan data, since having no goal yet is a
-// normal, supported state, not a reason to lose access to Settings.
-function ProfileButton() {
-  const router = useRouter();
-  const { profile } = useAuth();
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const displayName = profile?.full_name || profile?.username || profile?.email?.split("@")[0] || "?";
-
-  return (
-    <Pressable
-      style={styles.avatar}
-      onPress={() => router.push("/settings")}
-      hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
-      accessibilityRole="button"
-      accessibilityLabel="Open profile and settings"
-    >
-      <Text style={styles.avatarInitial}>{displayName.charAt(0).toUpperCase()}</Text>
-    </Pressable>
-  );
+function icon(name: IoniconName) {
+  return ({ color, focused }: { color: ColorValue; focused: boolean }) => <TabIcon name={name} color={color} focused={focused} />;
 }
 
-// Rendered as the Home tab's headerLeft - living in the exact same header
-// row as ProfileButton (headerRight) is the only way to guarantee they sit
-// on the same visual line, since anything placed in the scrollable content
-// below is a different layout tree from the native header and will never
-// reliably line up with it.
-function HomeGreeting() {
-  const { profile } = useAuth();
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const displayName = profile?.full_name || profile?.email?.split("@")[0] || "there";
-  return (
-    <Text style={styles.greeting} numberOfLines={1}>
-      Good to see you, {displayName}
-    </Text>
-  );
-}
-
+/**
+ * Five equal tabs - Home, Plan, Track, Activity, Coach - with no raised centre
+ * button and no navigator header (each tab draws its own TabHeader). Track keeps
+ * the tab bar but is always dark, so its bar is dark too.
+ */
 export default function TabsLayout() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  // Sized from the real bottom inset instead of a flat 74: a fixed height
-  // gave the icons and labels less room on phones with a home indicator or
-  // gesture bar than on ones with none, and the same header came out a
-  // different height by default on iOS (44pt) and Android (56dp).
   const tabBarBottom = Math.max(insets.bottom, 8);
   return (
     <Tabs
       screenOptions={{
-        headerShown: true,
-        headerTitle: "",
-        headerShadowVisible: false,
-        headerStyle: { backgroundColor: colors.screenBg, height: insets.top + 52 },
-        headerRight: () => (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <HealthSyncButton />
-            <NotificationBell />
-            <ProfileButton />
-          </View>
-        ),
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textFaint,
+        headerShown: false,
+        tabBarActiveTintColor: colors.accentText,
+        tabBarInactiveTintColor: colors.textDim,
         tabBarButton: (props) => <AnimatedTabButton {...props} />,
-        tabBarStyle: { height: 66 + tabBarBottom, paddingTop: 9, paddingBottom: tabBarBottom, backgroundColor: colors.tabBarBg, borderTopColor: colors.cardLine },
-        tabBarLabelStyle: { fontFamily: fonts.bodyMedium, ...text("micro") },
+        tabBarStyle: { height: 54 + tabBarBottom, paddingTop: 8, paddingBottom: tabBarBottom, backgroundColor: colors.tabBarBg, borderTopColor: colors.cardLine },
+        tabBarLabelStyle: { fontFamily: fonts.bodyMedium, ...text("micro"), marginTop: 2 },
         // The five labels share a fixed-width bar; letting them follow a large system font
         // pushed them into each other, so they hold their size (icons and names stay legible).
         tabBarAllowFontScaling: false,
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          headerLeft: () => <HomeGreeting />,
-          tabBarIcon: ({ color, focused }) => <TabIcon name="home-outline" focused={focused} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="plan"
-        options={{
-          title: "Plan",
-          tabBarIcon: ({ color, focused }) => <TabIcon name="calendar-outline" focused={focused} color={color} />,
-        }}
-      />
+      <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: icon("home-outline") }} />
+      <Tabs.Screen name="plan" options={{ title: "Plan", tabBarIcon: icon("calendar-outline") }} />
       <Tabs.Screen
         name="track"
         options={{
           title: "Track",
-          // Full-bleed map screen - no header, no tab bar, so there's
-          // nothing to distract from tracking. The only way back to the
-          // rest of the app is ending the run (active-run's Save/Discard
-          // both land back on a normal tab screen, which restores these).
-          headerShown: false,
-          tabBarStyle: { display: "none" },
-          tabBarIcon: () => <RaisedTabIcon />,
+          tabBarIcon: icon("play-outline"),
+          // Always dark, like the screen itself.
+          tabBarActiveTintColor: palette.accentGlow,
+          tabBarInactiveTintColor: "#B3B6C4",
+          tabBarStyle: { height: 54 + tabBarBottom, paddingTop: 8, paddingBottom: tabBarBottom, backgroundColor: "#0F1220", borderTopColor: "rgba(255,255,255,0.09)" },
         }}
       />
-      <Tabs.Screen
-        name="activity"
-        options={{
-          title: "Activity",
-          tabBarIcon: ({ color, focused }) => <TabIcon name="list-outline" focused={focused} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="coach"
-        options={{
-          title: "Coach",
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="chatbubble-ellipses-outline" focused={focused} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="activity" options={{ title: "Activity", tabBarIcon: icon("bar-chart-outline") }} />
+      <Tabs.Screen name="coach" options={{ title: "Coach", tabBarIcon: icon("chatbox-outline") }} />
     </Tabs>
   );
-}
-
-function createRaisedStyles(colors: Colors, shadows: ThemeShadows) {
-  return StyleSheet.create({
-    circle: {
-      width: 50,
-      height: 50,
-      borderRadius: radius.pill,
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: -32, // lifts it well clear of the bar's top edge
-      backgroundColor: colors.accent,
-      ...shadows.card,
-    },
-    ring: {
-      width: 22,
-      height: 22,
-      borderRadius: radius.pill,
-      borderWidth: 3,
-      borderColor: palette.onAccent,
-    },
-  });
-}
-
-function createStyles(colors: Colors) {
-  return StyleSheet.create({
-    avatar: {
-      width: 28,
-      height: 28,
-      borderRadius: radius.pill,
-      // Neutral surface with a hairline edge: orange is reserved for Start and
-      // Track, so the avatar no longer competes with them. The card surface
-      // reads against both the light and dark header (predawn would vanish).
-      backgroundColor: colors.cardBg,
-      borderWidth: 1,
-      borderColor: colors.cardLine,
-      alignItems: "center",
-      justifyContent: "center",
-      marginRight: 16,
-    },
-    avatarInitial: { fontFamily: fonts.bodyBold, ...text("caption"), color: colors.accentText },
-    greeting: {
-      fontFamily: fonts.bodyMedium,
-      fontSize: type.pDim,
-      color: colors.textDim,
-      marginLeft: 18,
-      maxWidth: 220,
-    },
-  });
 }

@@ -8,10 +8,10 @@ import {
   computePersonalRecords,
   computeWeeklyMileageSeries,
 } from "../lib/trendsStats";
-import { formatDistance } from "../lib/units";
+import { formatDistance, formatPace } from "../lib/units";
 import { formatHms } from "../lib/timeFormat";
 import { todayIso } from "../lib/data/usePlanData";
-import { fonts, type, text } from "../lib/theme";
+import { fonts, text } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "./ui/Card";
 import { PressTooltip } from "./ui/PressTooltip";
@@ -73,8 +73,7 @@ export function TrendsView({ activities, unit }: TrendsViewProps) {
     <View>
       <Card>
         <View style={styles.cardTitleRow}>
-          <Text style={styles.cardTitleMain}>Pace over time</Text>
-          <Text style={styles.cardTitleValue}>last 8 weeks</Text>
+          <Text style={styles.cardTitleMain}>Pace, last 8 weeks</Text>
         </View>
         {paceLinePoints.length < 2 ? (
           <Text style={styles.emptyChartText}>Log a few runs to see your pace trend.</Text>
@@ -83,7 +82,7 @@ export function TrendsView({ activities, unit }: TrendsViewProps) {
             <Polyline
               points={paceLinePoints.map((p) => `${p.x},${p.y}`).join(" ")}
               fill="none"
-              stroke={colors.accent}
+              stroke={colors.accentMark}
               strokeWidth={2.5}
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -92,9 +91,15 @@ export function TrendsView({ activities, unit }: TrendsViewProps) {
               cx={paceLinePoints[paceLinePoints.length - 1].x}
               cy={paceLinePoints[paceLinePoints.length - 1].y}
               r={3.5}
-              fill={colors.accent}
+              fill={colors.accentMark}
             />
           </Svg>
+        )}
+        {paceValues.length > 0 && (
+          <View style={styles.paceFoot}>
+            <Text style={styles.cardTitleValue}>{formatPace(paceValues[0], unit)}</Text>
+            <Text style={styles.cardTitleValue}>{formatPace(paceValues.reduce((a, b) => a + b, 0) / paceValues.length, unit)} avg</Text>
+          </View>
         )}
       </Card>
 
@@ -115,7 +120,7 @@ export function TrendsView({ activities, unit }: TrendsViewProps) {
                 style={[
                   styles.barFill,
                   { height: Math.max(4, (p.km / (maxWeeklyKm * 1.15)) * BAR_ROW_HEIGHT) },
-                  { backgroundColor: i === currentWeekIndex ? colors.accent : colors.contour },
+                  { backgroundColor: i === currentWeekIndex ? colors.accentMark : colors.cardLine },
                 ]}
               />
             </PressTooltip>
@@ -126,7 +131,6 @@ export function TrendsView({ activities, unit }: TrendsViewProps) {
       <Card>
         <View style={styles.cardTitleRow}>
           <Text style={styles.cardTitleMain}>Consistency</Text>
-          <Text style={styles.cardTitleValue}>last 30 days</Text>
         </View>
         <View style={styles.grid}>
           {consistencyGrid.map((day) => (
@@ -139,8 +143,8 @@ export function TrendsView({ activities, unit }: TrendsViewProps) {
               <View
                 style={[
                   styles.gridCell,
-                  day.level === "full" && { backgroundColor: colors.success },
-                  day.level === "light" && { backgroundColor: colors.success, opacity: 0.4 },
+                  day.level === "full" && { backgroundColor: colors.accentMark },
+                  day.level === "light" && { backgroundColor: colors.successText, opacity: 0.55 },
                   day.level === "none" && { backgroundColor: colors.terrainFuture },
                 ]}
               />
@@ -165,18 +169,19 @@ export function TrendsView({ activities, unit }: TrendsViewProps) {
 function createStyles(colors: Colors) {
   return StyleSheet.create({
     cardTitleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 },
-    cardTitleMain: { fontFamily: fonts.bodyBold, ...text("small"), color: colors.textPrimary },
-    cardTitleValue: { fontFamily: fonts.mono, fontSize: type.pFaint, color: colors.textDim },
-    emptyChartText: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint },
+    cardTitleMain: { fontFamily: fonts.monoMedium, ...text("micro"), textTransform: "uppercase", letterSpacing: 1.1, color: colors.textDim },
+    cardTitleValue: { fontFamily: fonts.mono, ...text("small"), color: colors.textDim },
+    paceFoot: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
+    emptyChartText: { fontFamily: fonts.body, ...text("small"), color: colors.textFaint },
     barRow: { flexDirection: "row", alignItems: "flex-end", height: BAR_ROW_HEIGHT, gap: 5 },
     barTrack: { flex: 1, height: "100%", justifyContent: "flex-end", position: "relative" },
-    barFill: { width: "100%", borderRadius: 3, minHeight: 2 },
+    barFill: { width: "100%", borderRadius: 5, minHeight: 2 },
     grid: { flexDirection: "row", flexWrap: "wrap", gap: 4 },
     gridCellWrap: { width: `${100 / CONSISTENCY_COLUMNS - 1.2}%`, aspectRatio: 1, position: "relative" },
-    gridCell: { flex: 1, borderRadius: 3 },
+    gridCell: { flex: 1, borderRadius: 4 },
     prTitle: { marginBottom: 8 },
     prRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 5 },
-    prLabel: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim },
+    prLabel: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
     prValue: { fontFamily: fonts.mono, ...text("small"), color: colors.textPrimary },
   });
 }

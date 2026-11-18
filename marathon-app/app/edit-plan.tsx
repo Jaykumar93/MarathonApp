@@ -81,7 +81,7 @@ export default function EditPlan() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Own save action, deliberately separate from the plan-regenerating
-  // "Save & regenerate plan" button below - see updateRaceLocation's own
+  // "Save and regenerate plan" button below - see updateRaceLocation's own
   // comment for why location can't go through that same path.
   const [savingLocation, setSavingLocation] = useState(false);
   const [locationSaved, setLocationSaved] = useState(false);
@@ -229,13 +229,13 @@ export default function EditPlan() {
 
   return (
     <ScrollView style={styles.screen} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.container, { paddingTop: SCREEN_TOP_GAP + insets.top, paddingBottom: SCREEN_BOTTOM_GAP + insets.bottom }]}>
-      <ScreenHeader title="Edit Plan" onBack={goBack} />
+      <ScreenHeader title="Edit plan" onBack={goBack} />
       <Text style={styles.subtitle}>
         Changing any of this regenerates your plan from today - your training history stays intact.
       </Text>
 
       <SectionLabel>RACE</SectionLabel>
-      <Card>
+      <Card style={styles.flat}>
         <Text style={styles.fieldLabel}>Distance</Text>
         <ChipSelect
           options={DISTANCE_OPTIONS}
@@ -265,7 +265,7 @@ export default function EditPlan() {
       </Card>
 
       <SectionLabel>RACE LOCATION</SectionLabel>
-      <Card>
+      <Card style={styles.flat}>
         <Text style={styles.fieldLabel}>Only used to show a race-day weather forecast - saved separately, doesn't regenerate your plan.</Text>
         <View style={styles.fieldGap}>
           <TextField
@@ -291,7 +291,7 @@ export default function EditPlan() {
       </Card>
 
       <SectionLabel>FITNESS</SectionLabel>
-      <Card>
+      <Card style={styles.flat}>
         <Text style={styles.fieldLabel}>Experience level</Text>
         <ChipSelect options={EXPERIENCE_OPTIONS} value={experienceLevel} onChange={setExperienceLevel} />
         <View style={styles.fieldGap}>
@@ -305,8 +305,8 @@ export default function EditPlan() {
         </View>
       </Card>
 
-      <SectionLabel>GOAL TIME & RECENT RACE</SectionLabel>
-      <Card>
+      <SectionLabel>GOAL TIME</SectionLabel>
+      <Card style={styles.flat}>
         <TextField
           label="Goal finish time (HH:MM:SS, optional)"
           value={targetTime}
@@ -356,7 +356,7 @@ export default function EditPlan() {
       </Card>
 
       <SectionLabel>SCHEDULE</SectionLabel>
-      <Card>
+      <Card style={styles.flat}>
         <Text style={styles.fieldLabel}>Days per week</Text>
         <ChipSelect options={DAYS_OPTIONS} value={trainingDaysPerWeek} onChange={setTrainingDaysPerWeek} />
         <View style={styles.fieldGap}>
@@ -370,7 +370,7 @@ export default function EditPlan() {
 
       <View style={styles.saveButton}>
         <PrimaryButton
-          label="Save & regenerate plan"
+          label="Save and regenerate plan"
           onPress={handleSave}
           loading={saving}
           disabled={saving || calibrationIncomplete || !preview?.ok}
@@ -389,7 +389,8 @@ function createStyles(colors: Colors) {
     subtitle: { fontFamily: fonts.body, ...text("small"), color: colors.textDim, marginBottom: 16 },
     fieldLabel: { fontFamily: fonts.bodyMedium, ...inputText("small"), color: colors.textDim, marginBottom: 8 },
     fieldGap: { marginTop: 14 },
-    errorText: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
+    flat: { backgroundColor: "transparent", borderWidth: 0, padding: 0, marginBottom: 8 },
+    errorText: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText },
     saveButton: { marginTop: 8, marginBottom: 12 },
   });
 }

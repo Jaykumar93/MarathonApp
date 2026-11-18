@@ -24,7 +24,7 @@ export async function registerForPushNotifications(userId: string): Promise<void
       await Notifications.setNotificationChannelAsync("daily-nudge", {
         name: "Training reminders",
         importance: Notifications.AndroidImportance.DEFAULT,
-        lightColor: "#FF5A1F",
+        lightColor: "#6C4DFF",
       });
     }
 

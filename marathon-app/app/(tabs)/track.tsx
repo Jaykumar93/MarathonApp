@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, StyleSheet, Text, View } from "react-native";
+import { Pressable as RNPressable } from "react-native";
+import { PressableScale as Pressable } from "../../components/ui/PressableScale";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,6 +18,7 @@ import { fonts, palette, spacing, text, radius, darkSurface } from "../../lib/th
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { RunMap } from "../../components/RunMap";
+import { TabHeader } from "../../components/ui/TabHeader";
 import { StatusBar } from "expo-status-bar";
 
 function formatElapsedShort(totalSeconds: number): string {
@@ -202,24 +205,28 @@ function TrackScreen() {
   const bottomBannerHeight = isTracking ? 110 : 52;
   const recenterBottomOffset = insets.bottom + 24 + bottomBannerHeight + 16;
 
+  const gpsReady = rt.isLocationActive || !!lobbyPosition;
+  const plannedLabel =
+    hasPlannedRun && todaySession
+      ? `${SESSION_TYPE_LABEL[todaySession.session_type]?.replace(" run", "").replace(" session", "") ?? todaySession.session_type}${
+          todaySession.planned_distance_meters ? ` · ${formatDistance(todaySession.planned_distance_meters / 1000, unit)}` : ""
+        }`
+      : null;
+
   return (
     <View style={styles.screen}>
-      <View style={styles.mapArea}>
-        <RunMap points={mapPoints} live recenterBottomOffset={recenterBottomOffset} />
-      </View>
-
-      <Pressable
-        style={[styles.backButton, { top: insets.top + 12 }]}
-        onPress={goBack}
-        hitSlop={10}
-        accessibilityRole="button"
-        accessibilityLabel="Back"
-      >
-        <Ionicons name="chevron-back" size={22} color={darkSurface.text} />
-      </Pressable>
+      <TabHeader
+        dark
+        title="Track"
+        right={
+          <View style={[styles.gpsPill, !gpsReady && styles.gpsPillWaiting]}>
+            <Text style={[styles.gpsPillText, !gpsReady && styles.gpsPillTextWaiting]}>{gpsReady ? "GPS ready" : "Finding GPS"}</Text>
+          </View>
+        }
+      />
 
       {pendingCount > 0 && (
-        <View style={[styles.pendingBanner, { top: insets.top + 60 }]}>
+        <View style={styles.pendingBanner}>
           <Text style={styles.pendingText}>
             {pendingCount} run{pendingCount === 1 ? "" : "s"} saved on this device, waiting to sync.
           </Text>
@@ -227,25 +234,42 @@ function TrackScreen() {
         </View>
       )}
 
-      {isTracking ? (
-        <View style={[styles.trackingBanner, { bottom: insets.bottom + 24 }]}>
-          <View style={styles.trackingBannerText}>
-            {(rt.phase === "running" || rt.phase === "countdown") && <View style={styles.liveDot} />}
-            <Text style={styles.trackingBannerLabel} numberOfLines={1}>
-              {trackingLabel}
-            </Text>
+      <View style={styles.mapCard}>
+        <RunMap points={mapPoints} live recenterBottomOffset={plannedLabel ? 84 : 20} />
+        {plannedLabel ? (
+          <View style={styles.plannedChip} pointerEvents="none">
+            <Text style={styles.plannedChipLabel}>PLANNED TODAY</Text>
+            <Text style={styles.plannedChipValue}>{plannedLabel}</Text>
           </View>
-          <PrimaryButton label="Resume" onPress={() => router.push("/active-run")} />
-        </View>
-      ) : (
-        <View style={[styles.startButtonWrap, { bottom: insets.bottom + 24 }]}>
-          <PrimaryButton label="Start run" onPress={handleStartPress} />
-        </View>
-      )}
+        ) : null}
+      </View>
+
+      <View style={[styles.bottom, { paddingBottom: 14 }]}>
+        {isTracking ? (
+          <View style={styles.trackingBanner}>
+            <View style={styles.trackingBannerText}>
+              {(rt.phase === "running" || rt.phase === "countdown") && <View style={styles.liveDot} />}
+              <Text style={styles.trackingBannerLabel} numberOfLines={1}>
+                {trackingLabel}
+              </Text>
+            </View>
+            <PrimaryButton label="Resume" onPress={() => router.push("/active-run")} />
+          </View>
+        ) : (
+          <>
+            <Pressable style={styles.startBtn} onPress={handleStartPress} accessibilityRole="button" accessibilityLabel="Start run">
+              <Text style={styles.startBtnText}>Start run</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push("/log-activity")} hitSlop={8} accessibilityRole="button" style={styles.logLink}>
+              <Text style={styles.logLinkText}>Log a run instead</Text>
+            </Pressable>
+          </>
+        )}
+      </View>
 
       <Modal visible={choiceOpen} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setChoiceOpen(false)}>
         <View style={styles.modalWrap}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setChoiceOpen(false)} />
+          <RNPressable style={styles.modalBackdrop} onPress={() => setChoiceOpen(false)} />
           <View style={[styles.modalSheet, { paddingBottom: Math.max(28, insets.bottom + 16) }]}>
             <Text style={styles.modalTitle}>What are you running?</Text>
 
@@ -289,43 +313,51 @@ function createStyles(colors: Colors) {
   // regardless of the app theme (matches the map-surface aesthetic this
   // screen was built with), so these two stay on the static palette
   // instead of the themed `colors` object.
-  screen: { flex: 1, backgroundColor: palette.predawn },
+  screen: { flex: 1, backgroundColor: palette.ink },
   // No alignItems/justifyContent, unlike the placeholder text this box used
   // to center - RunMap needs to stretch to the box's full width (the
   // default cross-axis behavior), not just its height.
-  mapArea: {
+  mapCard: {
     flex: 1,
-    backgroundColor: palette.predawn,
+    marginHorizontal: spacing.screenPadding,
+    borderRadius: spacing.cardRadius,
+    borderWidth: 1,
+    borderColor: darkSurface.line,
+    overflow: "hidden",
+    backgroundColor: darkSurface.card,
   },
-  backButton: {
+  plannedChip: {
     position: "absolute",
-    left: spacing.screenPadding,
-    width: 36,
-    height: 36,
-    borderRadius: radius.pill,
-    backgroundColor: darkSurface.line,
-    alignItems: "center",
-    justifyContent: "center",
+    left: 14,
+    bottom: 14,
+    backgroundColor: palette.ink,
+    borderWidth: 1,
+    borderColor: darkSurface.line,
+    borderRadius: radius.md,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
   },
+  plannedChipLabel: { fontFamily: fonts.monoMedium, ...text("small"), letterSpacing: 1.2, color: darkSurface.textDim },
+  plannedChipValue: { fontFamily: fonts.bodySemiBold, ...text("emphasis"), color: darkSurface.text },
+  gpsPill: { backgroundColor: "rgba(111,208,166,0.16)", borderRadius: radius.pill, paddingVertical: 4, paddingHorizontal: 12 },
+  gpsPillWaiting: { backgroundColor: "rgba(242,203,97,0.16)" },
+  gpsPillText: { fontFamily: fonts.monoMedium, ...text("small"), color: "#6FD0A6" },
+  gpsPillTextWaiting: { color: "#F2CB61" },
+  bottom: { paddingHorizontal: spacing.screenPadding, paddingTop: 14, gap: 8 },
+  startBtn: { minHeight: 62, borderRadius: radius.lg, backgroundColor: palette.accentFill, alignItems: "center", justifyContent: "center" },
+  startBtnText: { fontFamily: fonts.bodySemiBold, ...text("title"), color: palette.onAccent },
+  logLink: { alignItems: "center", justifyContent: "center", minHeight: 44 },
+  logLinkText: { fontFamily: fonts.bodyMedium, ...text("emphasis"), color: darkSurface.textDim },
   pendingBanner: {
-    position: "absolute",
-    left: spacing.screenPadding,
-    right: spacing.screenPadding,
+    marginHorizontal: spacing.screenPadding,
+    marginBottom: 10,
     backgroundColor: colors.cardBg,
     borderRadius: spacing.cardRadius,
     padding: 14,
     gap: 10,
   },
   pendingText: { fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textPrimary },
-  startButtonWrap: {
-    position: "absolute",
-    left: spacing.screenPadding,
-    right: spacing.screenPadding,
-  },
   trackingBanner: {
-    position: "absolute",
-    left: spacing.screenPadding,
-    right: spacing.screenPadding,
     backgroundColor: darkSurface.floating,
     borderRadius: spacing.cardRadius,
     borderWidth: 1,

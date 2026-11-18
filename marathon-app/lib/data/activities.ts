@@ -21,6 +21,11 @@ export interface ActivityRow {
   route: unknown;
   rpe: number | null;
   notes: string | null;
+  /** Post-run reflection (migration 20261117100000): the face 1-5, optional chips, and when it was saved. Absent/null until the runner reflects, and absent entirely until the migration is applied. */
+  feel?: number | null;
+  body_tags?: string[] | null;
+  condition_tags?: string[] | null;
+  reflected_at?: string | null;
   /** Public Storage URLs (activity-photos bucket), max 3 - enforced in app code, not a DB constraint. */
   photo_urls: string[] | null;
   /** Which shoe this run is tagged with, if any - shoes.cumulative_distance_km is trigger-maintained from this. */

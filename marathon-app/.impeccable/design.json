@@ -1,0 +1,388 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-17T12:23:37.319Z",
+  "title": "Design System: Cursus",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#0F1220",
+        "tonalRamp": [
+          "#101423",
+          "#212745",
+          "#343f6f",
+          "#4b5aa0",
+          "#7481be",
+          "#9ea7d1",
+          "#c7cde5",
+          "#eaecf5"
+        ]
+      },
+      "bone": {
+        "role": "neutral",
+        "displayName": "Bone",
+        "canonical": "#F4F1EA",
+        "tonalRamp": [
+          "#211d12",
+          "#433923",
+          "#6b5c38",
+          "#9a8451",
+          "#b9a679",
+          "#cec1a1",
+          "#e3dbc9",
+          "#f4f2eb"
+        ]
+      },
+      "ultraviolet": {
+        "role": "primary",
+        "displayName": "Ultraviolet",
+        "canonical": "#6C4DFF",
+        "tonalRamp": [
+          "#090033",
+          "#120066",
+          "#1c00a3",
+          "#2900eb",
+          "#5733ff",
+          "#8970ff",
+          "#bcadff",
+          "#e6e0ff"
+        ]
+      },
+      "violet-lift": {
+        "role": "primary",
+        "displayName": "Violet Lift",
+        "canonical": "#8A72FF",
+        "tonalRamp": [
+          "#090033",
+          "#110066",
+          "#1c00a3",
+          "#2800eb",
+          "#5633ff",
+          "#8970ff",
+          "#bbadff",
+          "#e6e0ff"
+        ]
+      },
+      "violet-glow": {
+        "role": "primary",
+        "displayName": "Violet Glow",
+        "canonical": "#C9B8FF",
+        "tonalRamp": [
+          "#0c0033",
+          "#180066",
+          "#2700a3",
+          "#3800eb",
+          "#6433ff",
+          "#9270ff",
+          "#c1adff",
+          "#e8e0ff"
+        ]
+      },
+      "accent-text-light": {
+        "role": "primary",
+        "displayName": "Accent Text, light",
+        "canonical": "#5B3FE8",
+        "tonalRamp": [
+          "#0c052e",
+          "#180b5b",
+          "#271192",
+          "#3819d2",
+          "#6349e9",
+          "#927ff0",
+          "#c1b6f6",
+          "#e8e4fc"
+        ]
+      },
+      "glacier": {
+        "role": "secondary",
+        "displayName": "Glacier",
+        "canonical": "#1F6F8B",
+        "tonalRamp": [
+          "#09212a",
+          "#134353",
+          "#1e6b85",
+          "#2b99c0",
+          "#58b8da",
+          "#8acde5",
+          "#bce3f0",
+          "#e6f4f9"
+        ]
+      },
+      "glacier-lift": {
+        "role": "secondary",
+        "displayName": "Glacier Lift",
+        "canonical": "#4FA8C4",
+        "tonalRamp": [
+          "#0d2026",
+          "#1a404c",
+          "#29677a",
+          "#3b94b0",
+          "#66b3cc",
+          "#94cadb",
+          "#c2e1eb",
+          "#e8f4f7"
+        ]
+      },
+      "moss": {
+        "role": "secondary",
+        "displayName": "Moss",
+        "canonical": "#4FB286",
+        "tonalRamp": [
+          "#10231b",
+          "#1f4735",
+          "#327255",
+          "#47a37a",
+          "#71c19d",
+          "#9cd4bb",
+          "#c6e6d8",
+          "#eaf6f0"
+        ]
+      },
+      "rose-interval": {
+        "role": "secondary",
+        "displayName": "Rose",
+        "canonical": "#C23B87",
+        "tonalRamp": [
+          "#270c1b",
+          "#4e1836",
+          "#7d2657",
+          "#b4377d",
+          "#cf63a0",
+          "#de92bc",
+          "#ecc0d9",
+          "#f8e8f1"
+        ]
+      },
+      "marigold": {
+        "role": "tertiary",
+        "displayName": "Marigold",
+        "canonical": "#F2B705",
+        "tonalRamp": [
+          "#322601",
+          "#644c02",
+          "#a07903",
+          "#e6ae05",
+          "#fbca37",
+          "#fcda73",
+          "#fdeaaf",
+          "#fef7e1"
+        ]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Danger",
+        "canonical": "#D9483A",
+        "tonalRamp": [
+          "#2b0b08",
+          "#561710",
+          "#89241a",
+          "#c53426",
+          "#de6054",
+          "#e89087",
+          "#f2bfbb",
+          "#fae7e5"
+        ]
+      },
+      "danger-fill": {
+        "role": "tertiary",
+        "displayName": "Danger Fill",
+        "canonical": "#C73C2F",
+        "tonalRamp": [
+          "#290c0a",
+          "#531913",
+          "#84281f",
+          "#be392d",
+          "#d8655a",
+          "#e4938b",
+          "#efc1bd",
+          "#f9e8e6"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero totals."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Screen heroes."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Screen and card titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Reading text and controls."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase section labels, timestamps, units (Martian Mono)."
+      }
+    },
+    "shadows": [
+      {
+        "name": "run-sheet",
+        "value": "0 -8px 30px rgba(0,0,0,0.35)",
+        "purpose": "The dark run sheet over the map. Cards have no shadow."
+      }
+    ],
+    "motion": [
+      {
+        "name": "press-in",
+        "value": "scale 0.97, spring speed 50, bounciness 0",
+        "purpose": "Buttons and tabs on press-in."
+      },
+      {
+        "name": "press-out",
+        "value": "scale 1, spring speed 24, bounciness 6",
+        "purpose": "Springy release."
+      },
+      {
+        "name": "toggle",
+        "value": "160ms",
+        "purpose": "Toggle knob and track."
+      }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one violet action on a screen.",
+      "html": "<button class=\"ds-btn-primary\">Create your plan</button>",
+      "css": ".ds-btn-primary{background:#6C4DFF;color:#fff;min-height:52px;padding:0 24px;border:0;border-radius:12px;font:600 16px/22px 'Figtree',system-ui,sans-serif;width:100%;cursor:pointer;transition:transform .12s}.ds-btn-primary:active{transform:scale(.97)}.ds-btn-primary:focus-visible{outline:2px solid #0F1220;outline-offset:2px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined, for the quieter choice next to a primary.",
+      "html": "<button class=\"ds-btn-secondary\">Not now</button>",
+      "css": ".ds-btn-secondary{background:transparent;color:#1F6F8B;min-height:52px;padding:0 24px;border:1.5px solid #1F6F8B;border-radius:12px;font:600 16px/22px 'Figtree',system-ui,sans-serif;width:100%;cursor:pointer}.ds-btn-secondary:focus-visible{outline:2px solid #0F1220;outline-offset:2px}"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Flat surface with a hairline border and no shadow.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-label\">THIS WEEK</div><div class=\"ds-card-num\">32.0 km</div></div>",
+      "css": ".ds-card{background:#fff;border:1px solid rgba(15,18,32,.09);border-radius:16px;padding:14px;font-family:'Figtree',system-ui,sans-serif;color:#0F1220}.ds-card-label{font:500 11px/14px 'Martian Mono',ui-monospace,monospace;letter-spacing:.09em;color:#5F6272}.ds-card-num{font:600 22px/28px 'Martian Mono',ui-monospace,monospace;margin-top:6px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "text-field",
+      "description": "50px field with a hairline border.",
+      "html": "<input class=\"ds-input\" placeholder=\"e.g. Sunday club run\">",
+      "css": ".ds-input{background:#fff;color:#0F1220;height:50px;padding:0 14px;border:1px solid rgba(15,18,32,.09);border-radius:12px;font:400 16px 'Figtree',system-ui,sans-serif;width:100%;box-sizing:border-box;caret-color:#6C4DFF}.ds-input:focus-visible{outline:2px solid #6C4DFF;outline-offset:1px}"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Pill choice; selected is violet with a white label.",
+      "html": "<button class=\"ds-chip\">Easy</button> <button class=\"ds-chip ds-chip-on\">Tempo</button>",
+      "css": ".ds-chip{background:#fff;color:#0F1220;padding:10px 16px;border:1px solid rgba(15,18,32,.09);border-radius:999px;font:500 14px 'Figtree',system-ui,sans-serif;cursor:pointer}.ds-chip-on{background:#6C4DFF;border-color:#6C4DFF;color:#fff}"
+    },
+    {
+      "name": "Toggle",
+      "kind": "custom",
+      "refersTo": "toggle",
+      "description": "A drawn 48 by 28 switch, identical on both platforms.",
+      "html": "<span class=\"ds-toggle\"><span class=\"ds-knob\"></span></span>",
+      "css": ".ds-toggle{display:inline-block;width:48px;height:28px;border-radius:999px;background:#6C4DFF;position:relative}.ds-knob{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#fff}"
+    },
+    {
+      "name": "Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Run-type badge on the session card.",
+      "html": "<span class=\"ds-badge\">TEMPO</span>",
+      "css": ".ds-badge{display:inline-block;background:rgba(108,77,255,.15);color:#5B3FE8;border-radius:999px;padding:3px 10px;font:500 10px/14px 'Martian Mono',ui-monospace,monospace;letter-spacing:.6px}"
+    },
+    {
+      "name": "Session Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Card with a coloured left edge for the run type.",
+      "html": "<div class=\"ds-session\"><b>Tempo</b><div class=\"ds-s-big\">8.0 km at 5:20/km</div></div>",
+      "css": ".ds-session{background:#fff;border:1px solid rgba(15,18,32,.09);border-left:4px solid #6C4DFF;border-radius:4px 16px 16px 4px;padding:14px;font-family:'Figtree',system-ui,sans-serif;color:#0F1220}.ds-s-big{font:600 22px/28px 'Martian Mono',ui-monospace,monospace;margin-top:4px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Profile Line",
+    "overview": "A training block is a line drawn across terrain: low base weeks, a climb, a peak, a taper down to a flag. The mark is that line, and the system follows it. The ground is deep ink-blue (or warm bone in light mode), surfaces are flat and edged by hairlines, and a single ultraviolet line of colour marks the one thing to do next.\n\nThe system is calm and confident, with generous 12 to 16px curves, quiet type and one clear action per screen. Active Run and Track stay dark in both themes because they are read outdoors, mid-stride. Pika, a small mountain goat, is the only illustration and appears only at calm or good moments.",
+    "keyCharacteristics": [
+      "Dark-first ground, with a fully designed light twin (same hues, different surfaces).",
+      "One accent (ultraviolet) for action and emphasis; semantic colour for run types and state.",
+      "Bricolage Grotesque for titles, Figtree for reading, Martian Mono for numbers and uppercase labels.",
+      "Hairline borders define edges in both themes; cards are flat with no shadow.",
+      "Glanceable: large numerals and strong contrast on the run screens."
+    ],
+    "rules": [
+      {
+        "name": "The One Line Rule",
+        "body": "Violet is the single call to action on a screen. If two things are filled violet, one of them is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Text Role Rule",
+        "body": "A hue used as text takes its *Text token, never the fill colour; the fill is only for marks and for the ground behind a white label.",
+        "section": "colors"
+      },
+      {
+        "name": "The Semantic Colour Rule",
+        "body": "A run type keeps one colour everywhere (easy Moss, tempo Ultraviolet, interval Rose, long Glacier, race Marigold). Colour never decorates.",
+        "section": "colors"
+      },
+      {
+        "name": "The Not-A-Failure Rule",
+        "body": "Missed or slow sessions are never red; red is reserved for destructive actions.",
+        "section": "colors"
+      },
+      {
+        "name": "The Pinned Type Rule",
+        "body": "Every size comes from the scale, and each step pins fontSize, lineHeight and includeFontPadding together (text(\"body\")). A text style with a hand-typed size is a bug.",
+        "section": "typography"
+      },
+      {
+        "name": "The Numbers Are Mono Rule",
+        "body": "Pace, distance, time and every stat value use Martian Mono; titles stay on Bricolage.",
+        "section": "typography"
+      },
+      {
+        "name": "The No-Typed-Icons Rule",
+        "body": "Chevrons and carets are drawn icons, never typed characters.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hairline Rule",
+        "body": "Edges are drawn by a 1px hairline, so a card reads the same on iOS and Android.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Use the type scale (text(\"body\")) and the four radii; never a hand-typed size or radius.",
+      "Keep one violet action per screen.",
+      "Use *Text tokens for coloured text and accentMark for marks.",
+      "Draw icons (Ionicons); never type a glyph as an icon.",
+      "Keep Active Run and Track dark, with colours from darkSurface.",
+      "State missed or slow sessions neutrally.",
+      "Put numbers in Martian Mono."
+    ],
+    "donts": [
+      "Nest a bordered box inside a bordered card.",
+      "Use red for anything but destructive actions.",
+      "Use the fill hue as text on a light ground.",
+      "Show Pika during a run or on an error.",
+      "Give a control a fixed height that large system fonts would clip.",
+      "Use fontWeight on top of a custom font family.",
+      "Let the coach's UI imply it chooses training numbers."
+    ]
+  }
+}

@@ -1,18 +1,17 @@
 import React, { useState } from "react";
 import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
-import { ChipSelect } from "../../components/ui/ChipSelect";
+import { OnboardingStepLayout, PillChips, GroupLabel } from "../../components/OnboardingStepLayout";
 import { TextField } from "../../components/ui/TextField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
 import { parseHms } from "../../lib/timeFormat";
-import { fonts, palette, text } from "../../lib/theme";
+import { fonts, text } from "../../lib/theme";
 import { useTheme } from "../../lib/theme/ThemeContext";
 
 const CALIBRATION_DISTANCE_OPTIONS = [
   { value: 5, label: "5K" },
   { value: 10, label: "10K" },
-  { value: 21.0975, label: "Half marathon" },
+  { value: 21.0975, label: "Half" },
   { value: 42.195, label: "Marathon" },
 ];
 
@@ -51,7 +50,7 @@ export default function Calibration() {
     <OnboardingStepLayout
       step={3}
       title="Got a goal time or recent race?"
-      subtitle="Optional - skip this and we'll use broad pace estimates instead."
+      subtitle="Optional. Skip this and we'll use broad pace estimates instead."
       onNext={handleNext}
       onSkip={handleSkip}
       nextDisabled={calibrationIncomplete}
@@ -64,48 +63,41 @@ export default function Calibration() {
         keyboardType="numbers-and-punctuation"
       />
       <View>
-        <Text style={{ fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textDim, marginBottom: 8 }}>
-          Or a recent race result
-        </Text>
-        <TextField
-          label="Duration (HH:MM:SS)"
-          value={calibrationTime}
-          onChangeText={setCalibrationTime}
-          placeholder="0:50:00"
-          keyboardType="numbers-and-punctuation"
-        />
-        <View style={{ marginTop: 12 }}>
-          <Text style={{ fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textDim, marginBottom: 8 }}>
-            Distance
-          </Text>
-          <ChipSelect
-            options={CALIBRATION_DISTANCE_OPTIONS}
-            value={isCustomDistance ? undefined : answers.calibrationRaceDistanceKm}
-            onChange={(v) => {
-              update({ calibrationRaceDistanceKm: v });
-              setCustomDistance("");
-            }}
-          />
-          <View style={{ marginTop: 12 }}>
-            <TextField
-              label="Or enter a custom distance (km)"
-              value={customDistance}
-              onChangeText={(t) => {
-                setCustomDistance(t);
-                const n = parseFloat(t);
-                if (!Number.isNaN(n) && n > 0) update({ calibrationRaceDistanceKm: n });
-              }}
-              keyboardType="decimal-pad"
-              placeholder="e.g. 15"
-            />
-          </View>
-          {calibrationIncomplete && (
-            <Text style={{ fontFamily: fonts.body, ...text("small"), color: palette.danger, marginTop: 8 }}>
-              Pick the distance this time was run over, or clear the duration field to skip this section.
-            </Text>
-          )}
+        <View style={{ marginBottom: 10 }}>
+          <GroupLabel>Recent race</GroupLabel>
         </View>
+        <PillChips
+          options={CALIBRATION_DISTANCE_OPTIONS}
+          value={isCustomDistance ? undefined : answers.calibrationRaceDistanceKm}
+          onChange={(v) => {
+            update({ calibrationRaceDistanceKm: v });
+            setCustomDistance("");
+          }}
+        />
       </View>
+      <TextField
+        label="Duration (HH:MM:SS)"
+        value={calibrationTime}
+        onChangeText={setCalibrationTime}
+        placeholder="0:50:00"
+        keyboardType="numbers-and-punctuation"
+      />
+      <TextField
+        label="Or enter a custom distance (km)"
+        value={customDistance}
+        onChangeText={(t) => {
+          setCustomDistance(t);
+          const n = parseFloat(t);
+          if (!Number.isNaN(n) && n > 0) update({ calibrationRaceDistanceKm: n });
+        }}
+        keyboardType="decimal-pad"
+        placeholder="e.g. 15"
+      />
+      {calibrationIncomplete && (
+        <Text style={{ fontFamily: fonts.body, ...text("small"), color: colors.dangerText }}>
+          Pick the distance this time was run over, or clear the duration field to skip this section.
+        </Text>
+      )}
     </OnboardingStepLayout>
   );
 }

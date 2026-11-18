@@ -44,6 +44,11 @@ interface CoachRequestBody {
 // grow the prompt (and the per-message token cost) without bound.
 const MAX_HISTORY_MESSAGES = 10;
 
+// Input and spend limits (security audit F4): one question can't be a huge
+// prompt, and one account can't drive unbounded paid LLM/embedding/search calls.
+const MAX_MESSAGE_CHARS = 2000;
+const MAX_QUESTIONS_PER_DAY = 150;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS_HEADERS });
@@ -70,6 +75,27 @@ Deno.serve(async (req) => {
     const body: CoachRequestBody = await req.json();
     const message = body.message?.trim();
     if (!message) return jsonResponse({ error: "message is required" }, 400);
+    if (message.length > MAX_MESSAGE_CHARS) return jsonResponse({ error: `message is too long (max ${MAX_MESSAGE_CHARS} characters)` }, 400);
+
+    // Waitlist approval is enforced here too, not only in the app's router -
+    // otherwise a pending user could call this function directly and spend
+    // the shared LLM quota. (RLS on the data tables enforces the same rule.)
+    const { data: callerProfile } = await supabase.from("profiles").select("status").eq("id", user.id).maybeSingle();
+    if (callerProfile?.status !== "approved") return jsonResponse({ error: "Your account isn't approved yet." }, 403);
+
+    // A per-user daily cap on saved questions, counted from the caller's own
+    // coach_messages (RLS-scoped). It bounds LLM and search spend per account.
+    // Calls with skipPersistence leave no row, so they are bounded by the
+    // length cap and the in-function iteration limit instead.
+    const dayAgoIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { count: recentQuestions } = await supabase
+      .from("coach_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "user")
+      .gte("created_at", dayAgoIso);
+    if ((recentQuestions ?? 0) >= MAX_QUESTIONS_PER_DAY) {
+      return jsonResponse({ error: "You've reached today's coach question limit. Try again tomorrow." }, 429);
+    }
 
     // Normalized once, here, rather than guarding every later use site
     // individually - an invalid id (this app's own client only ever sends a
@@ -235,19 +261,10 @@ Deno.serve(async (req) => {
       conversationId,
     });
   } catch (e) {
+    // Full detail (provider error bodies, Postgres messages) goes to this
+    // function's own logs only - echoing it to the client would leak upstream
+    // and schema detail (security audit F5).
     console.error("coach-chat error:", e);
-    // Supabase/Postgrest errors (a bad query, a constraint violation) are
-    // plain objects with their own `.message`, not real Error instances -
-    // `e instanceof Error` misses them entirely and silently downgraded
-    // every one of them to a useless "Unknown error", the exact case that
-    // surfaced this: an invalid activityId threw a Postgres "invalid input
-    // syntax for type uuid" error that never made it into the response.
-    const message =
-      e instanceof Error
-        ? e.message
-        : e && typeof e === "object" && "message" in e && typeof (e as { message: unknown }).message === "string"
-          ? (e as { message: string }).message
-          : "Unknown error";
-    return jsonResponse({ error: message }, 500);
+    return jsonResponse({ error: "Something went wrong. Please try again." }, 500);
   }
 });

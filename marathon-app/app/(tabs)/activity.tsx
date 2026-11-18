@@ -1,13 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable as RNPressable } from "react-native";
+import { PressableScale as Pressable } from "../../components/ui/PressableScale";
+import { Pika } from "../../components/mascot/Pika";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth/AuthContext";
 import { getAllActivities, type ActivityRow } from "../../lib/data/activities";
-import { computeActivityStats } from "../../lib/activityStats";
 import { getCurrentCalendarWeekRange, todayIso } from "../../lib/data/usePlanData";
 import { formatDistance, formatPace } from "../../lib/units";
 import { SESSION_TYPE_LABEL, ACTIVITY_TYPE_OPTIONS } from "../../lib/sessionTypes";
-import { fonts, spacing, type, text, inputText, radius } from "../../lib/theme";
+import { fonts, spacing, text, inputText, radius, palette } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Card } from "../../components/ui/Card";
 import { Dropdown } from "../../components/ui/Dropdown";
@@ -16,7 +18,8 @@ import { DateField } from "../../components/ui/DateField";
 import { TextField } from "../../components/ui/TextField";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { LogFab } from "../../components/ui/LogFab";
-import { ChipSelect } from "../../components/ui/ChipSelect";
+import { TabHeader } from "../../components/ui/TabHeader";
+import { SectionLabel } from "../../components/ui/SectionLabel";
 import { TrendsView } from "../../components/TrendsView";
 import { ActivityThumbnail } from "../../components/ActivityThumbnail";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -45,6 +48,11 @@ function formatShortDate(iso: string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
+function formatWeekday(iso: string): string {
+  const d = new Date(iso + "T00:00:00Z");
+  return d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
+}
+
 function formatMonthHeading(yearMonth: string): string {
   const d = new Date(yearMonth + "-01T00:00:00Z");
   return d.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -55,13 +63,6 @@ function formatClock(totalSeconds: number): string {
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = Math.round(totalSeconds % 60);
   return h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`;
-}
-
-/** Rounded to whole hours + minutes - a stat card doesn't need seconds precision. */
-function formatClockRounded(totalSeconds: number): string {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.round((totalSeconds % 3600) / 60);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
 /** [from, to] inclusive ISO bounds for a preset, or null for "all"/an incomplete custom range - presets people actually reach for, rather than raw Year/Month pickers. */
@@ -126,8 +127,6 @@ export default function Activity() {
     reload();
   }, [reload]);
 
-  const stats = useMemo(() => computeActivityStats(activities, todayIso()), [activities]);
-
   const dateBounds = useMemo(() => getDateRangeBounds(dateRange, customFrom, customTo), [dateRange, customFrom, customTo]);
   const minDistanceMeters = parseFloat(minDistanceKm) > 0 ? parseFloat(minDistanceKm) * 1000 : 0;
   const minDurationSeconds = parseFloat(minDurationMin) > 0 ? parseFloat(minDurationMin) * 60 : 0;
@@ -190,60 +189,78 @@ export default function Activity() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.body}>Loading your activity…</Text>
+      <View style={styles.screen}>
+        <TabHeader title="Activity" />
+        <View style={styles.center}>
+          <Text style={styles.body}>Loading your activity…</Text>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.screen}>
+      <TabHeader title="Activity" />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.container}
         refreshControl={<RefreshControl refreshing={false} onRefresh={reload} />}
       >
-        <Text style={styles.header}>Activity</Text>
-
-        <View style={styles.subviewRow}>
-          <ChipSelect options={SUBVIEW_OPTIONS} value={subview} onChange={setSubview} />
+        <View style={styles.segment} accessibilityRole="tablist">
+          {SUBVIEW_OPTIONS.map((opt) => {
+            const selected = opt.value === subview;
+            return (
+              <Pressable
+                key={opt.value}
+                style={[styles.segmentItem, selected && styles.segmentItemSelected]}
+                onPress={() => setSubview(opt.value)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected }}
+              >
+                <Text style={[styles.segmentLabel, selected && styles.segmentLabelSelected]}>{opt.label}</Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         {subview === "trends" ? (
           <TrendsView activities={activities} unit={unit} />
         ) : (
           <>
-        <View style={styles.statRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>THIS WEEK</Text>
-            <Text style={styles.statValue}>{formatDistance(stats.weekKm, unit)}</Text>
-            <Text style={styles.statSubValue}>in {formatClockRounded(stats.weekSeconds)}</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>THIS MONTH</Text>
-            <Text style={styles.statValue}>{formatDistance(stats.monthKm, unit)}</Text>
-            <Text style={styles.statSubValue}>in {formatClockRounded(stats.monthSeconds)}</Text>
-          </View>
-        </View>
-
         {/* Type stays out on the main screen - it's the filter people reach
             for first and doesn't need a whole sheet to change; everything
             else (date range, thresholds) lives behind "Filters". */}
-        <View style={styles.topFilterRow}>
-          <Dropdown
-            options={TYPE_OPTIONS}
-            value={typeFilter}
-            onSelect={setTypeFilter}
-            compact
-            style={styles.typeDropdown}
-            badge={typeFilter !== "all" ? 1 : undefined}
-          />
-          <Pressable style={styles.filtersButton} onPress={() => setFiltersOpen(true)} accessibilityRole="button">
-            <Text style={styles.filtersButtonText}>Filters</Text>
-            {activeFilterCount > 0 && <Badge count={activeFilterCount} />}
-            <Ionicons name="chevron-down" size={12} color={colors.textFaint} />
-          </Pressable>
-        </View>
+        {activities.length > 0 && (
+          <View style={styles.topFilterRow}>
+            <Pressable
+              style={[styles.chip, dateRange !== "all" && styles.chipActive]}
+              onPress={() => setFiltersOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Date range"
+            >
+              <Text style={[styles.chipText, dateRange !== "all" && styles.chipTextActive]}>
+                {DATE_RANGE_OPTIONS.find((o) => o.value === dateRange)?.label}
+              </Text>
+            </Pressable>
+            <Dropdown
+              options={TYPE_OPTIONS}
+              value={typeFilter}
+              onSelect={setTypeFilter}
+              compact
+              style={styles.typeDropdown}
+              badge={typeFilter !== "all" ? 1 : undefined}
+            />
+            {minDistanceMeters > 0 && (
+              <Pressable style={[styles.chip, styles.chipActive]} onPress={() => setFiltersOpen(true)} accessibilityRole="button">
+                <Text style={[styles.chipText, styles.chipTextActive]}>Min {formatDistance(minDistanceMeters / 1000, unit)}</Text>
+              </Pressable>
+            )}
+            <Pressable style={styles.chip} onPress={() => setFiltersOpen(true)} accessibilityRole="button">
+              <Text style={styles.chipText}>Filters</Text>
+              {activeFilterCount > 0 && <Badge count={activeFilterCount} />}
+            </Pressable>
+          </View>
+        )}
 
         <Modal visible={filtersOpen} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setFiltersOpen(false)}>
           <View style={styles.modalWrap}>
@@ -256,7 +273,7 @@ export default function Activity() {
                 on web, it's a native-only responder API). Keeping the
                 backdrop's tap-to-close area completely separate from the
                 sheet's own content sidesteps that entirely. */}
-            <Pressable accessibilityRole="button" style={styles.modalBackdrop} onPress={() => setFiltersOpen(false)} />
+            <RNPressable accessibilityRole="button" style={styles.modalBackdrop} onPress={() => setFiltersOpen(false)} />
             <View style={[styles.modalSheet, { paddingBottom: Math.max(28, insets.bottom + 16) }]}>
               <ScrollView>
                 <Text style={styles.modalTitle}>Filters</Text>
@@ -309,22 +326,29 @@ export default function Activity() {
         </Modal>
 
         {monthGroups.length === 0 ? (
-          <Card>
-            <Text style={styles.emptyText}>
-              {activities.length === 0 ? "No runs logged yet - tap the + button to add your first one." : "No runs match this filter."}
-            </Text>
-          </Card>
+          activities.length === 0 ? (
+            <View style={styles.emptyWrap}>
+              <Pika expression="rest" size={150} />
+              <Text style={styles.emptyTitle}>No runs yet</Text>
+              <Text style={styles.emptyText}>Your first run will show up here, with its route and splits.</Text>
+              <View style={styles.emptyButton}>
+                <PrimaryButton label="Start a run" onPress={() => router.push("/(tabs)/track")} />
+              </View>
+            </View>
+          ) : (
+            <Card>
+              <Text style={styles.emptyText}>No runs match this filter.</Text>
+            </Card>
+          )
         ) : (
           monthGroups.map((group) => (
             <View key={group.yearMonth} style={styles.monthGroup}>
               <View style={styles.monthHeaderRow}>
-                <Text style={styles.monthHeading}>{formatMonthHeading(group.yearMonth)}</Text>
-                <Text style={styles.monthSummary}>{formatDistance(group.totalKm, unit)}</Text>
+                <SectionLabel style={styles.monthHeading}>{formatMonthHeading(group.yearMonth)}</SectionLabel>
+                <Text style={styles.monthSummary}>
+                  {formatDistance(group.totalKm, unit)} · {formatClock(group.totalSeconds)}
+                </Text>
               </View>
-              <Text style={styles.monthSubSummary}>
-                {group.activities.length} {group.activities.length === 1 ? "activity" : "activities"} ·{" "}
-                {formatClock(group.totalSeconds)}
-              </Text>
               <Card style={styles.listCard}>
                 {group.activities.map((a, index) => {
                   const distanceKm = a.distance_meters / 1000;
@@ -339,12 +363,12 @@ export default function Activity() {
                       <ActivityThumbnail activity={a} />
                       <View style={styles.rowBody}>
                         <Text style={styles.rowTitle}>{SESSION_TYPE_LABEL[a.activity_type] ?? a.activity_type}</Text>
-                        <Text style={styles.rowDate}>{formatShortDate(a.start_time.slice(0, 10))}</Text>
+                        <Text style={styles.rowStats}>
+                          {formatDistance(distanceKm, unit)} · {formatPace(paceSecondsPerKm, unit)}
+                        </Text>
                       </View>
-                      <Text style={styles.rowStats}>
-                        {formatDistance(distanceKm, unit)}
-                        {"\n"}
-                        {formatPace(paceSecondsPerKm, unit)}
+                      <Text style={styles.rowDate} accessibilityLabel={formatShortDate(a.start_time.slice(0, 10))}>
+                        {formatWeekday(a.start_time.slice(0, 10))}
                       </Text>
                     </Pressable>
                   );
@@ -365,19 +389,25 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.screenBg },
   scroll: { flex: 1 },
-  container: { padding: spacing.screenPadding, paddingTop: 10, paddingBottom: 90 },
+  container: { padding: spacing.screenPadding, paddingTop: 4, paddingBottom: 90, flexGrow: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screenBg },
   body: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
-  header: { fontFamily: fonts.dataBold, fontSize: type.hMd, color: colors.textPrimary, marginBottom: 12 },
-  subviewRow: { marginBottom: 14 },
-  statRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
-  statCard: { flex: 1, backgroundColor: colors.cardBg, borderRadius: spacing.cardRadius, paddingVertical: 12, alignItems: "center" },
-  statLabel: { fontFamily: fonts.monoMedium, fontSize: type.statLabel, color: colors.textFaint, marginBottom: 4 },
-  statValue: { fontFamily: fonts.dataBold, ...text("emphasis"), color: colors.textPrimary },
-  statSubValue: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textDim, marginTop: 1 },
-  topFilterRow: { flexDirection: "row", gap: 8, alignItems: "center", marginBottom: 16 },
+  segment: {
+    flexDirection: "row",
+    backgroundColor: colors.cardBg,
+    borderWidth: 1,
+    borderColor: colors.cardLine,
+    borderRadius: radius.lg,
+    padding: 3,
+    marginBottom: 12,
+  },
+  segmentItem: { flex: 1, alignItems: "center", justifyContent: "center", height: 38, borderRadius: radius.md },
+  segmentItemSelected: { backgroundColor: palette.accentFill },
+  segmentLabel: { fontFamily: fonts.bodyMedium, ...text("body"), color: colors.textDim },
+  segmentLabelSelected: { fontFamily: fonts.bodySemiBold, color: palette.onAccent },
+  topFilterRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 14 },
   typeDropdown: { width: 130 },
-  filtersButton: {
+  chip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
@@ -388,7 +418,9 @@ function createStyles(colors: Colors) {
     borderColor: colors.cardLine,
     backgroundColor: colors.cardBg,
   },
-  filtersButtonText: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.textPrimary },
+  chipActive: { borderColor: colors.accentMark },
+  chipText: { fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textPrimary },
+  chipTextActive: { color: colors.accentText },
   modalWrap: { flex: 1, justifyContent: "flex-end" },
   modalBackdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.scrim },
   modalSheet: {
@@ -406,25 +438,27 @@ function createStyles(colors: Colors) {
   modalRowItem: { flex: 1 },
   customRangeStack: { gap: 14, marginTop: 14 },
   modalActions: { flexDirection: "row", gap: 10, marginTop: 20 },
-  emptyText: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textFaint, textAlign: "center" },
-  monthGroup: { marginBottom: 18 },
+  emptyWrap: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 40, gap: 8 },
+  emptyTitle: { fontFamily: fonts.dataBold, ...text("headline"), color: colors.textPrimary, marginTop: 8 },
+  emptyText: { fontFamily: fonts.body, ...text("body"), color: colors.textDim, textAlign: "center", paddingHorizontal: 30 },
+  emptyButton: { alignSelf: "stretch", marginTop: 40 },
+  monthGroup: { marginBottom: 14 },
   monthHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 2 },
-  monthHeading: { fontFamily: fonts.bodyBold, ...text("body"), color: colors.textPrimary },
-  monthSummary: { fontFamily: fonts.mono, fontSize: type.pDim, color: colors.textDim },
-  monthSubSummary: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginBottom: 8 },
+  monthHeading: {},
+  monthSummary: { fontFamily: fonts.mono, ...text("micro"), color: colors.textDim },
   listCard: { paddingHorizontal: 12, paddingVertical: 2, marginBottom: 0 },
   // Flat rows divided by hairlines inside the one card - each row used to be its
   // own bordered box inside the month card, a card within a card.
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 11,
-    paddingVertical: 11,
+    gap: 12,
+    paddingVertical: 12,
   },
   rowDivider: { borderTopWidth: 1, borderTopColor: colors.cardLine },
   rowBody: { flex: 1 },
-  rowTitle: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.textPrimary },
-  rowDate: { fontFamily: fonts.body, fontSize: type.pFaint, color: colors.textFaint, marginTop: 2 },
-  rowStats: { fontFamily: fonts.mono, fontSize: type.pDim, color: colors.textDim, textAlign: "right", lineHeight: 16 },
+  rowTitle: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
+  rowDate: { fontFamily: fonts.monoMedium, ...text("small"), color: colors.textDim },
+  rowStats: { fontFamily: fonts.mono, ...text("small"), color: colors.textDim, marginTop: 2 },
   });
 }

@@ -22,7 +22,6 @@ function createStyles(colors: Colors, shadows: ThemeShadows, mode: ThemeMode) {
       // platforms render differently. Light mode keeps its soft shadow on top.
       borderWidth: 1,
       borderColor: colors.cardLine,
-      ...(mode === "dark" ? null : shadows.card),
     },
   });
 }

@@ -1,15 +1,17 @@
 import React, { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { requestPasswordReset } from "../../lib/auth/passwordReset";
-import { fonts, palette, spacing, text, fs } from "../../lib/theme";
+import { fonts, radius, spacing, text } from "../../lib/theme";
 import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
-import { BrandMark } from "../../components/ui/BrandMark";
+import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { TextField } from "../../components/ui/TextField";
 import { KeyboardAvoider } from "../../components/ui/KeyboardAvoider";
 
 export default function ForgotPassword() {
+  const router = useRouter();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [email, setEmail] = useState("");
@@ -33,32 +35,13 @@ export default function ForgotPassword() {
     }
   }
 
-  if (sent) {
-    return (
-      <View style={[styles.flex, styles.container]}>
-        <View style={styles.markRow}>
-          <BrandMark size={56} />
-        </View>
-        <Text style={styles.title}>Check your email</Text>
-        <Text style={styles.subtitle}>
-          If there's an account for {email.trim()}, a reset link is on its way. It's only valid for a little while,
-          so use it soon.
-        </Text>
-        <Link href="/sign-in" style={styles.footerLink}>
-          Back to sign in
-        </Link>
-      </View>
-    );
-  }
-
   return (
     <KeyboardAvoider style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.markRow}>
-          <BrandMark size={56} />
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View>
+          <ScreenHeader title="Reset your password" onBack={() => (router.canGoBack() ? router.back() : router.replace("/sign-in"))} />
+          <Text style={styles.subtitle}>Enter the email on your account and we'll send you a reset link.</Text>
         </View>
-        <Text style={styles.title}>Reset your password</Text>
-        <Text style={styles.subtitle}>Enter the email on your account and we'll send you a reset link.</Text>
 
         <View style={styles.form}>
           <TextField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" required />
@@ -67,8 +50,17 @@ export default function ForgotPassword() {
               {error}
             </Text>
           )}
-          <PrimaryButton label="Send reset link" onPress={handleSend} loading={loading} disabled={!email.trim()} />
+          <PrimaryButton label={sent ? "Send again" : "Send reset link"} onPress={handleSend} loading={loading} disabled={!email.trim()} />
         </View>
+
+        {sent && (
+          <View style={styles.sentCard} accessibilityLiveRegion="polite">
+            <Ionicons name="checkmark" size={24} color={colors.textPrimary} />
+            <Text style={styles.sentText}>
+              If there's an account for {email.trim()}, a reset link is on its way. It's only valid for a little while, so use it soon.
+            </Text>
+          </View>
+        )}
 
         <View style={styles.footerRow}>
           <Link href="/sign-in" style={styles.footerLink}>
@@ -83,12 +75,21 @@ export default function ForgotPassword() {
 function createStyles(colors: Colors) {
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: colors.screenBg },
-    container: { flexGrow: 1, padding: spacing.screenPadding, justifyContent: "center", gap: 22 },
-    markRow: { alignItems: "center", marginBottom: 4 },
-    title: { fontFamily: fonts.dataBold, ...text("headline"), color: colors.textPrimary },
-    subtitle: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: colors.textDim, lineHeight: 19 },
+    container: { flexGrow: 1, padding: spacing.screenPadding, paddingTop: spacing.screenPadding + 16, gap: 16 },
+    subtitle: { fontFamily: fonts.body, ...text("body"), color: colors.textDim },
     form: { gap: 14 },
-    error: { fontFamily: fonts.body, ...text("small"), color: palette.danger },
+    error: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText },
+    sentCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+      padding: 16,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.cardLine,
+      backgroundColor: colors.cardBg,
+    },
+    sentText: { flex: 1, fontFamily: fonts.body, ...text("body"), color: colors.textDim },
     footerRow: { flexDirection: "row", justifyContent: "center" },
     footerLink: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.accentText },
   });

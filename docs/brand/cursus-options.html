@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cursus logo and mascot options</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Figtree:wght@400;500;600&family=Martian+Mono:wght@400;500&display=swap">
+<style>
+*{box-sizing:border-box;margin:0}
+body{background:#E9E5DB;color:#0F1220;font:400 15px/1.5 Figtree,system-ui,sans-serif;padding:32px 24px 80px;overflow-x:hidden}
+main{max-width:1240px;margin:0 auto}
+h1{font:700 34px Bricolage Grotesque,sans-serif;letter-spacing:-.02em}
+h2{font:700 26px Bricolage Grotesque,sans-serif;letter-spacing:-.02em;margin:48px 0 6px}
+.sub{color:#5F626E;max-width:720px;margin:6px 0 22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:18px}
+.card{background:#F4F1EA;border:1px solid rgba(15,18,32,.1);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card h3{font:700 18px Bricolage Grotesque,sans-serif;display:flex;justify-content:space-between;align-items:baseline}
+.card h3 small{font:500 11px 'Martian Mono',monospace;color:#5F626E;letter-spacing:.06em}
+.card p{font-size:13px;color:#5F626E}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.t{border-radius:12px;display:flex;align-items:center;justify-content:center;min-height:120px;padding:10px}
+.t.l{background:#fff;border:1px solid rgba(15,18,32,.08)}
+.t.d{background:#0F1220}
+.t.i{background:#EDE9DF;flex-direction:column;gap:10px}
+.lock{display:flex;align-items:center;gap:10px}
+.wm{font:700 26px Bricolage Grotesque,sans-serif;letter-spacing:-.03em;line-height:1}
+.icons{display:flex;align-items:flex-end;gap:10px}
+.sq{border-radius:22%;display:flex;align-items:center;justify-content:center}
+.tag{display:inline-block;font:500 11px 'Martian Mono',monospace;border-radius:999px;padding:3px 10px;background:rgba(108,77,255,.12);color:#4B33C9;margin-right:6px}
+.pick{background:#6C4DFF;color:#fff}
+.mhero{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center}
+.mini{display:flex;gap:6px}
+.mini div{background:#fff;border:1px solid rgba(15,18,32,.08);border-radius:12px;padding:4px;display:flex;flex-direction:column;align-items:center;font:500 11px 'Martian Mono',monospace;color:#5F626E}
+.herobox{background:#fff;border:1px solid rgba(15,18,32,.08);border-radius:16px;display:flex;align-items:center;justify-content:center;padding:6px}
+.row2{display:flex;gap:6px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<main>
+<h1>Cursus: logo and mascot options</h1>
+<p class="sub">Eight logo directions and six mascot directions. Each logo is shown on light, on dark, and as an app icon at three sizes, because a mark that only works large isn't a logo. Each mascot is shown with four expressions that match the reflection faces and run states. Every shape here is simple SVG, so it can be exported as is.</p>
+
+<h2>Logo directions</h2>
+<p class="sub">Palette: violet <b>#6C4DFF</b>, light violet <b>#8A72FF</b>, glow <b>#C9B8FF</b>, ink <b>#0F1220</b>, bone <b>#F4F1EA</b>. Wordmark is lowercase Bricolage Grotesque Bold.</p>
+<div class="grid" id="logos"></div>
+
+<h2>Mascot directions</h2>
+<p class="sub">The mascot should never appear during a run. It lives on empty states, onboarding, the reflection step and personal bests. Expressions: easy, hard, max, resting, personal best.</p>
+<div class="grid" id="mascots"></div>
+</main>
+
+<script>
+const P={
+  light:{a:'#6C4DFF',b:'#8A72FF',c:'#C9B8FF',ink:'#0F1220',z:'#F4F1EA',text:'#0F1220'},
+  dark:{a:'#8A72FF',b:'#C9B8FF',c:'#6C4DFF',ink:'#F4F1EA',z:'#0F1220',text:'#F4F1EA'},
+  mono:{a:'#F4F1EA',b:'#F4F1EA',c:'#F4F1EA',ink:'#F4F1EA',z:'#6C4DFF',text:'#F4F1EA'}
+};
+const arc=(r)=>{const x=50+r*.788,dy=r*.616;return 'M'+x.toFixed(1)+' '+(50-dy).toFixed(1)+' A'+r+' '+r+' 0 1 0 '+x.toFixed(1)+' '+(50+dy).toFixed(1)};
+const MARKS={
+ lanes:c=>'<path d="'+arc(38)+'" fill="none" stroke="'+c.a+'" stroke-width="9" stroke-linecap="round"/><path d="'+arc(25)+'" fill="none" stroke="'+c.b+'" stroke-width="9" stroke-linecap="round"/><path d="'+arc(12)+'" fill="none" stroke="'+c.c+'" stroke-width="9" stroke-linecap="round"/><circle cx="90" cy="50" r="6.5" fill="'+c.a+'"/>',
+ switchback:c=>'<path d="M50 10L90 85H10Z" fill="'+c.a+'" stroke="'+c.a+'" stroke-width="8" stroke-linejoin="round"/><path d="M28 76L66 70L38 58L60 50L44 38L50 27" fill="none" stroke="'+c.z+'" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>',
+ track:c=>'<path d="M90 50A23 23 0 0 1 67 73H33A23 23 0 0 1 33 27H67A23 23 0 0 1 90 50" pathLength="100" fill="none" stroke="'+c.a+'" stroke-width="12" stroke-linecap="round" stroke-dasharray="82 18"/><circle cx="90" cy="50" r="9" fill="'+c.c+'" stroke="'+c.a+'" stroke-width="4"/>',
+ bands:c=>'<path d="M16 54L50 24L84 54" fill="none" stroke="'+c.c+'" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 72L50 42L84 72" fill="none" stroke="'+c.b+'" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 90L50 60L84 90" fill="none" stroke="'+c.a+'" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M50 24V6" stroke="'+c.ink+'" stroke-width="3.5" stroke-linecap="round"/><path d="M50 6L66 12L50 18Z" fill="'+c.ink+'"/>',
+ blaze:c=>'<rect x="26" y="6" width="26" height="50" rx="9" fill="'+c.a+'"/><rect x="48" y="44" width="26" height="50" rx="9" fill="'+c.c+'"/>',
+ arcmark:c=>'<path d="M14 72A36 36 0 0 1 86 72" fill="none" stroke="'+c.c+'" stroke-width="11" stroke-linecap="round" opacity=".55"/><path d="M14 72A36 36 0 0 1 61 37.6" fill="none" stroke="'+c.a+'" stroke-width="11" stroke-linecap="round"/><circle cx="61" cy="37.6" r="8.5" fill="'+c.a+'" stroke="'+c.z+'" stroke-width="3.5"/><path d="M8 86H92" stroke="'+c.ink+'" stroke-width="4" stroke-linecap="round"/>',
+ courseC:c=>'<path d="M74.5 29.4A32 32 0 1 0 74.5 70.6" fill="none" stroke="'+c.a+'" stroke-width="15" stroke-linecap="round"/><path d="M74.5 29.4V9" stroke="'+c.ink+'" stroke-width="4.5" stroke-linecap="round"/><rect x="74.5" y="7" width="19" height="13" rx="2" fill="'+c.ink+'"/>',
+ profile:c=>'<path d="M8 74L28 54L40 62L58 30L72 50L84 42L93 62" fill="none" stroke="'+c.a+'" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M58 30V12" stroke="'+c.ink+'" stroke-width="3.5" stroke-linecap="round"/><path d="M58 12L74 18L58 24Z" fill="'+c.ink+'"/>'
+};
+const LOGOS=[
+ ['lanes','Lanes','A track seen from above','Three nested lanes make a C, with a runner at the start line. Reads as the letter and as a track at once.','Best at small size. Colour steps give it depth without gradients.'],
+ ['track','Track','The stadium outline','A running track with a gap and a runner at the start line. Calm and very simple.','Reads as a track instantly. Less of a letter.'],
+ ['bands','Peak bands','Terrain layers and a flag','Stacked chevrons are the training phases, with a finish flag on top. Ties to the Block Profile.','Rich at large size. Three bands get dense at 16px.'],
+ ['switchback','Switchback','A trail up a mountain','A switchback trail climbing to the peak. Tells the story of a plan: many turns, one summit.','Distinctive. The zigzag needs size to read.'],
+ ['arcmark','Countdown arc','The app\'s own signature','The race countdown arc with its position dot. Unique to this product.','Looks like a gauge. Needs the wordmark to read as a brand.'],
+ ['courseC','Course C','A C with a finish flag','A heavy C for Cursus and a flag at the end of the course. Literal and bold.','Easy to understand. Can read as a refresh icon at small sizes.'],
+ ['profile','Profile line','An elevation profile','The terrain line of the plan with a flag on the peak. Looks like running data.','Reads as fitness quickly. Resembles a health chart.'],
+ ['blaze','Blaze','A trail marker','Two offset bars like the paint blazes that mark a trail: follow me, turn here.','Most abstract and ownable. Least obvious, and needs the name beside it.']
+];
+const sq=(size,bg,mk,c)=>'<div class="sq" style="width:'+size+'px;height:'+size+'px;background:'+bg+'"><svg viewBox="0 0 100 100" width="'+size*.64+'" height="'+size*.64+'">'+MARKS[mk](c)+'</svg></div>';
+const lock=(mk,c)=>'<div class="lock"><svg viewBox="0 0 100 100" width="44" height="44">'+MARKS[mk](c)+'</svg><span class="wm" style="color:'+c.text+'">cursus</span></div>';
+document.getElementById('logos').innerHTML=LOGOS.map((l,i)=>'<div class="card"><h3>'+l[1]+'<small>'+String(i+1).padStart(2,'0')+'</small></h3><div class="tiles"><div class="t l">'+lock(l[0],P.light)+'</div><div class="t d">'+lock(l[0],P.dark)+'</div><div class="t i"><div class="icons">'+sq(64,'#6C4DFF',l[0],P.mono)+sq(40,'#0F1220',l[0],P.dark)+sq(24,'#6C4DFF',l[0],P.mono)+'</div></div></div><p><b style="color:#0F1220">'+l[2]+'.</b> '+l[3]+'</p><p>'+l[4]+'</p></div>').join('');
+
+/* faces */
+const EYE=(x,y,r,p)=>'<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="#fff"/><circle cx="'+(x+r*.2)+'" cy="'+(y+r*.25)+'" r="'+r*.5+'" fill="#0F1220"/>';
+const FACE=(e,s)=>{const g=7*s,r=5.5*s,k='#0F1220';let o='';
+ if(e==='easy')o=EYE(-g,0,r)+EYE(g,0,r)+'<path d="M'+-4*s+' '+9*s+'Q0 '+14*s+' '+4*s+' '+9*s+'" fill="none" stroke="'+k+'" stroke-width="'+2.2*s+'" stroke-linecap="round"/>';
+ if(e==='hard')o=EYE(-g,1*s,r)+EYE(g,1*s,r)+'<path d="M'+-g*1.7+' '+-6*s+'L'+-g*.5+' '+-3*s+'M'+g*1.7+' '+-6*s+'L'+g*.5+' '+-3*s+'" stroke="'+k+'" stroke-width="'+2.2*s+'" stroke-linecap="round"/><path d="M'+-3*s+' '+11*s+'H'+3*s+'" stroke="'+k+'" stroke-width="'+2.2*s+'" stroke-linecap="round"/>';
+ if(e==='max')o='<path d="M'+-g*1.6+' '+-1*s+'L'+-g*.5+' '+1*s+'M'+g*1.6+' '+-1*s+'L'+g*.5+' '+1*s+'" stroke="#fff" stroke-width="'+2.6*s+'" stroke-linecap="round"/><ellipse cx="0" cy="'+10*s+'" rx="'+4.2*s+'" ry="'+3.6*s+'" fill="'+k+'"/><path d="M'+g*2.3+' '+-8*s+'Q'+g*2.6+' '+-3*s+' '+g*2.3+' '+-1*s+'Q'+g*2+' '+-3*s+' '+g*2.3+' '+-8*s+'Z" fill="#7CC3D9"/>';
+ if(e==='rest')o='<path d="M'+-g*1.6+' '+0+'Q'+-g+' '+4*s+' '+-g*.4+' '+0+'M'+g*.4+' '+0+'Q'+g+' '+4*s+' '+g*1.6+' '+0+'" fill="none" stroke="'+k+'" stroke-width="'+2.2*s+'" stroke-linecap="round"/><path d="M'+-3*s+' '+10*s+'Q0 '+12*s+' '+3*s+' '+10*s+'" fill="none" stroke="'+k+'" stroke-width="'+2*s+'" stroke-linecap="round"/><path d="M'+g*2+' '+-8*s+'h'+5*s+'l'+-5*s+' '+5*s+'h'+5*s+'" fill="none" stroke="#C9B8FF" stroke-width="'+2*s+'" stroke-linecap="round" stroke-linejoin="round"/>';
+ if(e==='pb')o='<path d="M'+-g*1.6+' '+2*s+'Q'+-g+' '+-5*s+' '+-g*.4+' '+2*s+'M'+g*.4+' '+2*s+'Q'+g+' '+-5*s+' '+g*1.6+' '+2*s+'" fill="none" stroke="'+k+'" stroke-width="'+2.2*s+'" stroke-linecap="round"/><path d="M'+-5*s+' '+8*s+'Q0 '+18*s+' '+5*s+' '+8*s+'Z" fill="'+k+'"/><path d="M'+-g*2.4+' '+-9*s+'v'+6*s+'m'+-3*s+' '+-3*s+'h'+6*s+'M'+g*2.4+' '+-14*s+'v'+6*s+'m'+-3*s+' '+-3*s+'h'+6*s+'" stroke="#F2B705" stroke-width="'+2*s+'" stroke-linecap="round"/>';
+ return o};
+const FLAG=(x,y,h,col)=>'<path d="M'+x+' '+y+'V'+(y-h)+'" stroke="#4B33C9" stroke-width="3" stroke-linecap="round"/><path d="M'+x+' '+(y-h)+'L'+(x+16)+' '+(y-h+6)+'L'+x+' '+(y-h+12)+'Z" fill="'+col+'"/>';
+const FL=e=>e==='pb'?'#F2B705':'#C9B8FF';
+const BODY={
+ tor:e=>'<ellipse cx="-18" cy="44" rx="12" ry="5.5" fill="#4B33C9"/><ellipse cx="18" cy="44" rx="12" ry="5.5" fill="#4B33C9"/><path d="M-42 42C-44 10-22 -30 0 -50C22 -30 44 10 42 42Z" fill="#6C4DFF"/><path d="M0 -50C22 -30 44 10 42 42H14C20 14 14 -22 0 -50Z" fill="#5A3CE0"/><path d="M-15 -29C-9 -39-4 -44 0 -50C4 -44 9 -39 15 -29L9 -23L2 -29L-4 -23Z" fill="#C9B8FF"/>'+FLAG(0,-50,20,FL(e))+'<g transform="translate(0 6)">'+FACE(e,1.15)+'</g>',
+ tortoise:e=>'<rect x="-30" y="26" width="16" height="16" rx="7" fill="#8A72FF"/><rect x="18" y="26" width="16" height="16" rx="7" fill="#8A72FF"/><path d="M42 30L56 34L42 38Z" fill="#8A72FF"/><path d="M-36 34C-38 -4-16 -38 8 -38C32 -38 48 -6 44 34Z" fill="#6C4DFF"/><path d="M8 -38C32 -38 48 -6 44 34H24C30 8 24 -20 8 -38Z" fill="#5A3CE0"/><path d="M-6 -22C0 -32 4 -36 8 -38C12 -34 16 -30 22 -20L16 -16L10 -22L4 -16Z" fill="#C9B8FF"/>'+FLAG(8,-38,20,FL(e))+'<path d="M-36 34H44" stroke="#4B33C9" stroke-width="5" stroke-linecap="round"/><ellipse cx="-42" cy="12" rx="22" ry="19" fill="#CFC3FF"/><g transform="translate(-44 12)">'+FACE(e,1.15)+'</g>',
+ hare:e=>'<ellipse cx="0" cy="26" rx="30" ry="26" fill="#6C4DFF"/><ellipse cx="-14" cy="-44" rx="8" ry="24" fill="#8A72FF" transform="rotate(-8 -14 -44)"/><ellipse cx="14" cy="-44" rx="8" ry="24" fill="#8A72FF" transform="rotate(8 14 -44)"/><ellipse cx="-14" cy="-44" rx="3.5" ry="17" fill="#C9B8FF" transform="rotate(-8 -14 -44)"/><ellipse cx="14" cy="-44" rx="3.5" ry="17" fill="#C9B8FF" transform="rotate(8 14 -44)"/><circle cx="0" cy="-12" r="24" fill="#8A72FF"/><path d="M-24 -22Q0 -32 24 -22L23 -14Q0 -24 -23 -14Z" fill="#C9B8FF"/><ellipse cx="-14" cy="50" rx="11" ry="5" fill="#4B33C9"/><ellipse cx="14" cy="50" rx="11" ry="5" fill="#4B33C9"/><circle cx="32" cy="34" r="8" fill="#F4F1EA"/><g transform="translate(0 -6)">'+FACE(e,1.05)+'</g>',
+ swift:e=>'<path d="M30 6L58 -4L52 10L60 22L30 18Z" fill="#4B33C9"/><circle cx="0" cy="6" r="34" fill="#6C4DFF"/><path d="M0 6A34 34 0 0 1 34 6C34 30 14 40 0 40Z" fill="#5A3CE0"/><ellipse cx="14" cy="10" rx="17" ry="11" fill="#8A72FF" transform="rotate(-18 14 10)"/><path d="M-32 0L-52 6L-32 14Z" fill="#F2B705"/><path d="M-12 38L-18 52M8 40L8 54" stroke="#F2B705" stroke-width="4" stroke-linecap="round"/><path d="M-60 -26H-42M-66 -12H-46M-62 2H-48" stroke="#C9B8FF" stroke-width="3" stroke-linecap="round" opacity=".7"/><g transform="translate(-10 -4)">'+FACE(e,1)+'</g>',
+ stack:e=>'<ellipse cx="0" cy="34" rx="44" ry="19" fill="#6C4DFF"/><path d="M-44 34A44 19 0 0 0 44 34V40A44 19 0 0 1 -44 40Z" fill="#4B33C9"/><ellipse cx="2" cy="6" rx="32" ry="16" fill="#8A72FF"/><ellipse cx="-2" cy="-14" rx="20" ry="11" fill="#C9B8FF"/>'+FLAG(-2,-23,18,FL(e))+'<g transform="translate(2 6)">'+FACE(e,.95)+'</g>',
+ blaze:e=>'<rect x="-22" y="38" width="16" height="12" rx="6" fill="#4B33C9"/><rect x="6" y="38" width="16" height="12" rx="6" fill="#4B33C9"/><rect x="-30" y="-48" width="60" height="92" rx="26" fill="#6C4DFF"/><path d="M6 -48A26 26 0 0 1 30 -22V18A26 26 0 0 1 6 44Z" fill="#5A3CE0"/><rect x="-22" y="-42" width="12" height="30" rx="6" fill="#8A72FF"/><path d="M-30 6Q-42 10 -38 22M30 6Q42 10 38 22" fill="none" stroke="#6C4DFF" stroke-width="7" stroke-linecap="round"/><g transform="translate(0 -14)">'+FACE(e,1.15)+'</g>'
+};
+const MASC=[
+ ['tor','Tor, the mountain','Your plan, as a character','A friendly little mountain with a flag. Mirrors the terrain Block Profile and the app mark, so the logo and mascot are the same object.','Safest and most on-brand. Mountains are common mascots.'],
+ ['tortoise','Tor, the tortoise','Slow, steady, never judged','A tortoise whose shell is a mountain. Says the thing the product believes: easy runs matter and slow is allowed.','Most meaningful and warm. Most distinct from other apps.'],
+ ['hare','Hare','Quick, with a pace band','A round hare with a headband in pace-band colours. Instantly reads as running and speed.','Very friendly. Risks feeling like a kids\' brand.'],
+ ['swift','Swift, the bird','Light and fast','A round little bird with a tail and running legs, with speed lines. Moves nicely.','Playful and different. Less tied to training.'],
+ ['stack','Stack, the cairn','Marks the way','Three stones in the app colours with a flag. A cairn is how trails are marked, so it marks progress.','Calm and original. Simple shapes are easy to animate.'],
+ ['blaze','Blaze, the trail mark','The logo, alive','A painted trail blaze that came to life with arms and feet. Pairs with logo direction 08.','Most minimal. Least character.']
+];
+const mg=(k,e,sz)=>'<svg viewBox="-75 -85 150 150" width="'+sz+'" height="'+sz+'" role="img" aria-label="'+k+' '+e+'">'+BODY[k](e)+'</svg>';
+const EX=[['hard','hard'],['max','max'],['rest','rest'],['pb','best']];
+document.getElementById('mascots').innerHTML=MASC.map((m,i)=>'<div class="card"><h3>'+m[1]+'<small>'+String(i+1).padStart(2,'0')+'</small></h3><div class="mhero"><div class="herobox">'+mg(m[0],'easy',140)+'</div><div><p><b style="color:#0F1220">'+m[2]+'.</b> '+m[3]+'</p></div></div><div class="mini">'+EX.map(x=>'<div>'+mg(m[0],x[0],68)+x[1]+'</div>').join('')+'</div><p>'+m[4]+'</p></div>').join('');
+</script>
+</body>
+</html>

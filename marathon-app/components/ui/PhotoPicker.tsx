@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
+import { PressableScale as Pressable } from "./PressableScale";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { fonts, text, radius, palette } from "../../lib/theme";
@@ -130,7 +131,7 @@ function createStyles(colors: Colors) {
       backgroundColor: colors.cardBg,
     },
     addSlotDark: { borderColor: "rgba(255,255,255,0.25)", backgroundColor: "rgba(255,255,255,0.06)" },
-    errorText: { fontFamily: fonts.body, ...text("caption"), color: colors.danger, marginTop: 6 },
+    errorText: { fontFamily: fonts.body, ...text("caption"), color: colors.dangerText, marginTop: 6 },
     errorTextDark: { color: "#f0a89e" },
   });
 }

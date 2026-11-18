@@ -10,7 +10,6 @@ import { formatHms, parseHms } from "../lib/timeFormat";
 import { ACTIVITY_TYPE_OPTIONS } from "../lib/sessionTypes";
 import { fonts, palette, spacing, type, text, inputText } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
-import { Card } from "../components/ui/Card";
 import { ChipSelect } from "../components/ui/ChipSelect";
 import { TextField } from "../components/ui/TextField";
 import { DateField } from "../components/ui/DateField";
@@ -38,7 +37,6 @@ export default function LogActivity() {
   const [distanceKm, setDistanceKm] = useState("");
   const [duration, setDuration] = useState("");
   const [rpe, setRpe] = useState<number | undefined>();
-  const [showMore, setShowMore] = useState(false);
   const [notes, setNotes] = useState("");
   const [avgHeartRate, setAvgHeartRate] = useState("");
   const [elevationGain, setElevationGain] = useState("");
@@ -118,88 +116,56 @@ export default function LogActivity() {
         <Text style={styles.subtitle}>Logging this fulfills your planned session for this day.</Text>
       )}
 
-      <Card>
+      <ChipSelect options={ACTIVITY_TYPE_OPTIONS} value={activityType} onChange={setActivityType} />
+
+      <View style={styles.fieldGap}>
         <TextField label="Name (optional)" value={name} onChangeText={setName} placeholder="e.g. Sunday club run" />
-        <View style={styles.fieldGap}>
+      </View>
+
+      <View style={[styles.fieldGap, styles.pair]}>
+        <View style={{ flex: 1 }}>
           <DateField label="Date" value={date} onChange={setDate} yearsBack={2} yearsAhead={0} defaultOffsetDays={0} />
         </View>
-        {isFutureDate && <Text style={styles.errorText}>Date can't be in the future.</Text>}
-
-        <View style={styles.fieldGap}>
-          <Text style={styles.fieldLabel}>Type</Text>
-          <ChipSelect options={ACTIVITY_TYPE_OPTIONS} value={activityType} onChange={setActivityType} />
+        <View style={{ flex: 1 }}>
+          <TextField label="Distance (km)" value={distanceKm} onChangeText={setDistanceKm} keyboardType="decimal-pad" placeholder="e.g. 8.5" />
         </View>
+      </View>
+      {isFutureDate && <Text style={styles.errorText}>Date can't be in the future.</Text>}
 
-        <View style={styles.fieldGap}>
-          <TextField
-            label="Distance (km)"
-            value={distanceKm}
-            onChangeText={setDistanceKm}
-            keyboardType="decimal-pad"
-            placeholder="e.g. 8.5"
-          />
+      <View style={styles.fieldGap}>
+        <TextField label="Duration (HH:MM:SS)" value={duration} onChangeText={setDuration} keyboardType="numbers-and-punctuation" placeholder="0:45:00" />
+      </View>
+
+      <View style={[styles.fieldGap, styles.pair]}>
+        <View style={{ flex: 1 }}>
+          <TextField label="Avg HR, bpm" value={avgHeartRate} onChangeText={setAvgHeartRate} keyboardType="number-pad" placeholder="e.g. 152" />
         </View>
-
-        <View style={styles.fieldGap}>
-          <TextField
-            label="Duration (HH:MM:SS)"
-            value={duration}
-            onChangeText={setDuration}
-            keyboardType="numbers-and-punctuation"
-            placeholder="0:45:00"
-          />
+        <View style={{ flex: 1 }}>
+          <TextField label="Elevation, m" value={elevationGain} onChangeText={setElevationGain} keyboardType="decimal-pad" placeholder="e.g. 45" />
         </View>
+      </View>
 
+      <View style={styles.fieldGap}>
+        <TextField label="Notes" value={notes} onChangeText={setNotes} placeholder="How the run went, anything worth remembering" multiline />
+      </View>
+
+      <View style={styles.fieldGap}>
+        <Text style={styles.fieldLabel}>How did it feel? (optional)</Text>
+        <ChipSelect options={RPE_OPTIONS} value={rpe} onChange={setRpe} />
+      </View>
+
+      {shoes.length > 0 && (
         <View style={styles.fieldGap}>
-          <Text style={styles.fieldLabel}>How did it feel? (optional)</Text>
-          <ChipSelect options={RPE_OPTIONS} value={rpe} onChange={setRpe} />
+          <Text style={styles.fieldLabel}>Shoes (optional)</Text>
+          <ChipSelect options={shoes.map((s) => ({ value: s.id, label: s.name }))} value={shoeId} onChange={setShoeId} />
         </View>
-      </Card>
+      )}
 
-      {!showMore ? (
-        <Text style={styles.moreLink} onPress={() => setShowMore(true)}>
-          + Add notes, heart rate, elevation
-        </Text>
-      ) : (
-        <Card>
-          <TextField
-            label="Notes (optional)"
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="How the run went, anything worth remembering"
-            multiline
-          />
-          <View style={styles.fieldGap}>
-            <TextField
-              label="Avg heart rate, bpm (optional)"
-              value={avgHeartRate}
-              onChangeText={setAvgHeartRate}
-              keyboardType="number-pad"
-              placeholder="e.g. 152"
-            />
-          </View>
-          <View style={styles.fieldGap}>
-            <TextField
-              label="Elevation gain, m (optional)"
-              value={elevationGain}
-              onChangeText={setElevationGain}
-              keyboardType="decimal-pad"
-              placeholder="e.g. 45"
-            />
-          </View>
-          {session?.user?.id && (
-            <View style={styles.fieldGap}>
-              <Text style={styles.fieldLabel}>Photos (optional, up to 3)</Text>
-              <PhotoPicker userId={session.user.id} photos={photos} onChange={setPhotos} />
-            </View>
-          )}
-          {shoes.length > 0 && (
-            <View style={styles.fieldGap}>
-              <Text style={styles.fieldLabel}>Shoes (optional)</Text>
-              <ChipSelect options={shoes.map((s) => ({ value: s.id, label: s.name }))} value={shoeId} onChange={setShoeId} />
-            </View>
-          )}
-        </Card>
+      {session?.user?.id && (
+        <View style={styles.fieldGap}>
+          <Text style={styles.fieldLabel}>Photos (optional, up to 3)</Text>
+          <PhotoPicker userId={session.user.id} photos={photos} onChange={setPhotos} />
+        </View>
       )}
 
       {error && <Text style={styles.errorText}>{error}</Text>}
@@ -218,7 +184,8 @@ function createStyles(colors: Colors) {
   subtitle: { fontFamily: fonts.body, ...text("small"), color: colors.textDim, marginBottom: 12 },
   fieldLabel: { fontFamily: fonts.bodyMedium, ...inputText("small"), color: colors.textDim, marginBottom: 8 },
   fieldGap: { marginTop: 14 },
-  errorText: { fontFamily: fonts.body, ...text("small"), color: palette.danger, marginTop: 6 },
+  pair: { flexDirection: "row", gap: 10 },
+  errorText: { fontFamily: fonts.body, ...text("small"), color: colors.dangerText, marginTop: 6 },
   moreLink: {
     fontFamily: fonts.bodySemiBold,
     ...text("small"),
@@ -226,6 +193,6 @@ function createStyles(colors: Colors) {
     textDecorationLine: "underline",
     marginBottom: 14,
   },
-  saveButton: { marginTop: 8, marginBottom: 12 },
+  saveButton: { marginTop: 22, marginBottom: 12 },
   });
 }

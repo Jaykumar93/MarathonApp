@@ -1,20 +1,19 @@
 import React, { useMemo, useState } from "react";
-import { Text, View } from "react-native";
+import { Text } from "react-native";
 import { useRouter } from "expo-router";
-import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
-import { ChipSelect } from "../../components/ui/ChipSelect";
+import { OnboardingStepLayout, PillChips } from "../../components/OnboardingStepLayout";
 import { TextField } from "../../components/ui/TextField";
 import { DateField } from "../../components/ui/DateField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
 import { computeAvailableWeeks, getMinWeeks, resolveStartDate, STRUCTURAL_MIN_WEEKS } from "../../lib/planEngine";
-import { fonts, palette, text } from "../../lib/theme";
+import { fonts, text } from "../../lib/theme";
 import { useTheme } from "../../lib/theme/ThemeContext";
 import { todayIso } from "../../lib/data/usePlanData";
 
 const DISTANCE_OPTIONS = [
   { value: 5, label: "5K" },
   { value: 10, label: "10K" },
-  { value: 21.0975, label: "Half marathon" },
+  { value: 21.0975, label: "Half" },
   { value: 42.195, label: "Marathon" },
   { value: 50, label: "50K ultra" },
 ];
@@ -65,23 +64,18 @@ export default function RaceTarget() {
     <OnboardingStepLayout
       step={1}
       title="What are you training for?"
-      subtitle="Pick a distance and race date - this shapes your whole plan."
+      subtitle="Pick a distance and race date. This shapes your whole plan."
       onNext={handleNext}
       nextDisabled={!canContinue}
     >
-      <View>
-        <Text style={{ fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textDim, marginBottom: 8 }}>
-          Distance
-        </Text>
-        <ChipSelect
-          options={DISTANCE_OPTIONS}
-          value={isCustom ? undefined : answers.raceDistanceKm}
-          onChange={(v) => {
-            update({ raceDistanceKm: v });
-            setCustomDistance("");
-          }}
-        />
-      </View>
+      <PillChips
+        options={DISTANCE_OPTIONS}
+        value={isCustom ? undefined : answers.raceDistanceKm}
+        onChange={(v) => {
+          update({ raceDistanceKm: v });
+          setCustomDistance("");
+        }}
+      />
       <TextField
         label="Or enter a custom distance (km)"
         value={customDistance}
@@ -91,16 +85,16 @@ export default function RaceTarget() {
           if (!Number.isNaN(n) && n > 0) update({ raceDistanceKm: n });
         }}
         keyboardType="decimal-pad"
-        placeholder="e.g. 15 or 100"
+        placeholder="42.2"
       />
       <DateField label="Race date" value={goalDate} onChange={setGoalDate} />
       {isPastDate && (
-        <Text style={{ fontFamily: fonts.body, ...text("small"), color: palette.danger }}>
+        <Text style={{ fontFamily: fonts.body, ...text("small"), color: colors.dangerText }}>
           Race date must be in the future - pick a date after today.
         </Text>
       )}
       {!isPastDate && scheduleWarning && (
-        <Text style={{ fontFamily: fonts.body, ...text("small"), color: palette.danger }}>
+        <Text style={{ fontFamily: fonts.body, ...text("small"), color: colors.dangerText }}>
           {scheduleWarning.tooTight
             ? `Only ${scheduleWarning.availableWeeks} week${scheduleWarning.availableWeeks === 1 ? "" : "s"} until race day - that's not enough time to build a safe plan for this distance (needs at least ${STRUCTURAL_MIN_WEEKS}). Pick a later date.`
             : `Only ${scheduleWarning.availableWeeks} weeks until race day - typical plans for this distance use ${scheduleWarning.minWeeksRecommended}+. We can still build you a plan, but it'll be a compressed, higher-effort ramp-up than we'd normally recommend.`}

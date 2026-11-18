@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createActivity, type CreateActivityInput } from "./activities";
 
+// Intentionally still "stryde": this is a stored-data key, not a brand string. Renaming it would orphan a runner's unsynced data on update (docs/plan/09-cursus-rebrand-redesign.md, Phase 5).
 const STORAGE_KEY = "stryde:pendingActivities";
 
 interface PendingActivity {

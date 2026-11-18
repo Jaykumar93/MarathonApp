@@ -85,8 +85,8 @@ function createStyles(colors: Colors) {
     chip: {
       paddingHorizontal: 14,
       paddingVertical: 10,
-      borderRadius: radius.md,
-      borderWidth: 1.5,
+      borderRadius: radius.pill,
+      borderWidth: 1,
       borderColor: colors.cardLine,
       backgroundColor: colors.cardBg,
     },

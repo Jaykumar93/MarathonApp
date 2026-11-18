@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Text, View } from "react-native";
+import { Card } from "../../components/ui/Card";
 import { useRouter } from "expo-router";
-import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
-import { ChipSelect } from "../../components/ui/ChipSelect";
+import { OnboardingStepLayout, PillChips } from "../../components/OnboardingStepLayout";
 import { TextField } from "../../components/ui/TextField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
 import { fonts, text } from "../../lib/theme";
@@ -19,6 +19,9 @@ export default function Fitness() {
   const { colors } = useTheme();
   const { answers, update } = useOnboarding();
   const [mileage, setMileage] = useState(answers.currentWeeklyMileageKm?.toString() ?? "");
+
+  const parsedKm = parseFloat(mileage);
+  const startKm = !Number.isNaN(parsedKm) && parsedKm > 0 ? parsedKm : null;
 
   function handleNext() {
     const n = parseFloat(mileage);
@@ -38,7 +41,7 @@ export default function Fitness() {
         <Text style={{ fontFamily: fonts.bodyMedium, ...text("small"), color: colors.textDim, marginBottom: 8 }}>
           Experience level
         </Text>
-        <ChipSelect
+        <PillChips
           options={EXPERIENCE_OPTIONS}
           value={answers.experienceLevel}
           onChange={(v) => update({ experienceLevel: v })}
@@ -51,6 +54,19 @@ export default function Fitness() {
         keyboardType="decimal-pad"
         placeholder="e.g. 25"
       />
+      {startKm !== null && (
+        <Card style={{ marginBottom: 0 }}>
+          <Text style={{ fontFamily: fonts.monoMedium, ...text("caption"), letterSpacing: 1.2, color: colors.textDim }}>
+            STARTING POINT
+          </Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 4 }}>
+            <Text style={{ fontFamily: fonts.dataBold, fontSize: 44, lineHeight: 50, includeFontPadding: false, color: colors.textPrimary }}>
+              {Math.round(startKm)}
+            </Text>
+            <Text style={{ fontFamily: fonts.body, ...text("body"), color: colors.textDim, paddingBottom: 6 }}>km per week</Text>
+          </View>
+        </Card>
+      )}
     </OnboardingStepLayout>
   );
 }

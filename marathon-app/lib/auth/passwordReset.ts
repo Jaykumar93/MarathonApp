@@ -6,7 +6,7 @@ import { supabase } from "../supabase";
  * Sends the reset email. redirectTo must be on Supabase's own redirect
  * allow-list (Dashboard -> Authentication -> URL Configuration) or it falls
  * back to the project's default site_url instead of bringing the user back
- * into this app - `stryde://reset-password` (native) and the web app's own
+ * into this app - `cursus://reset-password` (native; `stryde://` is still registered so links from older builds keep opening the app) and the web app's own
  * origin + /reset-password both need adding there once, by hand; nothing
  * client-side can register them.
  */

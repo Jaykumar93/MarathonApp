@@ -18,6 +18,7 @@
 | 6 | GPS tracking, Active Run, maps | Done | [06-gps-tracking-active-run.md](06-gps-tracking-active-run.md) |
 | 7 | Health Connect auto-sync (Android) | Done | [07-health-connect-sync.md](07-health-connect-sync.md) |
 | 8 | Trends, AI Coach (RAG), polish + first EAS build | In Progress | [08-trends-coach-polish.md](08-trends-coach-polish.md) |
+| 9 | Cursus rebrand + redesign (name, palette, type, logo, Pika, new flows) | Done (code, backend, docs; device QA + preview build open) | [09-cursus-rebrand-redesign.md](09-cursus-rebrand-redesign.md) · [log](implementation/09-cursus-rebrand-redesign.md) |
 
 ---
 
@@ -123,6 +124,19 @@ Final phase before first real build. Sequenced into six phases — see [08-trend
 
 **Depends on:** Task 5 (Trends needs activity data), Task 4 (Coach needs plan context).
 **Blocks:** nothing — final task.
+
+---
+
+### 9. Cursus rebrand + redesign
+Replace the Stryde / Pre-Dawn Run identity with Cursus: new name, violet palette (orange removed because it matches Strava), new fonts, the profile-line logo and the Pika mascot, plus the new flows from the design (post-run reflection, plan-ready onboarding, personal bests, hold-to-stop, interval colour and UI).
+- Design source of truth: `docs/cursus-design.html`, `docs/brand/cursus-final/`
+- Keeps the semicircle countdown, Block Profile, Pace Band and the month-slider calendar unchanged
+- Needs one new Supabase migration (reflection fields) and decisions on package id / URL scheme / trademark
+
+Marked Done 2026-11-17: code, migration, function deploys and docs are complete; on-device QA and the EAS preview build remain (Phase 8 of the sub-plan). Full account in [implementation/09-cursus-rebrand-redesign.md](implementation/09-cursus-rebrand-redesign.md).
+
+**Depends on:** the uncommitted accessibility/contrast changes landing first.
+**Blocks:** public Play Store listing.
 
 ---
 

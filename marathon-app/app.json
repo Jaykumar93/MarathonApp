@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Stryde",
+    "name": "Cursus",
     "slug": "marathonapp",
-    "scheme": "stryde",
+    "scheme": ["cursus", "stryde"],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,9 +13,10 @@
     },
     "android": {
       "package": "com.jaykumar093.stryde",
+      "versionCode": 2,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#14161A",
+        "backgroundColor": "#0F1220",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -39,12 +40,20 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#0F1220",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ],
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Stryde uses your location, including while your screen is off or another app is open, to keep tracking your route, distance, and pace for the whole run.",
-          "locationWhenInUsePermission": "Stryde uses your location while a run is active to track your route, distance, and pace.",
+          "locationAlwaysAndWhenInUsePermission": "Cursus uses your location, including while your screen is off or another app is open, to keep tracking your route, distance, and pace for the whole run.",
+          "locationWhenInUsePermission": "Cursus uses your location while a run is active to track your route, distance, and pace.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
@@ -54,7 +63,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Stryde uses your photos to attach pictures to a logged run and to build its shareable route card."
+          "photosPermission": "Cursus uses your photos to attach pictures to a logged run and to build its shareable route card."
         }
       ],
       "@sentry/react-native",
@@ -69,7 +78,7 @@
       [
         "expo-notifications",
         {
-          "color": "#FF5A1F",
+          "color": "#6C4DFF",
           "icon": "./assets/android-icon-monochrome.png"
         }
       ],

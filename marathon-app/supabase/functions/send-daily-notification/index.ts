@@ -60,6 +60,16 @@ async function sendExpoPush(messages: { to: string; title: string; body: string;
   return json?.data ?? [];
 }
 
+/** Constant-time string comparison, so the cron secret check doesn't leak a prefix match through timing. */
+function safeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const x = enc.encode(a);
+  const y = enc.encode(b);
+  let diff = x.length ^ y.length;
+  for (let i = 0; i < Math.max(x.length, y.length); i++) diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
+  return diff === 0;
+}
+
 Deno.serve(async (req) => {
   // Deployed --no-verify-jwt (the cron trigger has no user JWT to present),
   // which means this URL is reachable by anyone who finds it - without
@@ -69,7 +79,7 @@ Deno.serve(async (req) => {
   // secret and in Supabase Vault (see the migration's cron.schedule,
   // which reads it from Vault rather than embedding it in committed SQL).
   const expectedSecret = Deno.env.get("CRON_SHARED_SECRET");
-  if (!expectedSecret || req.headers.get("x-cron-secret") !== expectedSecret) {
+  if (!expectedSecret || !safeEqual(req.headers.get("x-cron-secret") ?? "", expectedSecret)) {
     return new Response(JSON.stringify({ error: "Not authorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
@@ -88,7 +98,15 @@ Deno.serve(async (req) => {
     const dueRows = (tokenRows ?? []).filter((row: any) => {
       const profile = row.profiles;
       if (!profile?.daily_notification_enabled) return false;
-      return isSendHourNow(row.timezone, profile.notification_hour_local, now);
+      // One row with an invalid timezone must not abort the whole hourly batch
+      // (security audit F3): treat a throwing row as "not due" and move on. A
+      // database trigger also normalises unknown zones to UTC on write.
+      try {
+        return isSendHourNow(row.timezone, profile.notification_hour_local, now);
+      } catch (e) {
+        console.error("send-daily-notification: skipping row with unusable timezone", row.id, e);
+        return false;
+      }
     });
 
     // One message per USER (not per token) - a user with two devices gets
@@ -103,8 +121,15 @@ Deno.serve(async (req) => {
 
     for (const [userId, tokens] of tokensByUserId) {
       const timezone = tokens[0].timezone;
-      const today = dateInTimezone(now, timezone);
-      const yesterday = dateInTimezone(new Date(now.getTime() - 24 * 60 * 60 * 1000), timezone);
+      let today: string;
+      let yesterday: string;
+      try {
+        today = dateInTimezone(now, timezone);
+        yesterday = dateInTimezone(new Date(now.getTime() - 24 * 60 * 60 * 1000), timezone);
+      } catch (e) {
+        console.error("send-daily-notification: skipping user with unusable timezone", userId, e);
+        continue;
+      }
 
       const { data: sessions } = await supabase
         .from("plan_sessions")
@@ -138,7 +163,7 @@ Deno.serve(async (req) => {
         // - the channel itself is created client-side once, on sign-in (see
         // lib/notifications/pushToken.ts's registerForPushNotifications), so
         // it already exists by the time any push referencing it arrives.
-        pushMessages.push({ to: t.token, title: "Stryde", body, color: "#FF5A1F", channelId: "daily-nudge" });
+        pushMessages.push({ to: t.token, title: "Cursus", body, color: "#6C4DFF", channelId: "daily-nudge" });
         tokenIdByIndex.push(t.rowId);
       }
     }

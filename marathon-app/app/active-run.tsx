@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getPlanSessionById, type PlanSessionRow } from "../lib/data/plans";
+import { todayIso } from "../lib/data/usePlanData";
 import { COUNTDOWN_SECONDS, useRunTracking } from "../lib/runTracking/RunTrackingContext";
 import { computeRouteDistanceMeters, computeRecentPaceSecondsPerKm, computeAveragePaceSecondsPerKm } from "../lib/gpsStats";
 import { getCurrentLeg } from "../lib/intervalProgress";
@@ -11,6 +12,7 @@ import { buildFallbackVoiceScript, type RunVoiceScript } from "../lib/runTrackin
 import { getOrGenerateVoiceScript } from "../lib/runTracking/voiceScript";
 import { formatDistance, formatPace } from "../lib/units";
 import { SESSION_TYPE_LABEL } from "../lib/sessionTypes";
+import Svg, { Circle } from "react-native-svg";
 import { fonts, palette, text, inputText, fs, radius, darkSurface } from "../lib/theme";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PhotoPicker } from "../components/ui/PhotoPicker";
@@ -34,10 +36,10 @@ function formatElapsed(totalSeconds: number): string {
 }
 
 /** Top-left, every phase - navigating away never stops tracking (see RunTrackingContext), so this is always safe to show. */
-function BackButton({ onPress, top }: { onPress: () => void; top: number }) {
+function BackButton({ onPress, top, plain }: { onPress: () => void; top: number; plain?: boolean }) {
   return (
     <Pressable
-      style={[styles.backButton, { top }]}
+      style={[styles.backButton, plain && styles.plainButton, { top }]}
       onPress={onPress}
       hitSlop={10}
       accessibilityRole="button"
@@ -55,10 +57,10 @@ function BackButton({ onPress, top }: { onPress: () => void; top: number }) {
  * (see RunTrackingContext's speakStatus/speakCoach split). Per-run only -
  * resets to unmuted on the next run.
  */
-function MuteButton({ muted, onPress, top }: { muted: boolean; onPress: () => void; top: number }) {
+function MuteButton({ muted, onPress, top, plain }: { muted: boolean; onPress: () => void; top: number; plain?: boolean }) {
   return (
     <Pressable
-      style={[styles.muteButton, { top }]}
+      style={[styles.muteButton, plain && styles.plainButton, { top }]}
       onPress={onPress}
       hitSlop={10}
       accessibilityRole="button"
@@ -161,25 +163,51 @@ function ActiveRunScreen() {
   // ---- Non-tracking states -------------------------------------------------
 
   if (rt.phase === "idle") {
+    const iv = previewSession?.interval_structure ?? null;
+    const isRest = !previewSession || previewSession.session_type === "rest";
+    const plannedKm = previewSession?.planned_distance_meters ? previewSession.planned_distance_meters / 1000 : null;
+    const bigDist = plannedKm != null ? (unit === "mi" ? plannedKm * 0.621371 : plannedKm).toFixed(1) : null;
+    const typeWord = previewSession ? (SESSION_TYPE_LABEL[previewSession.session_type] ?? previewSession.session_type).split(" ")[0].toUpperCase() : "";
+    const targetPace = previewSession?.planned_pace_seconds_per_km ?? null;
     return (
-      <View style={styles.center}>
-        <BackButton onPress={goBack} top={backTop} />
-        <Text style={styles.centerTitle}>Ready to run?</Text>
-        {previewSession && previewSession.session_type !== "rest" && (
-          <Text style={styles.centerText}>
-            This will fulfill today's {SESSION_TYPE_LABEL[previewSession.session_type] ?? previewSession.session_type}
-            {previewSession.planned_distance_meters ? ` · ${formatDistance(previewSession.planned_distance_meters / 1000, unit)}` : ""}
-          </Text>
-        )}
-        {previewScript && (
-          <View style={styles.breakdownBox}>
-            <Text style={styles.breakdownText}>{previewScript.breakdown}</Text>
+      <View style={styles.readyScreen}>
+        <BackButton onPress={goBack} top={backTop} plain />
+        <View style={styles.readyBody}>
+          {!isRest && (
+            <>
+              <Text style={styles.readyKicker}>
+                {typeWord} · {previewSession && previewSession.session_date === todayIso() ? "TODAY" : "SESSION"}
+              </Text>
+              {bigDist && (
+                <View style={styles.readyBigRow}>
+                  <Text style={styles.readyBig}>{bigDist}</Text>
+                  <Text style={styles.readyBigUnit}>{unit}</Text>
+                </View>
+              )}
+              {targetPace != null && <Text style={styles.readyTarget}>{formatPace(targetPace, unit).replace("/", " / ")} target</Text>}
+              {iv && (
+                <View style={styles.readyBar}>
+                  <View style={{ flex: 2, backgroundColor: palette.success, borderRadius: radius.pill }} />
+                  <View style={{ flex: 5, backgroundColor: palette.accentLift, borderRadius: radius.pill }} />
+                  <View style={{ flex: 1, backgroundColor: palette.success, borderRadius: radius.pill }} />
+                </View>
+              )}
+            </>
+          )}
+          {isRest && <Text style={styles.centerTitle}>Ready to run?</Text>}
+          {previewScript && (
+            <View style={styles.breakdownBox}>
+              <Text style={styles.breakdownText}>{previewScript.breakdown}</Text>
+            </View>
+          )}
+          <View style={styles.voiceChip}>
+            <Ionicons name="sparkles-outline" size={20} color={darkSurface.text} />
+            <Text style={styles.voiceChipText}>
+              {voiceEnabled ? "Voice cues on" : "Voice cues off"} · {COUNTDOWN_SECONDS}s countdown
+            </Text>
           </View>
-        )}
-        <Text style={styles.centerText}>
-          You'll get a {COUNTDOWN_SECONDS}-second heads-up before tracking starts{voiceEnabled ? ", with voice cues along the way." : "."}
-        </Text>
-        <View style={styles.centerButton}>
+        </View>
+        <View style={[styles.readyButton, { bottom: insets.bottom + 24 }]}>
           <PrimaryButton label="Start" onPress={() => rt.startRun(params.planSessionId)} />
         </View>
       </View>
@@ -201,7 +229,7 @@ function ActiveRunScreen() {
         <BackButton onPress={goBack} top={backTop} />
         <Text style={styles.centerTitle}>Location access needed</Text>
         <Text style={styles.centerText}>
-          Stryde needs your location while a run is active to track your route, distance, and pace. You can
+          Cursus needs your location while a run is active to track your route, distance, and pace. You can
           allow it from your phone's Settings, then try again.
         </Text>
         <View style={styles.centerButton}>
@@ -218,12 +246,34 @@ function ActiveRunScreen() {
   }
 
   if (rt.phase === "countdown") {
+    const RING = 208;
+    const STROKE = 8;
+    const r = (RING - STROKE) / 2;
+    const circ = 2 * Math.PI * r;
+    const frac = Math.max(0, Math.min(1, rt.countdownNumber / COUNTDOWN_SECONDS));
     return (
       <View style={styles.center}>
-        <BackButton onPress={goBack} top={backTop} />
-        <MuteButton muted={rt.coachMuted} onPress={rt.toggleCoachMute} top={backTop} />
-        <Text style={styles.centerTitle}>{rt.voiceScript?.countdownHeadsUp ?? "Get ready…"}</Text>
-        <Text style={styles.countdownNumber}>{rt.countdownNumber}</Text>
+        <BackButton onPress={goBack} top={backTop} plain />
+        <MuteButton muted={rt.coachMuted} onPress={rt.toggleCoachMute} top={backTop} plain />
+        <Text style={styles.centerTitle}>Get ready</Text>
+        <View style={{ width: RING, height: RING, marginVertical: 24, alignItems: "center", justifyContent: "center" }}>
+          <Svg width={RING} height={RING} style={StyleSheet.absoluteFill}>
+            <Circle cx={RING / 2} cy={RING / 2} r={r} stroke={darkSurface.line} strokeWidth={STROKE} fill="none" />
+            <Circle
+              cx={RING / 2}
+              cy={RING / 2}
+              r={r}
+              stroke={palette.accentLift}
+              strokeWidth={STROKE}
+              strokeLinecap="round"
+              fill="none"
+              strokeDasharray={`${circ * frac} ${circ}`}
+              transform={`rotate(-90 ${RING / 2} ${RING / 2})`}
+            />
+          </Svg>
+          <Text style={styles.countdownNumber}>{rt.countdownNumber}</Text>
+        </View>
+        <Text style={styles.centerText}>{rt.voiceScript?.countdownHeadsUp ?? "Tracking starts in a moment"}</Text>
       </View>
     );
   }
@@ -250,23 +300,33 @@ function ActiveRunScreen() {
   if (rt.phase === "finished" && rt.finalStats) {
     const distanceKm = rt.finalStats.distanceMeters / 1000;
     const pace = distanceKm > 0 ? rt.finalStats.durationSeconds / distanceKm : null;
+    const distNum = unit === "mi" ? distanceKm * 0.621371 : distanceKm;
     return (
       <View style={styles.finishedScreen}>
-        <BackButton onPress={goBack} top={backTop} />
-        <ScrollView style={styles.scrollFlex} contentContainerStyle={styles.finishedContainer} keyboardShouldPersistTaps="handled">
-          <Text style={styles.centerTitle}>Run finished</Text>
+        <BackButton onPress={goBack} top={backTop} plain />
+        <ScrollView
+          style={styles.scrollFlex}
+          contentContainerStyle={[styles.finishedContainer, { paddingTop: backTop + 36, paddingBottom: insets.bottom + 24 }]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.finishedTitle}>Run finished</Text>
+          {!confirmingDiscard && rt.points.length > 1 && (
+            <View style={styles.finishedMap}>
+              <RunMap points={rt.points} />
+            </View>
+          )}
           <View style={styles.finishedStatRow}>
             <View style={styles.finishedStat}>
-              <Text style={styles.paceLabel}>DISTANCE</Text>
-              <Text style={styles.finishedStatValue}>{formatDistance(distanceKm, unit)}</Text>
+              <Text style={[styles.paceLabel, { color: palette.accentGlow }]}>DIST · {unit.toUpperCase()}</Text>
+              <Text style={styles.finishedStatValue}>{distNum.toFixed(2)}</Text>
             </View>
             <View style={styles.finishedStat}>
               <Text style={styles.paceLabel}>TIME</Text>
-              <Text style={styles.finishedStatValue}>{formatElapsed(rt.finalStats.durationSeconds)}</Text>
+              <Text style={[styles.finishedStatValue, { color: darkSurface.textDim }]}>{formatElapsed(rt.finalStats.durationSeconds)}</Text>
             </View>
             <View style={styles.finishedStat}>
               <Text style={styles.paceLabel}>PACE</Text>
-              <Text style={styles.finishedStatValue}>{formatPace(pace, unit) || "--"}</Text>
+              <Text style={styles.finishedStatValue}>{formatPace(pace, unit).replace(/\/(km|mi)$/, "") || "--"}</Text>
             </View>
           </View>
 
@@ -288,33 +348,34 @@ function ActiveRunScreen() {
                   style={[styles.darkInput, styles.darkInputMultiline]}
                   value={runDescription}
                   onChangeText={setRunDescription}
-                  placeholder="How it went, anything worth remembering"
+                  placeholder="How it went"
                   placeholderTextColor={darkSurface.textFaint}
                   multiline
                 />
               </View>
               {session?.user?.id && (
                 <View style={styles.formSection}>
-                  <Text style={styles.formLabel}>Photos (optional, up to 3)</Text>
                   <PhotoPicker userId={session.user.id} photos={runPhotos} onChange={setRunPhotos} variant="dark" />
                 </View>
               )}
 
-              <View style={styles.centerButton}>
+              <View style={styles.finishedButton}>
                 <PrimaryButton label="Save run" onPress={handleSave} />
               </View>
-              <View style={{ marginTop: 10, width: "100%", maxWidth: 280 }}>
-                <PrimaryButton label="Discard this run" variant="dangerOutline" onPress={() => setConfirmingDiscard(true)} />
-              </View>
+              <Pressable onPress={() => setConfirmingDiscard(true)} hitSlop={8} accessibilityRole="button" style={styles.discardLink}>
+                <Text style={styles.discardLinkText}>Discard this run</Text>
+              </Pressable>
             </>
           ) : (
-            <View style={styles.confirmBox}>
-              <Ionicons name="warning" size={22} color={palette.danger} style={{ marginBottom: 6 }} />
-              <Text style={styles.confirmText}>Discard this run? This can't be undone.</Text>
-              <View style={styles.centerButton}>
+            <View style={styles.confirmWrap}>
+              <View style={styles.confirmBox}>
+                <Ionicons name="warning-outline" size={36} color={darkSurface.dangerText} style={{ marginBottom: 10 }} />
+                <Text style={styles.confirmText}>Discard this run? This can't be undone.</Text>
+              </View>
+              <View style={styles.finishedButton}>
                 <PrimaryButton label="Yes, discard it" variant="danger" onPress={handleDiscard} />
               </View>
-              <View style={{ marginTop: 10, width: "100%", maxWidth: 280 }}>
+              <View style={{ marginTop: 10, width: "100%" }}>
                 <PrimaryButton label="Keep it" variant="secondary" onPress={() => setConfirmingDiscard(false)} />
               </View>
             </View>
@@ -383,19 +444,48 @@ function ActiveRunScreen() {
 }
 
 const styles = StyleSheet.create({
-  mapScreen: { flex: 1, backgroundColor: palette.predawn },
+  mapScreen: { flex: 1, backgroundColor: palette.ink },
   center: {
     flex: 1,
-    backgroundColor: palette.predawn,
+    backgroundColor: palette.ink,
     alignItems: "center",
     justifyContent: "center",
     padding: 32,
     gap: 10,
   },
-  finishedScreen: { flex: 1, backgroundColor: palette.predawn },
+  finishedScreen: { flex: 1, backgroundColor: palette.ink },
   scrollFlex: { flex: 1 },
-  finishedContainer: { flexGrow: 1, alignItems: "center", padding: 32, paddingTop: 64, gap: 10 },
-  formSection: { width: "100%", maxWidth: 340, marginTop: 4 },
+  finishedContainer: { flexGrow: 1, alignItems: "center", paddingHorizontal: 18, gap: 10 },
+  finishedTitle: { fontFamily: fonts.dataBold, ...text("title"), color: darkSurface.text, textAlign: "center" },
+  finishedMap: { width: "100%", height: 190, borderRadius: radius.lg, overflow: "hidden", borderWidth: 1, borderColor: darkSurface.line },
+  finishedButton: { marginTop: 10, width: "100%" },
+  discardLink: { paddingVertical: 10 },
+  discardLinkText: { fontFamily: fonts.bodyMedium, ...text("emphasis"), color: darkSurface.dangerText },
+  confirmWrap: { flex: 1, width: "100%", justifyContent: "flex-end", paddingBottom: 8, minHeight: 440 },
+  plainButton: { backgroundColor: "transparent" },
+  readyScreen: { flex: 1, backgroundColor: palette.ink },
+  readyBody: { flex: 1, justifyContent: "center", paddingHorizontal: 18, gap: 8, paddingBottom: 120 },
+  readyKicker: { fontFamily: fonts.monoMedium, ...text("emphasis"), letterSpacing: 1.4, color: palette.accentGlow },
+  readyBigRow: { flexDirection: "row", alignItems: "flex-end", gap: 6 },
+  readyBig: { fontFamily: fonts.monoMedium, fontSize: 88, lineHeight: 96, includeFontPadding: false, color: palette.bone },
+  readyBigUnit: { fontFamily: fonts.bodyBold, fontSize: 26, lineHeight: 40, includeFontPadding: false, color: darkSurface.textDim },
+  readyTarget: { fontFamily: fonts.mono, ...text("emphasis"), color: darkSurface.textDim },
+  readyBar: { flexDirection: "row", gap: 5, height: 10, marginTop: 14, marginBottom: 6 },
+  voiceChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: darkSurface.card,
+    borderWidth: 1,
+    borderColor: darkSurface.line,
+    borderRadius: radius.pill,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    marginTop: 10,
+  },
+  voiceChipText: { fontFamily: fonts.body, ...text("emphasis"), color: darkSurface.textDim },
+  readyButton: { position: "absolute", left: 18, right: 18 },
+  formSection: { width: "100%", marginTop: 4 },
   formLabel: { fontFamily: fonts.bodyMedium, ...text("small"), color: darkSurface.textDim, marginBottom: 6 },
   darkInput: {
     height: 46,
@@ -437,25 +527,26 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     backgroundColor: darkSurface.card,
     width: "100%",
-    maxWidth: 340,
   },
   breakdownText: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: darkSurface.textDim, textAlign: "left", lineHeight: 19 },
   centerTitle: { fontFamily: fonts.dataBold, ...text("title"), color: darkSurface.text, textAlign: "center" },
   centerText: { fontFamily: fonts.body, ...text("body"), color: darkSurface.textDim, textAlign: "center" },
   centerButton: { marginTop: 12, width: "100%", maxWidth: 280 },
-  countdownNumber: { fontFamily: fonts.dataBold, fontSize: fs.countdown, includeFontPadding: false, color: darkSurface.text, lineHeight: 104, marginTop: 16 },
-  confirmBox: { alignItems: "center", marginTop: 20, width: "100%" },
-  confirmText: { fontFamily: fonts.bodySemiBold, ...text("body"), color: palette.danger, textAlign: "center", marginBottom: 4 },
-  finishedStatRow: { flexDirection: "row", gap: 8, marginVertical: 20, width: "100%", maxWidth: 340 },
+  countdownNumber: { fontFamily: fonts.dataBold, fontSize: fs.countdown, includeFontPadding: false, color: palette.bone, lineHeight: 104 },
+  confirmBox: { alignItems: "center", flex: 1, justifyContent: "center", width: "100%" },
+  confirmText: { fontFamily: fonts.bodySemiBold, ...text("body"), color: darkSurface.dangerText, textAlign: "center", marginBottom: 4 },
+  finishedStatRow: { flexDirection: "row", gap: 8, marginVertical: 6, width: "100%" },
   finishedStat: {
     flex: 1,
     backgroundColor: darkSurface.card,
-    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: darkSurface.line,
+    borderRadius: radius.lg,
     paddingVertical: 14,
     alignItems: "center",
   },
-  finishedStatValue: { fontFamily: fonts.dataBold, ...text("emphasis"), color: darkSurface.text },
-  paceLabel: { fontFamily: fonts.monoMedium, ...text("micro"), letterSpacing: 1, color: darkSurface.textFaint, marginTop: 4 },
+  finishedStatValue: { fontFamily: fonts.monoSemiBold, ...text("title"), color: darkSurface.text },
+  paceLabel: { fontFamily: fonts.monoMedium, ...text("caption"), letterSpacing: 1, color: darkSurface.textDim, marginTop: 4 },
 });
 
 // These screens stay dark regardless of the app's light/dark setting, so

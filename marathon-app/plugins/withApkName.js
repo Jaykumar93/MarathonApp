@@ -6,7 +6,7 @@ const { withAppBuildGradle } = require("@expo/config-plugins");
  * file after the build's own id (what read as "random" - it's not an app
  * config value at all, it's Gradle's own default naming). This renames
  * every build variant's output artifact after the app itself instead, so
- * a downloaded/sideloaded file reads as "Stryde-1.0.0.apk", not a UUID.
+ * a downloaded/sideloaded file reads as "Cursus-1.0.0.apk", not a UUID.
  */
 module.exports = function withApkName(config) {
   return withAppBuildGradle(config, (config) => {
@@ -17,7 +17,7 @@ module.exports = function withApkName(config) {
 android {
     applicationVariants.all { variant ->
         variant.outputs.all { output ->
-            output.outputFileName = "Stryde-\${variant.versionName}-\${variant.name}.apk"
+            output.outputFileName = "Cursus-\${variant.versionName}-\${variant.name}.apk"
         }
     }
 }

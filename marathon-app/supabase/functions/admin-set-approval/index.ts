@@ -79,12 +79,6 @@ Deno.serve(async (req) => {
     return jsonResponse({ ok: true });
   } catch (e) {
     console.error("admin-set-approval error:", e);
-    const message =
-      e instanceof Error
-        ? e.message
-        : e && typeof e === "object" && "message" in e && typeof (e as { message: unknown }).message === "string"
-          ? (e as { message: string }).message
-          : "Unknown error";
-    return jsonResponse({ error: message }, 500);
+    return jsonResponse({ error: "Something went wrong. Please try again." }, 500);
   }
 });

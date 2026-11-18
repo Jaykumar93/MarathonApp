@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../lib/auth/AuthContext";
-import { fonts, spacing, type, text, fs } from "../lib/theme";
+import { fonts, spacing, text, fs } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { ScreenHeader, SCREEN_TOP_GAP, SCREEN_BOTTOM_GAP } from "../components/ui/ScreenHeader";
@@ -49,12 +49,12 @@ export default function PrivacyPolicy() {
       <ScreenHeader title="Privacy Policy" onBack={goBack} />
       <Text style={styles.effectiveDate}>Effective date: September 21, 2026</Text>
       <Text style={styles.intro}>
-        Stryde is built and run by a single independent developer, currently in a manually-approved early-access
+        Cursus is built and run by a single independent developer, currently in a manually-approved early-access
         phase. This describes what the app actually collects and where it goes - not a generic template.
       </Text>
 
       <SectionLabel>WHAT WE COLLECT</SectionLabel>
-      <Card>
+      <Card style={styles.flat}>
         <Text style={styles.body}>
           Account info (email, name, username - your password is handled entirely by Supabase Auth, the app never
           sees it), the training data you enter, every activity you log (manual, GPS-tracked, or auto-synced from
@@ -65,7 +65,7 @@ export default function PrivacyPolicy() {
       </Card>
 
       <SectionLabel>WHY WE COLLECT IT</SectionLabel>
-      <Card>
+      <Card style={styles.flat}>
         <Text style={styles.body}>
           To generate and adjust your training plan, record your training history, power the AI coach's answers
           about your own training, sync with Health Connect if you choose to, and send the daily reminder if you
@@ -74,7 +74,7 @@ export default function PrivacyPolicy() {
       </Card>
 
       <SectionLabel>THIRD PARTIES</SectionLabel>
-      <Card>
+      <Card style={styles.flat}>
         <Text style={[styles.body, { marginBottom: 10 }]}>
           Running the app means sending some data to a small number of providers, each doing one specific job:
         </Text>
@@ -91,7 +91,7 @@ export default function PrivacyPolicy() {
       </Card>
 
       <SectionLabel>PHOTOS ARE STORED PUBLICLY</SectionLabel>
-      <Card>
+      <Card style={styles.flat}>
         <Text style={styles.body}>
           Activity photos are kept somewhere anyone with the exact URL could open - unlike everything else you
           store, there's no per-user access check on that link. This is what lets a photo just work everywhere it's
@@ -101,7 +101,7 @@ export default function PrivacyPolicy() {
       </Card>
 
       <SectionLabel>YOUR DATA IS ISOLATED FROM OTHER USERS</SectionLabel>
-      <Card>
+      <Card style={styles.flat}>
         <Text style={styles.body}>
           Every table in the database enforces row-level security - the backend itself refuses to return another
           user's rows to you, enforced independently of anything the app's own code does or doesn't check.
@@ -109,7 +109,7 @@ export default function PrivacyPolicy() {
       </Card>
 
       <SectionLabel>RETENTION & DELETION</SectionLabel>
-      <Card>
+      <Card style={styles.flat}>
         <Text style={styles.body}>
           Kept for as long as your account is active. There's no self-serve delete button yet - email the address
           below to request deletion of your account and everything tied to it, and we'll confirm once it's done.
@@ -117,15 +117,15 @@ export default function PrivacyPolicy() {
       </Card>
 
       <SectionLabel>CHILDREN'S PRIVACY</SectionLabel>
-      <Card>
+      <Card style={styles.flat}>
         <Text style={styles.body}>
-          Stryde is not directed at, and is not knowingly used by, children under 13. Contact us if you believe a
+          Cursus is not directed at, and is not knowingly used by, children under 13. Contact us if you believe a
           child has created an account and we'll remove it.
         </Text>
       </Card>
 
       <SectionLabel>CHANGES & CONTACT</SectionLabel>
-      <Card>
+      <Card style={styles.flat}>
         <Text style={styles.body}>
           If what the app does changes in a way that affects this policy, this page and its effective date will
           change too. Built and operated by one person - for any question, or to request deletion, email{" "}
@@ -141,8 +141,9 @@ function createStyles(colors: Colors) {
     screen: { flex: 1, backgroundColor: colors.screenBg },
     container: { padding: spacing.screenPadding, paddingBottom: 40 },
     effectiveDate: { fontFamily: fonts.mono, ...text("caption"), color: colors.textFaint, marginBottom: 12 },
-    intro: { fontFamily: fonts.body, fontSize: type.pDim, color: colors.textDim, marginBottom: 20, lineHeight: 17 },
-    body: { fontFamily: fonts.body, fontSize: fs.body, includeFontPadding: false, color: colors.textDim, lineHeight: 20 },
+    intro: { fontFamily: fonts.body, ...text("body"), color: colors.textDim, marginBottom: 20 },
+    body: { fontFamily: fonts.body, ...text("emphasis"), color: colors.textDim },
+    flat: { backgroundColor: "transparent", borderWidth: 0, padding: 0, marginBottom: 6 },
     providerRow: { marginBottom: 12 },
     providerName: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
     providerGets: { fontFamily: fonts.body, fontSize: fs.small, includeFontPadding: false, color: colors.textDim, marginTop: 1, lineHeight: 17 },

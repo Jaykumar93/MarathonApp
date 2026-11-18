@@ -5,30 +5,31 @@ import * as SplashScreen from "expo-splash-screen";
 import * as Linking from "expo-linking";
 import * as Sentry from "@sentry/react-native";
 import {
-  useFonts as useSpaceGrotesk,
-  SpaceGrotesk_500Medium,
-  SpaceGrotesk_600SemiBold,
-  SpaceGrotesk_700Bold,
-} from "@expo-google-fonts/space-grotesk";
+  useFonts as useBricolage,
+  BricolageGrotesque_500Medium,
+  BricolageGrotesque_600SemiBold,
+  BricolageGrotesque_700Bold,
+} from "@expo-google-fonts/bricolage-grotesque";
 import {
-  useFonts as usePlusJakarta,
-  PlusJakartaSans_400Regular,
-  PlusJakartaSans_500Medium,
-  PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold,
-} from "@expo-google-fonts/plus-jakarta-sans";
+  useFonts as useFigtree,
+  Figtree_400Regular,
+  Figtree_500Medium,
+  Figtree_600SemiBold,
+  Figtree_700Bold,
+} from "@expo-google-fonts/figtree";
 import {
-  useFonts as useJetBrainsMono,
-  JetBrainsMono_400Regular,
-  JetBrainsMono_500Medium,
-  JetBrainsMono_600SemiBold,
-} from "@expo-google-fonts/jetbrains-mono";
+  useFonts as useMartianMono,
+  MartianMono_400Regular,
+  MartianMono_500Medium,
+  MartianMono_600SemiBold,
+} from "@expo-google-fonts/martian-mono";
 import { AuthProvider, useAuth } from "../lib/auth/AuthContext";
 import { createSessionFromUrl } from "../lib/auth/googleAuth";
 import { isPasswordRecoveryUrl } from "../lib/auth/passwordReset";
 import { NotificationsProvider } from "../lib/notifications/NotificationsContext";
 import { RunTrackingProvider } from "../lib/runTracking/RunTrackingContext";
 import { ThemeProvider } from "../lib/theme/ThemeContext";
+import { palette } from "../lib/theme";
 import { ThemedStatusBar } from "../components/ThemedStatusBar";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -46,21 +47,21 @@ if (sentryDsn) {
 }
 
 function RootLayoutInner() {
-  const [spaceGroteskLoaded] = useSpaceGrotesk({
-    SpaceGrotesk_500Medium,
-    SpaceGrotesk_600SemiBold,
-    SpaceGrotesk_700Bold,
+  const [bricolageLoaded] = useBricolage({
+    BricolageGrotesque_500Medium,
+    BricolageGrotesque_600SemiBold,
+    BricolageGrotesque_700Bold,
   });
-  const [plusJakartaLoaded] = usePlusJakarta({
-    PlusJakartaSans_400Regular,
-    PlusJakartaSans_500Medium,
-    PlusJakartaSans_600SemiBold,
-    PlusJakartaSans_700Bold,
+  const [figtreeLoaded] = useFigtree({
+    Figtree_400Regular,
+    Figtree_500Medium,
+    Figtree_600SemiBold,
+    Figtree_700Bold,
   });
-  const [jetBrainsMonoLoaded] = useJetBrainsMono({
-    JetBrainsMono_400Regular,
-    JetBrainsMono_500Medium,
-    JetBrainsMono_600SemiBold,
+  const [martianMonoLoaded] = useMartianMono({
+    MartianMono_400Regular,
+    MartianMono_500Medium,
+    MartianMono_600SemiBold,
   });
 
   // A hung (not failed - useFonts has no error path that surfaces here)
@@ -76,7 +77,7 @@ function RootLayoutInner() {
     return () => clearTimeout(timer);
   }, []);
 
-  const fontsReady = (spaceGroteskLoaded && plusJakartaLoaded && jetBrainsMonoLoaded) || fontsTimedOut;
+  const fontsReady = (bricolageLoaded && figtreeLoaded && martianMonoLoaded) || fontsTimedOut;
 
   useEffect(() => {
     if (fontsReady) SplashScreen.hideAsync().catch(() => {});
@@ -183,6 +184,10 @@ function AuthGate() {
     const inRaceDay = segments[0] === "race-day";
     const inAdmin = segments[0] === "admin";
     const inNotifications = segments[0] === "notifications";
+    // Development-only brand gallery (app/dev-gallery.tsx); a production build redirects it home itself.
+    const inDevGallery = __DEV__ && segments[0] === "dev-gallery";
+    const inReflect = segments[0] === "reflect";
+    const inPersonalBest = segments[0] === "personal-best";
     // Reachable at every auth state, not just once signed in - it's linked
     // from sign-up itself ("you agree to our Privacy Policy"), before a
     // session exists at all, so the usual !inAuthGroup redirect below would
@@ -223,6 +228,9 @@ function AuthGate() {
       !inRaceDay &&
       !inAdmin &&
       !inNotifications &&
+      !inDevGallery &&
+      !inReflect &&
+      !inPersonalBest &&
       !inPrivacyPolicy &&
       !inResetPassword
     ) {
@@ -235,7 +243,7 @@ function AuthGate() {
   // blank/white while auth/profile/goal state resolves (see the fade-in
   // effect above, which takes over the instant `ready` flips true).
   if (!ready) {
-    return <View style={{ flex: 1, backgroundColor: "#14161A" }} />;
+    return <View style={{ flex: 1, backgroundColor: palette.ink }} />;
   }
 
   return (

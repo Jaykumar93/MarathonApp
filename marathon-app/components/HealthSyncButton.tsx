@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, StyleSheet } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet } from "react-native";
+import { PressableScale as Pressable } from "./ui/PressableScale";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../lib/auth/AuthContext";
 import { supabase } from "../lib/supabase";
@@ -38,7 +39,7 @@ export function HealthSyncButton() {
       if (!isConnected) {
         const granted = await healthConnectProvider.requestPermissions();
         if (!granted) {
-          Alert.alert("Health Connect", "Permission wasn't granted - allow Stryde access from Health Connect's own app settings.");
+          Alert.alert("Health Connect", "Permission wasn't granted - allow Cursus access from Health Connect's own app settings.");
           return;
         }
       }

@@ -1,26 +1,30 @@
 # design.md — Design System
-*Marathon Training App — final reference*
+*Cursus — final reference (rebranded from Stryde / Pre-Dawn Run in Task 9; the live token source is `lib/theme.ts` and `lib/theme/colors.ts`, the full written system is `marathon-app/DESIGN.md`)*
 
 ---
 
 ## 1. Design Philosophy
 
-Every visual choice comes from the real, physical world of marathon training — not from a generic fitness-app template. Reference points: the terrain a training block covers (base → build → peak → taper, shaped like a mountain range), the paper pace bands runners wear on race day, spray-painted course markings on real routes, pre-dawn training light. Avoid the three current AI-design defaults: black-background-with-neon-accent, cream-and-serif-with-terracotta, and dense broadsheet layouts.
+The identity is **the profile line**: a training block drawn as terrain — base weeks as low hills, a build climb, a peak, a taper down to a flag. The mark, the Block Profile and the Plan terrain all use that one line. Reference points: the terrain a training block covers, the paper pace bands runners wear on race day, and a small mountain-goat mascot, **Pika**. Running happens at any hour, so there is no time-of-day language anywhere (the earlier "pre-dawn" framing is retired). Avoid the generic fitness-app defaults: black with neon, cream with a serif, and dense broadsheet layouts.
 
 ---
 
-## 2. Color Palette — Pre-Dawn Run (final)
+## 2. Color Palette — Cursus
 
 | Token | Hex | Role |
 |---|---|---|
-| `--predawn` | `#14161A` | Dark surface base |
-| `--frost` | `#EEEFEA` | Light surface base (default mode) |
-| `--accent` | `#FF5A1F` | Course Marking — primary CTA, tempo-run color |
-| `--contour` | `#2B4C43` | Contour Ink — secondary/planned data, long-run color |
-| `--success` | `#3E8E7E` | Negative Split — on-target/completed state, easy-run color |
-| `--warning` | `#F2B705` | Caution Flare — plan-adjustment prompts, near-threshold warnings |
+| `ink` | `#0F1220` | Dark surface base; text on light |
+| `bone` | `#F4F1EA` | Light surface base (default mode); text on dark |
+| `accent` Ultraviolet | `#6C4DFF` | Primary CTA, tempo-run colour, countdown arc (also the fill behind a white label, 5.1:1) |
+| `accentLift` | `#8A72FF` | Violet marks (rings, lines, bars) on dark surfaces |
+| `accentGlow` | `#C9B8FF` | Violet text on dark surfaces; Pika's snow cap |
+| `contour` Glacier | `#1F6F8B` | Long runs, secondary buttons, planned data |
+| `success` Moss | `#4FB286` | Easy runs, on-target and completed states |
+| `interval` Rose | `#C23B87` | Interval sessions (lift `#F07AB6` on dark) |
+| `warning` / `race` Marigold | `#F2B705` | Plan-adjustment prompts, near-threshold warnings, race day |
+| `danger` | `#D9483A` | Destructive actions only (fill `#C73C2F` behind white) |
 
-Three alternate palettes (Race Bib, Trail & Elevation, Track Meet) were explored and set aside — Pre-Dawn Run is the confirmed direction. Kept as an appendix in case the direction is revisited: **Race Bib** (`#E8332E` accent, race-day energy, but reads closest to generic red/orange competitor apps), **Trail & Elevation** (`#B5541F` accent, earthier/muted, best for calm but risks low energy), **Track Meet** (`#00A6A6` teal accent, freshest/most differentiated from competitors, worth reconsidering if distinctiveness becomes a priority later).
+Hues used as **text** take a separate role token (`accentText`, `successText`, `dangerText`, `intervalText`, `secondaryAccent`) so every pairing passes AA; a test (`lib/__tests__/themeContrast.test.ts`) checks both modes. The earlier Pre-Dawn Run palette (orange `#FF5A1F`) was retired because it sat too close to a major competitor's colour.
 
 ---
 
@@ -28,25 +32,25 @@ Three alternate palettes (Race Bib, Trail & Elevation, Track Meet) were explored
 
 **Full user-toggleable theme, available app-wide.** Light is the default; the user switches to dark from Settings → Preferences, and it applies to every screen instantly.
 
-**One deliberate exception: Active Run stays permanently dark**, regardless of the app-wide toggle. Rationale: it's used almost exclusively outdoors — bright daylight or pre-dawn darkness — where a fixed high-contrast dark treatment serves legibility and battery life better than matching general preference (same pattern many camera and workout-tracking apps use). This is a considered exception, not an oversight — it can be removed if full uniformity is preferred.
+**One deliberate exception: Active Run stays permanently dark**, regardless of the app-wide toggle. Rationale: it's used almost exclusively outdoors — in bright daylight or darkness — where a fixed high-contrast dark treatment serves legibility and battery life better than matching general preference (same pattern many camera and workout-tracking apps use). This is a considered exception, not an oversight — it can be removed if full uniformity is preferred.
 
 Dark mode is **not** an inversion of light mode. It requires explicit component-level rules:
 
 | Element | Light | Dark |
 |---|---|---|
-| Screen background | `--frost` | `--predawn` |
-| Card surface | `#fff`, drop shadow | `rgba(255,255,255,0.055)`, `1px` border in `--dark-line`, no shadow |
-| Primary text | `--predawn` | `--frost` |
-| Dimmed text | `#6B6E73` | `#B7BAC0` |
-| Faint text | `#9A9D9F` | `#7D8085` |
+| Screen background | bone `#F4F1EA` | ink `#0F1220` |
+| Card surface | `#fff`, 1px hairline, no shadow | `rgba(255,255,255,0.055)`, 1px hairline, no shadow |
+| Primary text | ink | bone |
+| Dimmed text | `#454857` | `#B3B6C4` |
+| Faint text | `#5F6272` | `#8D90A5` |
 | Borders/dividers | `rgba(20,22,26,0.07)` (`--card-line`) | `rgba(255,255,255,0.09)` (`--dark-line`) |
 | Input fields | white fill, card-line border | `rgba(255,255,255,0.05)` fill, dark-line border |
-| Tab bar | white, card-line top border | `#1A1C21`, dark-line top border |
+| Tab bar | white, card-line top border | `#161A2B`, dark-line top border |
 | Calendar "rest" cell | dashed card-line border | dashed dark-line border |
 | Calendar "missed" cell | light grey fill | `rgba(255,255,255,0.08)` fill |
 | Banner (plan-adjustment) | `rgba(242,183,5,0.14)` bg | `rgba(242,183,5,0.12)` bg, lighter warning-toned text |
 
-Semantic colors (accent, success, warning, contour) keep the same hex values in both modes — they were chosen to hold sufficient contrast on both `--predawn` and `--frost`.
+Semantic hues (accent, success, warning, contour, interval) keep the same hex as fills in both modes; the text and mark versions change per mode as listed in §2.
 
 ---
 
@@ -56,11 +60,11 @@ Three roles, each doing exactly one job — never the same face for two purposes
 
 | Role | Font | Purpose |
 |---|---|---|
-| Data face | Space Grotesk | Big numbers only: pace, distance, splits, countdown. Technical, condensed, tabular figures — reads like a race clock. |
-| Body face | Plus Jakarta Sans | All conversational text: chat, onboarding, settings, prep tips. Warm, humanist, readable small. |
-| Utility/mono face | JetBrains Mono | Splits tables, dense numeric lists, section labels (mono uppercase). Tabular figures so columns align. |
+| Display face | Bricolage Grotesque | Titles, headlines and the wordmark. |
+| Body face | Figtree | All conversational text: chat, onboarding, settings, prep tips. Friendly, readable small. |
+| Number / label face | Martian Mono | Every number (pace, distance, time, splits, countdown, stats) and the uppercase section labels. Wide tabular figures so columns and digits align. |
 
-No serif anywhere. No single face doing double duty as both display and body text.
+No serif anywhere. Numbers are never set in the display face.
 
 ---
 
@@ -75,14 +79,18 @@ Simple, single-weight line icons (stroke, not fill). No gradients, no filled-gly
 ### 6.1 The Block Profile (macro)
 The entire training block rendered as a literal terrain silhouette — base weeks as low hills, build phase climbing, peak week as the tallest point, taper descending to a flag marking race day. Appears on: Plan screen (hero), Home (mini weekly slice, tappable to jump into Plan), post-block share cards.
 
+### 6.0 Pika (mascot)
+A small mountain goat with five expressions (easy, hard, max, rest, personal best). Used only at calm or good moments: onboarding, plan ready, empty states, post-run reflection, personal bests, notifications, splash. Never during a run, on errors, pain flags, missed runs or the paywall.
+
 ### 6.2 The Pace Band (micro, in-run)
 Styled after physical paper/silicone race-day pace bracelets — a horizontal strip of upcoming mile/km markers with target times, moving indicator showing actual position relative to target (green ahead of goal pace, amber behind). Core live-feedback element on Active Run; a pre-filled (not live) version anchors Race Day Details.
 
 ### 6.3 The Weekly Calendar Strip (added during design refinement)
 Seven day cells (Mon–Sun), each showing the actual date number and colored by **run type**, not just completion status:
 - Green fill = easy run, completed
-- Orange fill = tempo run, completed
-- Teal fill = long run, completed
+- Violet fill = tempo run, completed
+- Rose fill = interval session, completed
+- Glacier (teal-blue) fill = long run, completed
 - Colored outline (same hues) = upcoming session of that type
 - Dashed outline, no fill = rest day
 - Grey fill + strikethrough = missed
@@ -120,13 +128,13 @@ Minimal, only where it mirrors something physical:
 |---|---|
 | Session card | Run type label, target distance/pace in data face, one-line prep tip, left-edge accent color matching run type |
 | Weekly calendar cell | See §6.3 |
-| Primary button | Accent fill, body face, sentence case, states its exact action ("Start run," not "Go") |
-| Secondary button | Outline only, contour color, same size as primary — hierarchy from fill vs. outline, not size |
+| Primary button | Ultraviolet fill, body face, sentence case, states its exact action ("Start run," not "Go") |
+| Secondary button | Outline only, Glacier colour, same size as primary — hierarchy from fill vs. outline, not size |
 | Empty state | Short sentence + one action, never illustration-and-silence |
 | Banner/prompt | Inline at top of screen, warning-color accent, two equal-weight buttons, never a blocking modal for non-urgent decisions |
 | Missed-session row | Inline recovery actions ("Move to tomorrow" / "Mark done anyway") instead of passive display |
 | Ask Coach chip | Appears on Post-Run Summary and Plan session detail; opens Coach pre-filled with that run/session as context |
-| Insight card | Contour-colored card surfacing a specific, data-grounded observation (not generic encouragement) |
+| Insight card | Glacier-edged card surfacing a specific, data-grounded observation (not generic encouragement) |
 
 ---
 
@@ -189,5 +197,6 @@ Race Day Details, Shoe/Gear, and Export/Share reuse existing card and list-row p
 | `marathon-app-stitch-design-brief.md` | Descriptive, screen-by-screen prompts formatted for Stitch |
 | `marathon-app-full-screens-v2.html` | Full visual fidelity, light mode, all 14 screens, data-rich |
 | `marathon-app-final.html` | **Final deliverable** — all 14 screens with a working light/dark toggle |
-| `theme-variations.html` | Palette comparison (Pre-Dawn Run vs. Race Bib vs. Trail & Elevation vs. Track Meet) |
+| `cursus-design.html` | **Current mockup** — 48 screens, light and dark (renders in `docs/mockup-shots/`) |
+| `theme-variations.html` | Historical palette comparison (superseded by Cursus) |
 | `design.md` | This file |
