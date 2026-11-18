@@ -117,7 +117,22 @@ export default function Coach() {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [activities, setActivities] = useState<ActivityRow[]>([]);
   const [input, setInput] = useState(params.prefill ?? "");
-  const [sending, setSending] = useState(false);
+  // Which chat is on screen, as a counter that bumps every time the visible
+  // thread changes (new chat, open from history, a deep link, a delete). A
+  // request in flight remembers the counter value it started under, so its
+  // "thinking" state and its reply only ever touch THAT chat - switching to
+  // another chat while an answer is pending no longer shows the spinner there
+  // or drops the late reply into the wrong thread. (The reply is still saved
+  // server-side, so it is in the original chat when you open it again.)
+  const [viewKey, setViewKey] = useState(0);
+  const viewKeyRef = useRef(0);
+  const [sendingViews, setSendingViews] = useState<number[]>([]);
+  const sending = sendingViews.includes(viewKey);
+  const bumpView = useCallback(() => {
+    viewKeyRef.current += 1;
+    setViewKey(viewKeyRef.current);
+    return viewKeyRef.current;
+  }, []);
   const [thinkingStep, setThinkingStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   // undefined = a brand-new, not-yet-sent conversation ("New chat") - the
@@ -180,6 +195,7 @@ export default function Coach() {
 
       appliedEntryContextRef.current = incoming;
       contextRef.current = incoming;
+      bumpView();
       setMessages([]);
       setConversationId(undefined);
       setError(null);
@@ -232,6 +248,7 @@ export default function Coach() {
   }, [session?.user?.id]);
 
   const startNewChat = useCallback(() => {
+    bumpView();
     setMessages([]);
     setConversationId(undefined);
     setInput("");
@@ -239,18 +256,23 @@ export default function Coach() {
     setEntryPlanSession(null);
     setEntryActivity(null);
     contextRef.current = { activityId: undefined, planSessionId: undefined };
-  }, []);
+  }, [bumpView]);
 
   const openConversation = useCallback(
     async (conversation: CoachConversationSummary) => {
       if (!session?.user?.id) return;
       setHistoryOpen(false);
       setError(null);
+      const myView = bumpView();
       setConversationId(conversation.conversationId);
-      setMessages((await getCoachMessages(session.user.id, conversation.conversationId)).map(fromRow));
+      setMessages([]);
+      const rows = await getCoachMessages(session.user.id, conversation.conversationId);
+      // The user may have switched chats again while this one was loading.
+      if (viewKeyRef.current !== myView) return;
+      setMessages(rows.map(fromRow));
       scrollToEnd();
     },
-    [session?.user?.id]
+    [session?.user?.id, bumpView]
   );
 
   const openHistory = useCallback(async () => {
@@ -300,9 +322,10 @@ export default function Coach() {
     if (!text || sending) return;
     setError(null);
     const pendingId = `pending-${Date.now()}`;
+    const myView = viewKeyRef.current;
     setMessages((prev) => [...prev, { id: pendingId, role: "user", content: text }]);
     setInput("");
-    setSending(true);
+    setSendingViews((v) => [...v, myView]);
     scrollToEnd();
     try {
       // Entry-point context (activityId/planSessionId) is only attached to
@@ -316,6 +339,9 @@ export default function Coach() {
       // the Edge Function mints one and this adopts it, so every later
       // message in this same visible thread reuses it instead of each
       // starting its own separate conversation.
+      // Switched to another chat while waiting: the answer is saved on the
+      // server under its own conversation, so don't touch the chat now on screen.
+      if (viewKeyRef.current !== myView) return;
       setConversationId(reply.conversationId);
       setMessages((prev) => [
         ...prev,
@@ -333,12 +359,16 @@ export default function Coach() {
       // looks like a real message went unanswered. Roll it back and hand
       // the text back to the input so a retry doesn't mean retyping the
       // whole question from scratch.
+      if (viewKeyRef.current !== myView) return;
       setMessages((prev) => prev.filter((m) => m.id !== pendingId));
       setInput(text);
       setError(e instanceof Error ? e.message : "Couldn't reach the coach - try again.");
     } finally {
-      setSending(false);
-      scrollToEnd();
+      setSendingViews((v) => {
+        const i = v.indexOf(myView);
+        return i === -1 ? v : [...v.slice(0, i), ...v.slice(i + 1)];
+      });
+      if (viewKeyRef.current === myView) scrollToEnd();
     }
   }, [input, sending, scrollToEnd, conversationId]);
 
