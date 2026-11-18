@@ -67,7 +67,7 @@ const PROFILE_TODO = "M187 100 L187 12 L195 6 L215 24 L240 38 L270 46 L300 50 L3
 
 function createStyles(colors: Colors) {
   return StyleSheet.create({
-    wrap: { flex: 1, paddingHorizontal: spacing.screenPadding, gap: 14 },
+    wrap: { flex: 1, backgroundColor: colors.screenBg, paddingHorizontal: spacing.screenPadding, gap: 14 },
     progressRow: { flexDirection: "row", gap: 6 },
     progressSeg: { flex: 1, height: 4, borderRadius: 2, backgroundColor: colors.accentFill },
     profile: { position: "absolute", left: 0, right: 0, bottom: 0 },
