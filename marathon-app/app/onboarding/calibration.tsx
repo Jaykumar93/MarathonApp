@@ -3,6 +3,7 @@ import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { OnboardingStepLayout, PillChips, GroupLabel } from "../../components/OnboardingStepLayout";
 import { TextField } from "../../components/ui/TextField";
+import { DurationField } from "../../components/ui/DurationField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
 import { parseHms } from "../../lib/timeFormat";
 import { RACE_WHEN_OPTIONS } from "../../lib/onboarding/fitnessOptions";
@@ -56,13 +57,7 @@ export default function Calibration() {
       onSkip={handleSkip}
       nextDisabled={calibrationIncomplete}
     >
-      <TextField
-        label="Goal finish time (HH:MM:SS, optional)"
-        value={targetTime}
-        onChangeText={setTargetTime}
-        placeholder="4:00:00"
-        keyboardType="numbers-and-punctuation"
-      />
+      <DurationField label="Goal finish time (optional)" value={targetTime} onChange={setTargetTime} optional maxHours={40} />
       <View>
         <View style={{ marginBottom: 10 }}>
           <GroupLabel>Recent race</GroupLabel>
@@ -76,13 +71,7 @@ export default function Calibration() {
           }}
         />
       </View>
-      <TextField
-        label="Duration (HH:MM:SS)"
-        value={calibrationTime}
-        onChangeText={setCalibrationTime}
-        placeholder="0:50:00"
-        keyboardType="numbers-and-punctuation"
-      />
+      <DurationField label="Recent race finish time" value={calibrationTime} onChange={setCalibrationTime} optional maxHours={40} />
       <TextField
         label="Or enter a custom distance (km)"
         value={customDistance}

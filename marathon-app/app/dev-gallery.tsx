@@ -1,10 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Redirect } from "expo-router";
 import { Pika } from "../components/mascot/Pika";
 import { PIKA_EXPRESSIONS } from "../components/mascot/pikaFace";
 import { BrandLockup, Wordmark } from "../components/ui/Wordmark";
 import { BrandMark } from "../components/ui/BrandMark";
+import { DateField } from "../components/ui/DateField";
+import { DurationField } from "../components/ui/DurationField";
+import { StartDayPicker } from "../components/StartDayPicker";
+import type { StartOn } from "../lib/planEngine";
 import { fonts, palette, radius, text } from "../lib/theme";
 import { useTheme } from "../lib/theme/ThemeContext";
 
@@ -29,6 +33,9 @@ const SWATCHES: Array<[string, string]> = [
  */
 export default function DevGallery() {
   const { colors, mode } = useTheme();
+  const [raceDate, setRaceDate] = useState("");
+  const [goalTime, setGoalTime] = useState("");
+  const [startOn, setStartOn] = useState<StartOn>("first_run");
   if (!__DEV__) return <Redirect href="/" />;
 
   return (
@@ -85,6 +92,16 @@ export default function DevGallery() {
             {name} - the plan builds toward it
           </Text>
         ))}
+      </View>
+
+      <Text style={[styles.label, { color: colors.textDim }]}>PICKERS</Text>
+      <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.cardLine, gap: 14 }]}>
+        <DateField label="Race date" value={raceDate} onChange={setRaceDate} />
+        <DurationField label="Goal finish time (optional)" value={goalTime} onChange={setGoalTime} optional maxHours={40} />
+        <StartDayPicker input={{ raceDistanceKm: 21.0975, trainingDaysPerWeek: 4, longRunDay: "sat", experienceLevel: "intermediate" }} value={startOn} onChange={setStartOn} />
+        <Text style={{ color: colors.textDim, fontFamily: fonts.mono, ...text("caption") }}>
+          date {raceDate || "-"} | time {goalTime || "-"} | start {startOn}
+        </Text>
       </View>
 
       <Text style={[styles.label, { color: colors.textDim }]}>TYPE</Text>

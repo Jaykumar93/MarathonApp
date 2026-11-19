@@ -7,14 +7,13 @@ import { todayIso, useActivePlanData } from "../lib/data/usePlanData";
 import { updateGoal, updateRaceLocation, type CreateGoalInput } from "../lib/data/goals";
 import { supersedePlan, createPlanWithSessions } from "../lib/data/plans";
 import {
-  computeAvailableWeeks,
   generatePlan,
-  resolveStartDate,
   type DayOfWeek,
   type ExperienceLevel,
   type GoalInput,
   type HistoricalContext,
   type RaceRecency,
+  type StartOn,
   type TimeOff,
 } from "../lib/planEngine";
 import { loadHistoricalContext } from "../lib/data/fitnessProfile";
@@ -34,9 +33,11 @@ import { Card } from "../components/ui/Card";
 import { ChipSelect } from "../components/ui/ChipSelect";
 import { TextField } from "../components/ui/TextField";
 import { DateField } from "../components/ui/DateField";
+import { DurationField } from "../components/ui/DurationField";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PlanFeasibilityWarnings } from "../components/PlanFeasibilityWarnings";
 import { ReadinessSummary } from "../components/ReadinessSummary";
+import { StartDayPicker } from "../components/StartDayPicker";
 import { ScreenHeader, SCREEN_TOP_GAP, SCREEN_BOTTOM_GAP } from "../components/ui/ScreenHeader";
 import { SectionLabel } from "../components/ui/SectionLabel";
 
@@ -105,6 +106,8 @@ export default function EditPlan() {
   const [calibrationWhen, setCalibrationWhen] = useState<RaceRecency | undefined>();
   const [historicalContext, setHistoricalContext] = useState<HistoricalContext | undefined>();
   const [useEnteredNumber, setUseEnteredNumber] = useState(false);
+  // Regenerating a plan can start today, tomorrow or on the first run day (defaults to the first run day).
+  const [startOn, setStartOn] = useState<StartOn>("first_run");
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -221,6 +224,7 @@ export default function EditPlan() {
       trainingDaysPerWeek,
       longRunDay,
       historicalContext: useEnteredNumber ? undefined : historicalContext,
+      startOn,
     };
   }, [
     initialized,
@@ -237,9 +241,27 @@ export default function EditPlan() {
     timeOff,
     historicalContext,
     useEnteredNumber,
+    startOn,
     trainingDaysPerWeek,
     longRunDay,
   ]);
+
+  const pickerInput = useMemo(
+    () =>
+      raceDistanceKm && trainingDaysPerWeek && longRunDay
+        ? {
+            raceDistanceKm,
+            experienceLevel,
+            currentWeeklyMileageKm: weeklyMileage ? parseFloat(weeklyMileage) : undefined,
+            calibrationRaceTimeSeconds: parseHms(calibrationTime),
+            calibrationRaceDistanceKm: calibrationDistanceKm,
+            trainingDaysPerWeek,
+            longRunDay,
+            historicalContext: useEnteredNumber ? undefined : historicalContext,
+          }
+        : null,
+    [raceDistanceKm, experienceLevel, weeklyMileage, calibrationTime, calibrationDistanceKm, trainingDaysPerWeek, longRunDay, historicalContext, useEnteredNumber]
+  );
 
   // Computed here (not just at save time) so the warnings shown before
   // saving are guaranteed to match what actually gets persisted -
@@ -364,22 +386,10 @@ export default function EditPlan() {
 
       <SectionLabel>GOAL TIME</SectionLabel>
       <Card style={styles.flat}>
-        <TextField
-          label="Goal finish time (HH:MM:SS, optional)"
-          value={targetTime}
-          onChangeText={setTargetTime}
-          placeholder="4:00:00"
-          keyboardType="numbers-and-punctuation"
-        />
+        <DurationField label="Goal finish time (optional)" value={targetTime} onChange={setTargetTime} optional maxHours={40} />
         <View style={styles.fieldGap}>
           <Text style={styles.fieldLabel}>Or a recent race result</Text>
-          <TextField
-            label="Duration (HH:MM:SS)"
-            value={calibrationTime}
-            onChangeText={setCalibrationTime}
-            placeholder="0:50:00"
-            keyboardType="numbers-and-punctuation"
-          />
+          <DurationField label="Recent race finish time" value={calibrationTime} onChange={setCalibrationTime} optional maxHours={40} />
           <View style={styles.fieldGap}>
             <Text style={styles.fieldLabel}>Distance</Text>
             <ChipSelect
@@ -433,14 +443,16 @@ export default function EditPlan() {
         <Text style={styles.fieldLabel}>Last, because how many weeks you need depends on everything above.</Text>
         <DateField label="Race date" value={goalDate} onChange={setGoalDate} />
         {isPastDate && <Text style={styles.errorText}>Race date must be in the future - pick a date after today.</Text>}
+        {pickerInput && (
+          <View style={styles.fieldGap}>
+            <StartDayPicker input={pickerInput} value={startOn} onChange={setStartOn} />
+          </View>
+        )}
       </Card>
 
       {preview?.ok && goalInput && (
         <ReadinessSummary
-          readiness={{
-            ...preview.plan.readiness,
-            weeksAvailable: computeAvailableWeeks(resolveStartDate(todayIso()), goalInput.goalDate),
-          }}
+          readiness={preview.plan.readiness}
           raceDistanceKm={goalInput.raceDistanceKm}
           unit={unit}
           onUseEnteredNumber={preview.plan.readiness.usedLoggedInsteadOfEntered ? () => setUseEnteredNumber(true) : undefined}

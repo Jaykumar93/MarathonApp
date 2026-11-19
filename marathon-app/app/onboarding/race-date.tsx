@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
 import { PlanFeasibilityWarnings } from "../../components/PlanFeasibilityWarnings";
 import { ReadinessSummary } from "../../components/ReadinessSummary";
+import { StartDayPicker } from "../../components/StartDayPicker";
 import { BuildingPlan } from "../../components/onboarding/BuildingPlan";
 import { DateField } from "../../components/ui/DateField";
 import { TextField } from "../../components/ui/TextField";
@@ -16,7 +17,7 @@ import { todayIso } from "../../lib/data/usePlanData";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
 import { summarizePlan } from "../../lib/onboarding/planSummary";
 import { geocodeCity } from "../../lib/weather/openMeteo";
-import { computeAvailableWeeks, estimateReadiness, generatePlan, resolveStartDate, type GoalInput, type HistoricalContext } from "../../lib/planEngine";
+import { estimateReadiness, generatePlan, type GoalInput, type HistoricalContext, type StartOn } from "../../lib/planEngine";
 import { fonts, text } from "../../lib/theme";
 import { useTheme } from "../../lib/theme/ThemeContext";
 
@@ -42,6 +43,8 @@ export default function RaceDate() {
   const [city, setCity] = useState(answers.raceLocationName ?? "");
   const [historicalContext, setHistoricalContext] = useState<HistoricalContext | undefined>(undefined);
   const [useEnteredNumber, setUseEnteredNumber] = useState(false);
+  // Defaults to the first day the plan schedules a run; the picker offers today and tomorrow too.
+  const [startOn, setStartOn] = useState<StartOn>("first_run");
   const [submitting, setSubmitting] = useState(false);
   // Which "Building your plan" step is in progress - advanced after each real await below.
   const [buildStage, setBuildStage] = useState(1);
@@ -79,8 +82,27 @@ export default function RaceDate() {
       longRunDay: answers.longRunDay,
       // Logged runs outrank the runner's answers, unless they tapped "Use my number".
       historicalContext: useEnteredNumber ? undefined : historicalContext,
+      startOn,
     };
-  }, [answers, goalDate, dateIsValid, isPastDate, historicalContext, useEnteredNumber]);
+  }, [answers, goalDate, dateIsValid, isPastDate, historicalContext, useEnteredNumber, startOn]);
+
+  // What the start-day choices are built from: everything except the race date and the choice itself.
+  const pickerInput = useMemo(
+    () =>
+      answers.raceDistanceKm && answers.trainingDaysPerWeek && answers.longRunDay
+        ? {
+            raceDistanceKm: answers.raceDistanceKm,
+            experienceLevel: answers.experienceLevel,
+            currentWeeklyMileageKm: answers.currentWeeklyMileageKm,
+            calibrationRaceTimeSeconds: answers.calibrationRaceTimeSeconds,
+            calibrationRaceDistanceKm: answers.calibrationRaceDistanceKm,
+            trainingDaysPerWeek: answers.trainingDaysPerWeek,
+            longRunDay: answers.longRunDay,
+            historicalContext: useEnteredNumber ? undefined : historicalContext,
+          }
+        : null,
+    [answers, historicalContext, useEnteredNumber]
+  );
 
   // Computed here (not only at submit time) so the warnings shown before tapping
   // "Create my plan" are guaranteed to match what gets saved: handleFinish reuses
@@ -103,7 +125,9 @@ export default function RaceDate() {
     }).weeksNeeded;
   }, [answers, historicalContext, useEnteredNumber]);
 
-  const availableWeeks = dateIsValid && !isPastDate ? computeAvailableWeeks(resolveStartDate(todayIso()), goalDate) : null;
+  // Weeks the plan really has: from the chosen start (its Monday), not always from next Monday.
+  const availableWeeks =
+    dateIsValid && !isPastDate && preview && preview.ok ? preview.plan.readiness.weeksAvailable : null;
 
   async function handleFinish() {
     if (!session?.user?.id || !goalInput || !preview) return;
@@ -194,6 +218,7 @@ export default function RaceDate() {
       nextDisabled={submitting || !preview || !preview.ok}
     >
       <DateField label="Race date" value={goalDate} onChange={setGoalDate} />
+      {pickerInput && <StartDayPicker input={pickerInput} value={startOn} onChange={setStartOn} />}
       {isPastDate && (
         <Text style={{ fontFamily: fonts.body, ...text("small"), color: colors.dangerText }}>Race date must be in the future - pick a date after today.</Text>
       )}

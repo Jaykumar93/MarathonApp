@@ -116,9 +116,18 @@ function buildLeadInSessions(today: string, startDate: string, paceZones: PaceZo
   return sessions;
 }
 
+/** The Monday on or before an ISO date. */
+function mondayOnOrBefore(isoDate: string): string {
+  const dayIndex = new Date(isoDate + "T00:00:00Z").getUTCDay(); // 0 = Sunday
+  return addDays(isoDate, -((dayIndex + 6) % 7));
+}
+
 export function generatePlan(input: GoalInput): GenerateResult {
   const today = input.today ?? new Date().toISOString().slice(0, 10);
-  const startDate = resolveStartDate(today);
+  // With a start choice the plan begins that day, and its weeks are still Monday-aligned (the
+  // first one is simply shorter). Without one, it starts next Monday with a lead-in, as before.
+  const firstSessionDate = input.startOn === "tomorrow" ? addDays(today, 1) : input.startOn ? today : undefined;
+  const startDate = firstSessionDate ? mondayOnOrBefore(firstSessionDate) : resolveStartDate(today);
   const category = getDistanceCategory(input.raceDistanceKm);
 
   const availableWeeks = computeAvailableWeeks(startDate, input.goalDate);
@@ -149,7 +158,7 @@ export function generatePlan(input: GoalInput): GenerateResult {
   // coverage at all - see buildLeadInSessions. Prepended first since its
   // dates are always earlier than every session the week loop below adds,
   // keeping `sessions` in chronological order throughout.
-  const sessions: PlanSessionDraft[] = buildLeadInSessions(today, startDate, paceZones, category);
+  const sessions: PlanSessionDraft[] = firstSessionDate ? [] : buildLeadInSessions(today, startDate, paceZones, category);
 
   for (let week = 1; week <= totalWeeks; week++) {
     const phase = findPhaseForWeek(week, phases);
@@ -257,6 +266,15 @@ export function generatePlan(input: GoalInput): GenerateResult {
   const trimmedSessions = sessions.filter((s) => s.sessionDate <= input.goalDate);
   sessions.length = 0;
   sessions.push(...trimmedSessions);
+
+  // A chosen start day: nothing is scheduled before it. For "first run" the plan also begins on its
+  // first real run rather than on a rest day.
+  if (firstSessionDate) {
+    const fromStart = sessions.filter((s) => s.sessionDate >= firstSessionDate);
+    const firstRunIndex = input.startOn === "first_run" ? fromStart.findIndex((s) => s.sessionType !== "rest") : 0;
+    sessions.length = 0;
+    sessions.push(...(firstRunIndex > 0 ? fromStart.slice(firstRunIndex) : fromStart));
+  }
 
   // Overwrite the session on goalDate itself as the race.
   const raceSessionIndex = sessions.findIndex((s) => s.sessionDate === input.goalDate);

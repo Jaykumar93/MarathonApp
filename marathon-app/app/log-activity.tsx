@@ -12,6 +12,7 @@ import { fonts, palette, spacing, type, text, inputText } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { ChipSelect } from "../components/ui/ChipSelect";
 import { TextField } from "../components/ui/TextField";
+import { DurationField } from "../components/ui/DurationField";
 import { DateField } from "../components/ui/DateField";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PhotoPicker } from "../components/ui/PhotoPicker";
@@ -133,7 +134,7 @@ export default function LogActivity() {
       {isFutureDate && <Text style={styles.errorText}>Date can't be in the future.</Text>}
 
       <View style={styles.fieldGap}>
-        <TextField label="Duration (HH:MM:SS)" value={duration} onChangeText={setDuration} keyboardType="numbers-and-punctuation" placeholder="0:45:00" />
+        <DurationField label="Duration" value={duration} onChange={setDuration} maxHours={24} />
       </View>
 
       <View style={[styles.fieldGap, styles.pair]}>

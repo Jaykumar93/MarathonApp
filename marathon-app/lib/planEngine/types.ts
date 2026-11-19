@@ -67,6 +67,17 @@ export interface HistoricalContext {
   dataWeeks?: number;
 }
 
+/**
+ * When the plan begins. Left unset, a plan starts on the next Monday with a light
+ * lead-in for the days before it (the original behaviour). Set it to start sooner:
+ *  - today: the first session is today
+ *  - tomorrow: the first session is tomorrow
+ *  - first_run: the first day the plan actually schedules a run (any earlier days
+ *    this week are skipped, not filled with rest days)
+ * Weeks still run Monday to Sunday, so a mid-week start gives a shorter first week.
+ */
+export type StartOn = "today" | "tomorrow" | "first_run";
+
 export interface GoalInput {
   raceDistanceKm: number;
   /** ISO date (YYYY-MM-DD) of the race. */
@@ -86,6 +97,8 @@ export interface GoalInput {
   trainingDaysPerWeek: number;
   longRunDay: DayOfWeek;
   historicalContext?: HistoricalContext;
+  /** When the plan begins - see StartOn. Not stored on the goal: it only matters when a plan is generated. */
+  startOn?: StartOn;
   /** ISO date to treat as "today". Defaults to the real current date; overridable for deterministic tests. */
   today?: string;
 }
