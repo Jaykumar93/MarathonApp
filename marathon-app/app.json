@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.jaykumar093.stryde",
-      "versionCode": 3,
+      "versionCode": 4,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#0F1220",
