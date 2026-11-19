@@ -141,6 +141,17 @@ function ultraExperienceDefaultZones(level: ExperienceLevel, raceDistanceKm: num
  */
 const REALISTIC_STRETCH_FACTOR = 0.93;
 
+/**
+ * A race from a year or more ago says less about today's fitness, so its
+ * predicted time is slowed a little (provisional values, see types.ts).
+ */
+const STALE_RACE_TIME_FACTOR = { "1_2_years": 1.05, over_2_years: 1.1 } as const;
+
+function staleRaceFactor(input: GoalInput): number {
+  const when = input.calibrationRaceWhen;
+  return when === "1_2_years" || when === "over_2_years" ? STALE_RACE_TIME_FACTOR[when] : 1;
+}
+
 interface EvidenceBasedPace {
   pace: number; // seconds per km, at input.raceDistanceKm
   source: "calibration_race";
@@ -157,11 +168,12 @@ interface EvidenceBasedPace {
  */
 function evidenceBasedGoalPace(input: GoalInput): EvidenceBasedPace | null {
   if (input.calibrationRaceTimeSeconds && input.calibrationRaceDistanceKm) {
-    const predictedSeconds = applyLongDistancePredictionCorrection(
-      riegelPredict(input.calibrationRaceTimeSeconds, input.calibrationRaceDistanceKm, input.raceDistanceKm),
-      input.raceDistanceKm,
-      input.calibrationRaceDistanceKm
-    );
+    const predictedSeconds =
+      applyLongDistancePredictionCorrection(
+        riegelPredict(input.calibrationRaceTimeSeconds, input.calibrationRaceDistanceKm, input.raceDistanceKm),
+        input.raceDistanceKm,
+        input.calibrationRaceDistanceKm
+      ) * staleRaceFactor(input);
     return { pace: predictedSeconds / input.raceDistanceKm, source: "calibration_race" };
   }
 
@@ -211,11 +223,12 @@ export function resolvePaceZones(input: GoalInput): ResolvedPaceZones {
 
   // 3. Calibration race, via Riegel's formula.
   if (input.calibrationRaceTimeSeconds && input.calibrationRaceDistanceKm) {
-    const predictedSeconds = applyLongDistancePredictionCorrection(
-      riegelPredict(input.calibrationRaceTimeSeconds, input.calibrationRaceDistanceKm, input.raceDistanceKm),
-      input.raceDistanceKm,
-      input.calibrationRaceDistanceKm
-    );
+    const predictedSeconds =
+      applyLongDistancePredictionCorrection(
+        riegelPredict(input.calibrationRaceTimeSeconds, input.calibrationRaceDistanceKm, input.raceDistanceKm),
+        input.raceDistanceKm,
+        input.calibrationRaceDistanceKm
+      ) * staleRaceFactor(input);
     const goalPace = predictedSeconds / input.raceDistanceKm;
     return { zones: paceZonesFromGoalPace(goalPace, input.raceDistanceKm), source: "calibration_race" };
   }

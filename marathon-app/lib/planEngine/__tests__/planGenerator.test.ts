@@ -171,7 +171,9 @@ describe("generatePlan - fake onboarding input scenarios", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.reason).toBe("insufficient_time");
-    expect(result.minWeeksRequired).toBe(12);
+    // Weeks needed now follow the runner (here a default beginner), so it is at
+    // least the old distance-only minimum of 12 - see readiness.test.ts.
+    expect(result.minWeeksRequired).toBeGreaterThanOrEqual(12);
   });
 
   it("5b. marathon with ~8 weeks (below the 12-week recommendation, above the 5-week structural floor) still builds, flagged", () => {

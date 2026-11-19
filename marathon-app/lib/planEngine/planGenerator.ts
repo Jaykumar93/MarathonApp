@@ -4,11 +4,10 @@ import {
   computeAvailableWeeks,
   computePhases,
   computeWeeklyVolumes,
-  getMinWeeks,
   introPeriodWeeks,
   resolveStartDate,
-  resolveStartingVolume,
 } from "./periodization";
+import { estimateReadiness, rampOptionsFor, resolveFitness, weeksNeeded } from "./readiness";
 import { getPrepRecovery } from "./prepRecoveryTemplates";
 import {
   applyBackToBackIfApplicable,
@@ -20,6 +19,8 @@ import {
   DistanceCategory,
   GenerateResult,
   GoalInput,
+  LONG_RUN_GROWTH_PER_WEEK,
+  LONG_RUN_GUARD_FLOOR_KM,
   PaceZones,
   Phase,
   PlanSessionDraft,
@@ -121,7 +122,10 @@ export function generatePlan(input: GoalInput): GenerateResult {
   const category = getDistanceCategory(input.raceDistanceKm);
 
   const availableWeeks = computeAvailableWeeks(startDate, input.goalDate);
-  const minWeeksRequired = getMinWeeks(input.raceDistanceKm);
+  // How long THIS runner needs for THIS distance (readiness.ts), not a
+  // distance-only number: it follows their current weekly volume and past races.
+  const fitness = resolveFitness(input);
+  const minWeeksRequired = weeksNeeded(input, fitness);
   // Below the distance's recommended minimum, the plan is still buildable
   // (just a more aggressive ramp-up than recommended - flagged below via
   // scheduleFeasibilityWarning) as long as there's enough runway for the
@@ -135,8 +139,8 @@ export function generatePlan(input: GoalInput): GenerateResult {
 
   const totalWeeks = availableWeeks;
   const phases = computePhases(totalWeeks, input.raceDistanceKm);
-  const { weeklyKm: startingVolumeKm, source: volumeSource } = resolveStartingVolume(input);
-  const { volumesByWeek, peakWeeklyDistanceKm } = computeWeeklyVolumes(startingVolumeKm, phases);
+  const { currentBaseKm: startingVolumeKm, baseSource: volumeSource } = fitness;
+  const { volumesByWeek, peakWeeklyDistanceKm } = computeWeeklyVolumes(startingVolumeKm, phases, rampOptionsFor(input, fitness));
   const { zones: paceZones, source: paceSource, feasibilityWarning: paceFeasibilityWarning } = resolvePaceZones(input);
   const introWeeks = introPeriodWeeks(input);
 
@@ -167,7 +171,14 @@ export function generatePlan(input: GoalInput): GenerateResult {
     let usedVolumeKm = 0;
 
     if (longDays.length > 0) {
-      const primary = computeLongMetrics(weeklyVolumeKm, paceZones, category);
+      let primary = computeLongMetrics(weeklyVolumeKm, paceZones, category);
+      // Single long runs far above what the runner has recently done carry the
+      // injury risk, so the long run may only grow ~10% a week from their
+      // longest recent run (logged or reported). Ultra plans work by duration instead.
+      if (fitness.longestRunKm !== undefined && category !== "ultra") {
+        const guardKm = Math.max(LONG_RUN_GUARD_FLOOR_KM, fitness.longestRunKm) * Math.pow(LONG_RUN_GROWTH_PER_WEEK, week);
+        if (primary.distanceKm > guardKm) primary = { distanceKm: guardKm, durationSec: guardKm * paceZones.long };
+      }
       dayMetrics.set(longDays[0].day, primary);
       usedVolumeKm += primary.distanceKm;
 
@@ -278,6 +289,9 @@ export function generatePlan(input: GoalInput): GenerateResult {
       sessions,
       scheduleFeasibilityWarning,
       paceFeasibilityWarning,
+      // The numbers behind the plan's length and peak. reachablePeakKm is what
+      // the generated volumes actually reach, so the two can never disagree.
+      readiness: { ...estimateReadiness(input, availableWeeks), reachablePeakKm: peakWeeklyDistanceKm },
     },
   };
 }

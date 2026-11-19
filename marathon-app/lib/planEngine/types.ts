@@ -41,11 +41,30 @@ export interface PriorRaceResult {
   goalDate: string; // ISO date the race occurred
 }
 
+/** How long the runner has been off regular running, as they report it (see GoalInput.timeOff). */
+export type TimeOff = "none" | "1_3_months" | "3_12_months" | "over_year";
+
+/** How long ago a reported race was (see GoalInput.calibrationRaceWhen). */
+export type RaceRecency = "under_3_months" | "3_12_months" | "1_2_years" | "over_2_years";
+
 export interface HistoricalContext {
   /** Average weekly distance from real logged activities over the last ~4-6 weeks. */
   recentAvgWeeklyDistanceKm?: number;
   /** Actual results from previously completed goals - the most trustworthy calibration signal available. */
   priorRaceResults?: PriorRaceResult[];
+  /** Highest 4-week average distance in the last 12 months - what the runner's body has already handled. */
+  bestFourWeekAvgKm12mo?: number;
+  /** Longest single logged run in the last ~8 weeks. */
+  longestRecentRunKm?: number;
+  /** Weeks since the last logged run - a layoff signal. */
+  weeksSinceLastRun?: number;
+  /**
+   * How many weeks of logged data stand behind these numbers. Below
+   * MIN_LOGGED_WEEKS the logs are treated as thin and the runner's own
+   * answers win. Left undefined by older callers (the missed-run adjustment),
+   * which is treated as "enough" so that path behaves as it always did.
+   */
+  dataWeeks?: number;
 }
 
 export interface GoalInput {
@@ -58,6 +77,12 @@ export interface GoalInput {
   calibrationRaceTimeSeconds?: number;
   /** Required to make calibrationRaceTimeSeconds usable - Riegel's formula needs both time and distance. */
   calibrationRaceDistanceKm?: number;
+  /** Self-reported: how long ago the calibration race was. Old races say less about today's fitness. */
+  calibrationRaceWhen?: RaceRecency;
+  /** Self-reported: the longest run in roughly the last month, in km. Used when there are no logged runs. */
+  longestRecentRunKm?: number;
+  /** Self-reported: time off regular running. */
+  timeOff?: TimeOff;
   trainingDaysPerWeek: number;
   longRunDay: DayOfWeek;
   historicalContext?: HistoricalContext;
@@ -171,11 +196,40 @@ export interface GeneratedPlan {
   sessions: PlanSessionDraft[];
   scheduleFeasibilityWarning?: ScheduleFeasibilityWarning;
   paceFeasibilityWarning?: PaceFeasibilityWarning;
+  /** The numbers behind the plan's length and peak - see readiness.ts. */
+  readiness: Readiness;
 }
 
 export type GenerateResult =
   | { ok: true; plan: GeneratedPlan }
   | { ok: false; reason: "insufficient_time"; minWeeksRequired: number; availableWeeks: number };
+
+/** How well the time available matches what this runner needs for this distance. */
+export type ReadinessVerdict = "comfortable" | "tight" | "under_prepared";
+
+export type FitnessTier = "beginner" | "intermediate" | "advanced";
+
+export interface Readiness {
+  /** The weekly volume the plan starts from. */
+  currentBaseKm: number;
+  /** Where that number came from: logged runs, the runner's answers, or an experience default. */
+  baseSource: VolumeSource;
+  /** The weekly volume the distance asks for at the plan's peak, for this runner's tier. */
+  targetPeakKm: number;
+  /** The peak the generated plan actually reaches in the weeks available (never above the target). */
+  reachablePeakKm: number;
+  /** Weeks this runner needs for this distance, from their current base. */
+  weeksNeeded: number;
+  weeksAvailable: number;
+  verdict: ReadinessVerdict;
+  tier: FitnessTier;
+  /** True when no logged data was used: the result rests on the runner's own answers or defaults. */
+  basedOnAnswersOnly: boolean;
+  /** Set when the logs and the runner's answers disagree and the logs (lower) were used. */
+  usedLoggedInsteadOfEntered?: { loggedKm: number; enteredKm: number };
+  /** True when the runner is rebuilding after time off and the ramp may climb faster up to their earlier level. */
+  returningRunner: boolean;
+}
 
 /**
  * Anchor points for interpolating default/minimum plan length from an
@@ -223,3 +277,65 @@ export const EXPERIENCE_DEFAULT_WEEKLY_KM: Record<ExperienceLevel, number> = {
 export const ULTRA_MIN_STARTING_WEEKLY_KM = 40;
 
 export const DAY_ORDER: DayOfWeek[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+// ---------------------------------------------------------------------------
+// Readiness constants (Task 10, docs/plan/10-readiness-based-planning.md).
+//
+// EVERY NUMBER BELOW IS PROVISIONAL. They come from secondary sources (coaching
+// sites and vendor plans - see the sub-plan's Sources section), which agree on
+// the shape (the right plan length depends mainly on current weekly mileage)
+// but do not publish exact constants. They live in this one table so they can
+// be reviewed and corrected in one place. Do not present them to the runner as
+// science.
+// ---------------------------------------------------------------------------
+
+/** Logged data needs at least this many weeks behind it to outrank the runner's own answers. */
+export const MIN_LOGGED_WEEKS = 4;
+
+/**
+ * A runner is placed in a tier from their CURRENT weekly volume (not the label
+ * they pick), relative to the distance: they join a tier once their base is at
+ * least this share of that tier's target peak. So 45 km a week is intermediate
+ * for a marathon but advanced for a 10 km, and nobody is given a target more
+ * than about 1.7x their current volume to aim at.
+ */
+export const TIER_BASE_SHARE_OF_TARGET = 0.6;
+
+/**
+ * Weekly volume the distance asks for at the plan's peak, by tier. The half
+ * marathon anchors come from vendor beginner / intermediate / advanced plans
+ * (about 25 / 35 / 45-50 miles). The other rows are working estimates from the
+ * same family of plans and are NOT yet sourced (open decision D1). The ultra
+ * category keeps the older "1.6x your starting volume" rule instead.
+ */
+export const TARGET_PEAK_KM: Record<Exclude<DistanceCategory, "ultra">, Record<FitnessTier, number>> = {
+  short: { beginner: 25, intermediate: 40, advanced: 55 }, // 5-10 km
+  middle: { beginner: 40, intermediate: 56, advanced: 76 }, // up to ~25 km (half marathon)
+  marathon: { beginner: 48, intermediate: 68, advanced: 95 },
+};
+
+/** Weekly volume a past race of each category implies the runner once handled (only used to credit a returning runner). */
+export const IMPLIED_PAST_BASE_KM: Record<Exclude<DistanceCategory, "ultra">, number> = {
+  short: 15,
+  middle: 25,
+  marathon: 35,
+};
+
+/** Ramp used while a returning runner climbs back toward the volume they handled before (the normal ramp is 1.09). */
+export const RETURNING_RAMP_FACTOR = 1.12;
+/** The faster ramp stops at this share of the earlier volume - never beyond what the body has already handled. */
+export const RETURNING_RAMP_CEILING_SHARE = 0.8;
+
+/** A strong, recent record lets the distance minimum shrink by this factor (never below STRUCTURAL_MIN_WEEKS). */
+export const STRONG_EVIDENCE_MIN_WEEKS_FACTOR = 0.75;
+
+/** The long run may exceed the longest recent run by at most this much per week, compounding (single-run spikes carry the injury risk). */
+export const LONG_RUN_GROWTH_PER_WEEK = 1.1;
+/** Lower bound for the long-run guard, so a runner reporting "none" is not held to 0 km. */
+export const LONG_RUN_GUARD_FLOOR_KM = 3;
+
+/** Verdict boundary: available weeks as a share of weeks needed. */
+export const READINESS_TIGHT_RATIO = 0.8;
+
+/** Self-reported "longest run in the last month" answers, as the km value the engine uses. */
+export const LONGEST_RUN_ANSWER_KM = { none: 3, under_5: 4, "5_10": 8, "10_16": 13, "16_21": 18, over_21: 22 } as const;

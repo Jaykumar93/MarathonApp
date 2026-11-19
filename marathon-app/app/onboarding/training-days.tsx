@@ -27,7 +27,7 @@ export default function TrainingDays() {
   const { answers, update } = useOnboarding();
 
   function handleNext() {
-    router.push("/onboarding/race-location");
+    router.push("/onboarding/health-data");
   }
 
   const longRun = DAY_OF_WEEK_OPTIONS.find((d) => d.value === answers.longRunDay);

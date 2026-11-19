@@ -2,7 +2,9 @@ import {
   DistanceCategory,
   EXPERIENCE_DEFAULT_WEEKLY_KM,
   GoalInput,
+  MIN_LOGGED_WEEKS,
   PLAN_LENGTH_ANCHORS,
+  RETURNING_RAMP_FACTOR,
   Phase,
   PhaseBlock,
   ULTRA_EXTRA_DEFAULT_WEEKS_PER_KM,
@@ -122,11 +124,21 @@ export interface ResolvedVolume {
   source: VolumeSource;
 }
 
-export function resolveStartingVolume(input: GoalInput): ResolvedVolume {
+/** True when the logged average is backed by enough weeks of data to outrank the runner's own answers. */
+export function hasUsableLoggedVolume(input: Pick<GoalInput, "historicalContext">): boolean {
+  const h = input.historicalContext;
+  if (!h?.recentAvgWeeklyDistanceKm || h.recentAvgWeeklyDistanceKm <= 0) return false;
+  // dataWeeks is undefined for older callers (the missed-run adjustment passes only the average) - treated as enough.
+  return h.dataWeeks === undefined || h.dataWeeks >= MIN_LOGGED_WEEKS;
+}
+
+export function resolveStartingVolume(
+  input: Pick<GoalInput, "raceDistanceKm" | "historicalContext" | "currentWeeklyMileageKm" | "experienceLevel">
+): ResolvedVolume {
   const category = getDistanceCategory(input.raceDistanceKm);
 
-  if (input.historicalContext?.recentAvgWeeklyDistanceKm) {
-    return { weeklyKm: input.historicalContext.recentAvgWeeklyDistanceKm, source: "historical" };
+  if (hasUsableLoggedVolume(input)) {
+    return { weeklyKm: input.historicalContext!.recentAvgWeeklyDistanceKm!, source: "historical" };
   }
 
   if (input.currentWeeklyMileageKm) {
@@ -156,8 +168,21 @@ const PEAK_VOLUME_CAP_MULTIPLIER = 1.6;
  * (21 progression weeks) - short unit tests covering only one cutback in
  * isolation never exercised enough cycles to reveal the compounding decay.
  */
-function computeProgressionVolumes(startingVolumeKm: number, progressionWeeks: number): number[] {
-  const cap = startingVolumeKm * PEAK_VOLUME_CAP_MULTIPLIER;
+export interface RampOptions {
+  /** Highest weekly volume the ramp may reach. Defaults to 1.6x the starting volume (the original rule). */
+  capKm?: number;
+  /**
+   * A returning runner climbs back faster (RETURNING_RAMP_FACTOR instead of the
+   * normal 1.09) but only while below this volume, so the faster ramp never
+   * goes beyond what their body has already handled.
+   */
+  returningCeilingKm?: number;
+}
+
+export function computeProgressionVolumes(startingVolumeKm: number, progressionWeeks: number, opts: RampOptions = {}): number[] {
+  const cap = opts.capKm ?? startingVolumeKm * PEAK_VOLUME_CAP_MULTIPLIER;
+  const growthFrom = (previousKm: number) =>
+    opts.returningCeilingKm !== undefined && previousKm < opts.returningCeilingKm ? RETURNING_RAMP_FACTOR : PROGRESSION_INCREASE_FACTOR;
   const volumes: number[] = [];
   let lastCyclePeak = startingVolumeKm;
 
@@ -175,9 +200,9 @@ function computeProgressionVolumes(startingVolumeKm: number, progressionWeeks: n
     } else if (cyclePos === 0) {
       // first week of a new cycle - grow from the last cycle's peak, not
       // from the cutback dip that precedes it
-      volumes.push(Math.min(lastCyclePeak * PROGRESSION_INCREASE_FACTOR, cap));
+      volumes.push(Math.min(lastCyclePeak * growthFrom(lastCyclePeak), cap));
     } else {
-      volumes.push(Math.min(volumes[i - 1] * PROGRESSION_INCREASE_FACTOR, cap));
+      volumes.push(Math.min(volumes[i - 1] * growthFrom(volumes[i - 1]), cap));
     }
   }
   return volumes;
@@ -199,7 +224,8 @@ export interface WeeklyVolumePlan {
 
 export function computeWeeklyVolumes(
   startingVolumeKm: number,
-  phases: PhaseBlock[]
+  phases: PhaseBlock[],
+  ramp: RampOptions = {}
 ): WeeklyVolumePlan {
   const base = phases.find((p) => p.name === "base")!;
   const build = phases.find((p) => p.name === "build")!;
@@ -207,7 +233,7 @@ export function computeWeeklyVolumes(
   const taper = phases.find((p) => p.name === "taper")!;
 
   const progressionWeeks = build.endWeek - base.startWeek + 1;
-  const progressionVolumes = computeProgressionVolumes(startingVolumeKm, progressionWeeks);
+  const progressionVolumes = computeProgressionVolumes(startingVolumeKm, progressionWeeks, ramp);
   const peakWeeklyDistanceKm = Math.max(...progressionVolumes);
 
   const peakPhaseVolumes = Array(peak.endWeek - peak.startWeek + 1).fill(peakWeeklyDistanceKm);
@@ -235,7 +261,7 @@ export function introPeriodWeeks(input: GoalInput): number {
   if (level !== "beginner") return 0;
 
   const hasCorroboratingData =
-    !!input.historicalContext?.recentAvgWeeklyDistanceKm ||
+    hasUsableLoggedVolume(input) ||
     !!(input.historicalContext?.priorRaceResults && input.historicalContext.priorRaceResults.length > 0) ||
     !!input.calibrationRaceTimeSeconds;
 

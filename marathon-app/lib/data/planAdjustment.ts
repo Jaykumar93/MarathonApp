@@ -5,6 +5,7 @@ import {
   type GoalInput,
   type SessionType,
 } from "../planEngine";
+import { loadHistoricalContext } from "./fitnessProfile";
 import { getActivitiesInRange } from "./activities";
 import { supersedePlan, createPlanWithSessions, recordAdjustmentPrompted, recordAdjustmentDeclined } from "./plans";
 import type { PlanRow, PlanSessionRow } from "./plans";
@@ -60,6 +61,11 @@ export async function applyMissedRunAdjustment(userId: string, goal: GoalRow, pl
   const recentTotalKm = activities.reduce((sum, a) => sum + a.distance_meters / 1000, 0);
   const actualWeeklyAvgKm = recentTotalKm / (RECENT_ACTUAL_LOOKBACK_DAYS / 7);
 
+  // The longer view of the runner's logging (past best, longest run, time since the last run) gives the
+  // readiness rules more to go on than the recent weeks alone. The CURRENT volume stays exactly what
+  // this function has always used: the recent lookback average, or nothing when there is none.
+  const longerView = await loadHistoricalContext(userId);
+
   const goalInput: GoalInput = {
     raceDistanceKm: goal.race_distance_km,
     goalDate: goal.goal_date,
@@ -67,9 +73,19 @@ export async function applyMissedRunAdjustment(userId: string, goal: GoalRow, pl
     experienceLevel: goal.experience_level ?? undefined,
     calibrationRaceTimeSeconds: goal.calibration_race_time_seconds ?? undefined,
     calibrationRaceDistanceKm: goal.calibration_race_distance_km ?? undefined,
+    calibrationRaceWhen: goal.calibration_race_when ?? undefined,
     trainingDaysPerWeek: goal.training_days_per_week,
     longRunDay: goal.long_run_day,
-    historicalContext: actualWeeklyAvgKm > 0 ? { recentAvgWeeklyDistanceKm: actualWeeklyAvgKm } : undefined,
+    historicalContext:
+      actualWeeklyAvgKm > 0
+        ? {
+            recentAvgWeeklyDistanceKm: actualWeeklyAvgKm,
+            bestFourWeekAvgKm12mo: longerView?.bestFourWeekAvgKm12mo,
+            longestRecentRunKm: longerView?.longestRecentRunKm,
+            weeksSinceLastRun: longerView?.weeksSinceLastRun,
+            priorRaceResults: longerView?.priorRaceResults,
+          }
+        : undefined,
   };
 
   const result = generatePlan(goalInput);

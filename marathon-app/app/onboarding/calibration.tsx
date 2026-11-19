@@ -5,6 +5,7 @@ import { OnboardingStepLayout, PillChips, GroupLabel } from "../../components/On
 import { TextField } from "../../components/ui/TextField";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
 import { parseHms } from "../../lib/timeFormat";
+import { RACE_WHEN_OPTIONS } from "../../lib/onboarding/fitnessOptions";
 import { fonts, text } from "../../lib/theme";
 import { useTheme } from "../../lib/theme/ThemeContext";
 
@@ -93,6 +94,17 @@ export default function Calibration() {
         keyboardType="decimal-pad"
         placeholder="e.g. 15"
       />
+      {(answers.calibrationRaceDistanceKm !== undefined || calibrationTime.length > 0) && (
+        <View>
+          <View style={{ marginBottom: 10 }}>
+            <GroupLabel>When was it? (optional)</GroupLabel>
+          </View>
+          <PillChips options={RACE_WHEN_OPTIONS} value={answers.calibrationRaceWhen} onChange={(v) => update({ calibrationRaceWhen: v })} />
+          <Text style={{ fontFamily: fonts.body, ...text("small"), color: colors.textDim, marginTop: 8 }}>
+            An older race tells us less about your fitness today, so we allow for it.
+          </Text>
+        </View>
+      )}
       {calibrationIncomplete && (
         <Text style={{ fontFamily: fonts.body, ...text("small"), color: colors.dangerText }}>
           Pick the distance this time was run over, or clear the duration field to skip this section.

@@ -12,7 +12,7 @@ import { useTheme, type Colors } from "../lib/theme/ThemeContext";
  * onboarding's final step and Edit Plan so both surfaces show the exact
  * same warnings for the exact same preview result.
  */
-export function PlanFeasibilityWarnings({ preview }: { preview: GenerateResult }) {
+export function PlanFeasibilityWarnings({ preview, hideSchedule = false }: { preview: GenerateResult; hideSchedule?: boolean }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -25,7 +25,9 @@ export function PlanFeasibilityWarnings({ preview }: { preview: GenerateResult }
     );
   }
 
-  const { scheduleFeasibilityWarning: scheduleWarning, paceFeasibilityWarning: paceWarning } = preview.plan;
+  const { scheduleFeasibilityWarning: rawScheduleWarning, paceFeasibilityWarning: paceWarning } = preview.plan;
+  // The readiness summary already tells the runner their own weeks needed, so callers that show it hide this banner.
+  const scheduleWarning = hideSchedule ? undefined : rawScheduleWarning;
   if (!scheduleWarning && !paceWarning) return null;
 
   return (
@@ -34,9 +36,9 @@ export function PlanFeasibilityWarnings({ preview }: { preview: GenerateResult }
         <View style={styles.banner}>
           <Text style={styles.bannerTitle}>Compressed timeline</Text>
           <Text style={styles.bannerBody}>
-            Typical plans for this distance use {scheduleWarning.minWeeksRecommended}+ weeks; you have{" "}
-            {scheduleWarning.availableWeeks}. We've built the fittest plan we can for your race day, but
-            expect a more intense ramp-up than we'd normally recommend.
+            For your running right now, this distance needs about {scheduleWarning.minWeeksRecommended} weeks; you have{" "}
+            {scheduleWarning.availableWeeks}. We've built the fittest plan we can for your race day, but it peaks lower than a
+            full plan would and the ramp-up is more intense than we'd normally recommend.
           </Text>
         </View>
       )}

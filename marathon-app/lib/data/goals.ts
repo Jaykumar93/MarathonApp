@@ -1,5 +1,5 @@
 import { supabase } from "../supabase";
-import type { DayOfWeek, ExperienceLevel } from "../planEngine/types";
+import type { DayOfWeek, ExperienceLevel, RaceRecency, TimeOff } from "../planEngine/types";
 
 export interface ChecklistItem {
   id: string;
@@ -17,6 +17,10 @@ export interface GoalRow {
   experience_level: ExperienceLevel | null;
   calibration_race_time_seconds: number | null;
   calibration_race_distance_km: number | null;
+  /** Self-reported running answers (migration 20261119100000). Absent until that migration is applied. */
+  calibration_race_when?: RaceRecency | null;
+  longest_recent_run_km?: number | null;
+  time_off?: TimeOff | null;
   training_days_per_week: number;
   long_run_day: DayOfWeek;
   race_lat: number | null;
@@ -35,6 +39,9 @@ export interface CreateGoalInput {
   experienceLevel?: ExperienceLevel;
   calibrationRaceTimeSeconds?: number;
   calibrationRaceDistanceKm?: number;
+  calibrationRaceWhen?: RaceRecency;
+  longestRecentRunKm?: number;
+  timeOff?: TimeOff;
   trainingDaysPerWeek: number;
   longRunDay: DayOfWeek;
   raceLat?: number;
@@ -51,6 +58,9 @@ function goalInputToRow(input: CreateGoalInput) {
     experience_level: input.experienceLevel ?? null,
     calibration_race_time_seconds: input.calibrationRaceTimeSeconds ?? null,
     calibration_race_distance_km: input.calibrationRaceDistanceKm ?? null,
+    calibration_race_when: input.calibrationRaceWhen ?? null,
+    longest_recent_run_km: input.longestRecentRunKm ?? null,
+    time_off: input.timeOff ?? null,
     training_days_per_week: input.trainingDaysPerWeek,
     long_run_day: input.longRunDay,
     race_lat: input.raceLat ?? null,
@@ -59,12 +69,34 @@ function goalInputToRow(input: CreateGoalInput) {
   };
 }
 
+/** The three columns added by 20261119100000_goal_fitness_answers.sql. */
+const NEW_FITNESS_COLUMNS = ["calibration_race_when", "longest_recent_run_km", "time_off"] as const;
+
+function withoutNewFitnessColumns<T extends Record<string, unknown>>(row: T): Omit<T, (typeof NEW_FITNESS_COLUMNS)[number]> {
+  const copy: Record<string, unknown> = { ...row };
+  for (const c of NEW_FITNESS_COLUMNS) delete copy[c];
+  return copy as Omit<T, (typeof NEW_FITNESS_COLUMNS)[number]>;
+}
+
+/**
+ * True when the database rejected the write because the new columns do not
+ * exist yet (the migration has not been applied). Until it is, the goal is saved
+ * without those three answers, so onboarding and Edit plan keep working.
+ */
+function isMissingNewColumnError(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  if (error.code === "PGRST204" || error.code === "42703") return true;
+  const message = error.message ?? "";
+  return NEW_FITNESS_COLUMNS.some((c) => message.includes(c));
+}
+
 export async function createGoal(userId: string, input: CreateGoalInput): Promise<GoalRow> {
-  const { data, error } = await supabase
-    .from("goals")
-    .insert({ user_id: userId, ...goalInputToRow(input) })
-    .select()
-    .single();
+  const row = goalInputToRow(input);
+  let { data, error } = await supabase.from("goals").insert({ user_id: userId, ...row }).select().single();
+
+  if (isMissingNewColumnError(error)) {
+    ({ data, error } = await supabase.from("goals").insert({ user_id: userId, ...withoutNewFitnessColumns(row) }).select().single());
+  }
 
   if (error) throw error;
   return data as GoalRow;
@@ -79,12 +111,12 @@ export async function createGoal(userId: string, input: CreateGoalInput): Promis
  * createPlanWithSessions) - this function only updates the goal row.
  */
 export async function updateGoal(goalId: string, input: CreateGoalInput): Promise<GoalRow> {
-  const { data, error } = await supabase
-    .from("goals")
-    .update(goalInputToRow(input))
-    .eq("id", goalId)
-    .select()
-    .single();
+  const row = goalInputToRow(input);
+  let { data, error } = await supabase.from("goals").update(row).eq("id", goalId).select().single();
+
+  if (isMissingNewColumnError(error)) {
+    ({ data, error } = await supabase.from("goals").update(withoutNewFitnessColumns(row)).eq("id", goalId).select().single());
+  }
 
   if (error) throw error;
   return data as GoalRow;

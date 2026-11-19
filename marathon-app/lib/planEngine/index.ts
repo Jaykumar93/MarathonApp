@@ -8,9 +8,12 @@ export {
   type MissedSessionInfo,
 } from "./adjustment";
 export { riegelPredict, resolvePaceZones } from "./paceCalculator";
+export { estimateReadiness, resolveFitness, weeksNeeded, rampOptionsFor, type ReadinessInput, type ResolvedFitness } from "./readiness";
 export {
   computePhases,
+  computeProgressionVolumes,
   computeWeeklyVolumes,
+  hasUsableLoggedVolume,
   computeAvailableWeeks,
   getDefaultWeeks,
   getMinWeeks,

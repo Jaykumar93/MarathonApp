@@ -19,6 +19,7 @@
 | 7 | Health Connect auto-sync (Android) | Done | [07-health-connect-sync.md](07-health-connect-sync.md) |
 | 8 | Trends, AI Coach (RAG), polish + first EAS build | In Progress | [08-trends-coach-polish.md](08-trends-coach-polish.md) |
 | 9 | Cursus rebrand + redesign (name, palette, type, logo, Pika, new flows) | Done (code, backend, docs; device QA + preview build open) | [09-cursus-rebrand-redesign.md](09-cursus-rebrand-redesign.md) · [log](implementation/09-cursus-rebrand-redesign.md) |
+| 10 | Readiness-based planning (plan length, volume and peak from the runner's real fitness) | Code built and tested (migration, device check, coach context still open) | [10-readiness-based-planning.md](10-readiness-based-planning.md) |
 
 ---
 
@@ -137,6 +138,17 @@ Marked Done 2026-11-17: code, migration, function deploys and docs are complete;
 
 **Depends on:** the uncommitted accessibility/contrast changes landing first.
 **Blocks:** public Play Store listing.
+
+---
+
+### 10. Readiness-based planning
+Make plan length, starting volume and peak depend on the runner's real fitness (logged runs, best recent volume, past races, time away) instead of a distance-only minimum and a flat 1.6× peak cap.
+- Today the minimum weeks (5 / 6 / 8 / 12 by distance) ignores the runner, past races only change pace, and real data is used only on a mid-plan adjustment.
+- Built 2026-11-19 (log: [implementation/10-readiness-based-planning.md](implementation/10-readiness-based-planning.md)): a fitness profile from real data or the runner's own answers, a weeks-needed figure from the engine's own ramp, a distance-based target peak, a reachable peak when time is short, and a long-run guard.
+- Several constants need sourcing before build; see the open decisions in the sub-plan.
+
+**Depends on:** Tasks 3, 7 and 9.
+**Blocks:** nothing; improves the quality and safety of every generated plan.
 
 ---
 

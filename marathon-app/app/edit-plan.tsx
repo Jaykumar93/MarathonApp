@@ -6,7 +6,26 @@ import { useAuth } from "../lib/auth/AuthContext";
 import { todayIso, useActivePlanData } from "../lib/data/usePlanData";
 import { updateGoal, updateRaceLocation, type CreateGoalInput } from "../lib/data/goals";
 import { supersedePlan, createPlanWithSessions } from "../lib/data/plans";
-import { generatePlan, type DayOfWeek, type ExperienceLevel, type GoalInput } from "../lib/planEngine";
+import {
+  computeAvailableWeeks,
+  generatePlan,
+  resolveStartDate,
+  type DayOfWeek,
+  type ExperienceLevel,
+  type GoalInput,
+  type HistoricalContext,
+  type RaceRecency,
+  type TimeOff,
+} from "../lib/planEngine";
+import { loadHistoricalContext } from "../lib/data/fitnessProfile";
+import {
+  LONGEST_RUN_OPTIONS,
+  RACE_WHEN_OPTIONS,
+  TIME_OFF_OPTIONS,
+  longestRunBucketForKm,
+  longestRunKmForBucket,
+  type LongestRunBucket,
+} from "../lib/onboarding/fitnessOptions";
 import { geocodeCity } from "../lib/weather/openMeteo";
 import { parseHms, formatHms } from "../lib/timeFormat";
 import { fonts, palette, spacing, type, text, inputText } from "../lib/theme";
@@ -17,6 +36,7 @@ import { TextField } from "../components/ui/TextField";
 import { DateField } from "../components/ui/DateField";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PlanFeasibilityWarnings } from "../components/PlanFeasibilityWarnings";
+import { ReadinessSummary } from "../components/ReadinessSummary";
 import { ScreenHeader, SCREEN_TOP_GAP, SCREEN_BOTTOM_GAP } from "../components/ui/ScreenHeader";
 import { SectionLabel } from "../components/ui/SectionLabel";
 
@@ -61,7 +81,8 @@ export default function EditPlan() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { session, refreshActiveGoal } = useAuth();
+  const { session, profile, refreshActiveGoal } = useAuth();
+  const unit = profile?.distance_unit ?? "km";
   const { goal, plan, reload } = useActivePlanData();
 
   const [initialized, setInitialized] = useState(false);
@@ -77,6 +98,13 @@ export default function EditPlan() {
   const [trainingDaysPerWeek, setTrainingDaysPerWeek] = useState<number | undefined>();
   const [longRunDay, setLongRunDay] = useState<DayOfWeek | undefined>();
   const [raceLocationCity, setRaceLocationCity] = useState("");
+  // Answers about the runner's running (Task 10): they decide how many weeks the distance needs,
+  // so the race date sits after them at the bottom of the form.
+  const [longestRunBucket, setLongestRunBucket] = useState<LongestRunBucket | undefined>();
+  const [timeOff, setTimeOff] = useState<TimeOff | undefined>();
+  const [calibrationWhen, setCalibrationWhen] = useState<RaceRecency | undefined>();
+  const [historicalContext, setHistoricalContext] = useState<HistoricalContext | undefined>();
+  const [useEnteredNumber, setUseEnteredNumber] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,8 +129,24 @@ export default function EditPlan() {
     setTrainingDaysPerWeek(goal.training_days_per_week);
     setLongRunDay(goal.long_run_day);
     setRaceLocationCity(goal.race_location_name ?? "");
+    setLongestRunBucket(longestRunBucketForKm(goal.longest_recent_run_km));
+    setTimeOff(goal.time_off ?? undefined);
+    setCalibrationWhen(goal.calibration_race_when ?? undefined);
     setInitialized(true);
   }, [goal, initialized]);
+
+  // Logged runs outrank the answers above, so the readiness message uses them when they exist.
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId) return;
+    let cancelled = false;
+    loadHistoricalContext(userId).then((ctx) => {
+      if (!cancelled) setHistoricalContext(ctx);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.id]);
 
   async function handleSaveLocation() {
     if (!goal) return;
@@ -171,8 +215,12 @@ export default function EditPlan() {
       experienceLevel,
       calibrationRaceTimeSeconds: parseHms(calibrationTime),
       calibrationRaceDistanceKm: calibrationDistanceKm,
+      calibrationRaceWhen: calibrationWhen,
+      longestRecentRunKm: longestRunBucket ? longestRunKmForBucket(longestRunBucket) : undefined,
+      timeOff,
       trainingDaysPerWeek,
       longRunDay,
+      historicalContext: useEnteredNumber ? undefined : historicalContext,
     };
   }, [
     initialized,
@@ -184,6 +232,11 @@ export default function EditPlan() {
     experienceLevel,
     calibrationTime,
     calibrationDistanceKm,
+    calibrationWhen,
+    longestRunBucket,
+    timeOff,
+    historicalContext,
+    useEnteredNumber,
     trainingDaysPerWeek,
     longRunDay,
   ]);
@@ -258,10 +311,6 @@ export default function EditPlan() {
             placeholder="e.g. 15 or 100"
           />
         </View>
-        <View style={styles.fieldGap}>
-          <DateField label="Race date" value={goalDate} onChange={setGoalDate} />
-          {isPastDate && <Text style={styles.errorText}>Race date must be in the future - pick a date after today.</Text>}
-        </View>
       </Card>
 
       <SectionLabel>RACE LOCATION</SectionLabel>
@@ -302,6 +351,14 @@ export default function EditPlan() {
             keyboardType="decimal-pad"
             placeholder="e.g. 25"
           />
+        </View>
+        <View style={styles.fieldGap}>
+          <Text style={styles.fieldLabel}>Longest run in the last month (optional)</Text>
+          <ChipSelect options={LONGEST_RUN_OPTIONS} value={longestRunBucket} onChange={setLongestRunBucket} />
+        </View>
+        <View style={styles.fieldGap}>
+          <Text style={styles.fieldLabel}>Running regularly right now? (optional)</Text>
+          <ChipSelect options={TIME_OFF_OPTIONS} value={timeOff} onChange={setTimeOff} />
         </View>
       </Card>
 
@@ -346,6 +403,12 @@ export default function EditPlan() {
                 placeholder="e.g. 15"
               />
             </View>
+            {(calibrationDistanceKm !== undefined || calibrationTime.length > 0) && (
+              <View style={styles.fieldGap}>
+                <Text style={styles.fieldLabel}>When was it? (optional)</Text>
+                <ChipSelect options={RACE_WHEN_OPTIONS} value={calibrationWhen} onChange={setCalibrationWhen} />
+              </View>
+            )}
             {calibrationIncomplete && (
               <Text style={styles.errorText}>
                 Pick the distance this time was run over, or clear the duration field.
@@ -365,7 +428,25 @@ export default function EditPlan() {
         </View>
       </Card>
 
-      {preview && <PlanFeasibilityWarnings preview={preview} />}
+      <SectionLabel>RACE DATE</SectionLabel>
+      <Card style={styles.flat}>
+        <Text style={styles.fieldLabel}>Last, because how many weeks you need depends on everything above.</Text>
+        <DateField label="Race date" value={goalDate} onChange={setGoalDate} />
+        {isPastDate && <Text style={styles.errorText}>Race date must be in the future - pick a date after today.</Text>}
+      </Card>
+
+      {preview?.ok && goalInput && (
+        <ReadinessSummary
+          readiness={{
+            ...preview.plan.readiness,
+            weeksAvailable: computeAvailableWeeks(resolveStartDate(todayIso()), goalInput.goalDate),
+          }}
+          raceDistanceKm={goalInput.raceDistanceKm}
+          unit={unit}
+          onUseEnteredNumber={preview.plan.readiness.usedLoggedInsteadOfEntered ? () => setUseEnteredNumber(true) : undefined}
+        />
+      )}
+      {preview && <PlanFeasibilityWarnings preview={preview} hideSchedule />}
       {error && <Text style={styles.errorText}>{error}</Text>}
 
       <View style={styles.saveButton}>

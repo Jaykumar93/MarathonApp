@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-import type { DayOfWeek, ExperienceLevel } from "../planEngine/types";
+import type { DayOfWeek, ExperienceLevel, RaceRecency, TimeOff } from "../planEngine/types";
 import type { PlanSummary } from "./planSummary";
 
 export interface OnboardingAnswers {
@@ -10,6 +10,12 @@ export interface OnboardingAnswers {
   targetTimeSeconds?: number;
   calibrationRaceTimeSeconds?: number;
   calibrationRaceDistanceKm?: number;
+  /** How long ago the recent race was. */
+  calibrationRaceWhen?: RaceRecency;
+  /** Longest run in about the last month, in km (the middle of the chosen range). */
+  longestRecentRunKm?: number;
+  /** Time off regular running. */
+  timeOff?: TimeOff;
   trainingDaysPerWeek?: number;
   longRunDay?: DayOfWeek;
   raceLat?: number;
