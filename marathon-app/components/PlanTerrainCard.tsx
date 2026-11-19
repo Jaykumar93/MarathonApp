@@ -37,7 +37,7 @@ export function PlanTerrainCard({ weeklyVolumesKm, actualWeeklyVolumesKm, curren
           </Text>
         ))}
       </View>
-      <Text style={styles.week}>
+      <Text style={styles.week} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
         {startsOn ? `Starts ${shortDate(startsOn)} · ${totalWeeks} weeks` : `Week ${currentWeek} of ${totalWeeks}${phase ? ` · ${phase}` : ""}`}
       </Text>
     </View>

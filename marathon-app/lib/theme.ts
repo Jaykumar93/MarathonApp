@@ -118,6 +118,17 @@ const LINE_HEIGHT: Record<TypeStep, number> = {
 };
 
 /**
+ * Optical tracking (px) for the big heading steps. Larger type needs less space between letters to look evenly
+ * set: Bricolage Grotesque headings at 19 to 30 px read tighter and more finished with a small negative value.
+ * Small text, mono labels and numerals keep the default (labels add their own positive tracking where they need it).
+ */
+const TRACKING: Partial<Record<TypeStep, number>> = {
+  title: -0.2,
+  headline: -0.5,
+  display: -0.7,
+};
+
+/**
  * fontSize + an explicit lineHeight + includeFontPadding: false, spread into
  * a text style: `...text("body")`. Left to defaults, iOS and Android lay the
  * same custom font out differently (Android adds extra top/bottom "font
@@ -129,7 +140,10 @@ const LINE_HEIGHT: Record<TypeStep, number> = {
  * a single-line input's text off-center on iOS; use `inputText()` there.
  */
 export function text(step: TypeStep) {
-  return { fontSize: type[step], lineHeight: LINE_HEIGHT[step], includeFontPadding: false } as const;
+  const tracking = TRACKING[step];
+  return tracking === undefined
+    ? ({ fontSize: type[step], lineHeight: LINE_HEIGHT[step], includeFontPadding: false } as const)
+    : ({ fontSize: type[step], lineHeight: LINE_HEIGHT[step], includeFontPadding: false, letterSpacing: tracking } as const);
 }
 
 /** For TextInput styles: the size and Android padding fix, without lineHeight (see text()). */

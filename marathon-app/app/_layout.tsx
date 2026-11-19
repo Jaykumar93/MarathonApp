@@ -27,6 +27,7 @@ import { AuthProvider, useAuth } from "../lib/auth/AuthContext";
 import { createSessionFromUrl } from "../lib/auth/googleAuth";
 import { isPasswordRecoveryUrl } from "../lib/auth/passwordReset";
 import { NotificationsProvider } from "../lib/notifications/NotificationsContext";
+import { ResponsiveFrame } from "../components/ui/ResponsiveFrame";
 import { RunTrackingProvider } from "../lib/runTracking/RunTrackingContext";
 import { ThemeProvider } from "../lib/theme/ThemeContext";
 import { palette } from "../lib/theme";
@@ -247,6 +248,7 @@ function AuthGate() {
   }
 
   return (
+    <ResponsiveFrame>
     <Animated.View style={{ flex: 1, opacity: fade }}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
@@ -268,5 +270,6 @@ function AuthGate() {
         <Stack.Screen name="reset-password" options={{ presentation: "card" }} />
       </Stack>
     </Animated.View>
+    </ResponsiveFrame>
   );
 }

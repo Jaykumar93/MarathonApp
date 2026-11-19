@@ -26,15 +26,19 @@ export function Wordmark({ size = 26, color, style }: WordmarkProps) {
 
 /** Mark + wordmark side by side - the full logo lockup. */
 export function BrandLockup({ size = 26, color }: Pick<WordmarkProps, "size" | "color">) {
+  const markSize = Math.round(size * 1.7);
   return (
-    <View style={styles.lockup} accessible accessibilityRole="image" accessibilityLabel="Cursus">
-      <BrandMark size={Math.round(size * 1.7)} />
-      <Wordmark size={size} color={color} />
+    <View style={[styles.lockup, { gap: Math.round(size * 0.3) }]} accessible accessibilityRole="image" accessibilityLabel="Cursus">
+      {/* Optical alignment: the mark's drawing sits high in its box and the lowercase word (all x-height) sits low in its line, so the mark is nudged down and the word up until their centres meet. */}
+      <View style={{ marginTop: Math.round(markSize * 0.07) }}>
+        <BrandMark size={markSize} />
+      </View>
+      <Wordmark size={size} color={color} style={{ marginTop: -Math.round(size * 0.05) }} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   word: { fontFamily: fonts.dataBold, letterSpacing: -0.9, includeFontPadding: false },
-  lockup: { flexDirection: "row", alignItems: "center", gap: 8 },
+  lockup: { flexDirection: "row", alignItems: "center" },
 });

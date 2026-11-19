@@ -177,6 +177,7 @@ Two grounds, one accent, a run-type set and three state signals. Static hues (`p
 
 ### Named Rules
 **The Pinned Type Rule.** Every size comes from the scale, and each step pins fontSize, lineHeight and includeFontPadding together (`text("body")`). A text style with a hand-typed size is a bug.
+**The Optical Tracking Rule.** The big heading steps carry a small negative tracking (title -0.2, headline -0.5, display -0.7 px), set in `text()`, so Bricolage headings look evenly set. Small text, mono labels and numerals keep the default.
 **The Numbers Are Mono Rule.** Pace, distance, time and every stat value use Martian Mono; titles stay on Bricolage. Never mix the two in one number.
 **The No-Typed-Icons Rule.** Chevrons and carets are drawn icons, never `‹ › ▾` characters.
 
@@ -187,6 +188,10 @@ A single column, 18px screen padding, cards stacked with a 10px gap and 14px inn
 Home is today first: wordmark header with bell and settings, the countdown arc card, the THIS WEEK strip, a plan-adjustment banner when needed, today's session card, the block-progress terrain, weekly mileage, month totals and recent activity. Plan holds the terrain card, the month-slider calendar with the selected-day card, and this week's sessions.
 
 Spacing steps: 4, 8, 12, 16, 24, 32.
+
+### Responsive behaviour
+- **Phones (under 700 px wide):** the single column fills the screen. The layout is checked down to 320 px: long mono labels shrink to one line (`adjustsFontSizeToFit`) instead of wrapping with a stray word.
+- **Tablets, foldables and wide browser windows (700 px and up):** the app stays one centred column, at most 560 px wide (`ResponsiveFrame`), with a quiet darker margin and a hairline either side. Stretching the phone layout edge to edge left tiny charts, over-wide cards and over-long lines. The tab bar, headers and sheets live inside the column; pop-up sheets (calendar) are capped at 420 px.
 
 ## Elevation & Depth
 
@@ -224,6 +229,10 @@ Four radii: 8 (tags), 12 (controls, inputs), 16 (cards), 22 (sheet tops), plus a
 
 ### Pace band and run sheet (signature)
 - A dark bottom sheet over the map: distance, pace and time with Pause and hold-to-stop, expanding to a full panel. Always dark.
+
+### Logo
+- **Mark:** the profile line with a flag on the peak (`BrandMark`). Under 30 px it is drawn heavier (line 13, a thicker pole, a larger flag) so the flag does not turn to noise at 16 to 24 px.
+- **Lockup:** the mark is 1.7x the word's size with a gap of 0.3x. It is optically aligned: the mark is nudged down and the lowercase word (all x-height) up, so their visual centres meet.
 
 ### Pika (mascot)
 - Mountain-goat face with expressions (easy, hard, max, rest, pb). Allowed in onboarding, plan ready, empty states, reflection, personal bests, notifications and splash. Never during a run, on errors, pain flags, missed runs or the paywall.

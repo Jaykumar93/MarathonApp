@@ -114,6 +114,20 @@ export default function DevGallery() {
         ))}
       </View>
 
+      <Text style={[styles.label, { color: colors.textDim }]}>LOGO AT REAL SIZES</Text>
+      <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.cardLine, gap: 14 }]}>
+        <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 18 }}>
+          {[16, 20, 24, 32, 48, 72].map((n) => (
+            <BrandMark key={n} size={n} />
+          ))}
+        </View>
+        <View style={{ gap: 12 }}>
+          <BrandLockup size={18} />
+          <BrandLockup size={26} />
+          <BrandLockup size={40} />
+        </View>
+      </View>
+
       <Text style={[styles.label, { color: colors.textDim }]}>BUILDING PLAN SCREEN</Text>
       <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.cardLine }]}>
         <Pressable onPress={() => setDemoRun((n) => n + 1)} accessibilityRole="button">

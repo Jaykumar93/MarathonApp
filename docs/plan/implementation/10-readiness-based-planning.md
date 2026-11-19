@@ -85,6 +85,10 @@ Method: the `improve-ui` skill from ui-skills.com (audit against the product's o
 
 Not changed, on purpose: press scale stays under reduce motion (brief feedback, not travel, per `better-ui`).
 
+## 3h. Responsive layout, logo and type polish (added 2026-11-19, at the user's request: "polish, keep identity")
+
+Checked in the signed-in app at 320 px, 390 px and 768 px. At 768 the phone layout stretched edge to edge (tiny countdown arc, over-wide cards), so a `ResponsiveFrame` keeps the app a centred column of at most 560 px from 700 px up (calendar sheet capped at 420 px). At 320 px a long label wrapped with a stray word and now shrinks to one line. The logo mark has a heavier small-size version (under 30 px) and the lockup is optically aligned and its gap scales with size. Big headings get small negative tracking from `text()`. The brand (profile line, Pika, Bricolage Grotesque, Figtree, Martian Mono) is unchanged. The dev gallery shows the mark at real sizes. Rules recorded in `DESIGN.md` (Responsive behaviour, Logo, Optical Tracking Rule).
+
 ## 4. Deviations from the design
 
 - **Health data stays at step 5**, not step 2. Choosing a source in onboarding only records a preference (nothing is imported there), so it cannot pre-fill anything. Pre-filling uses runs already logged. This is the smaller alternative named in D5.

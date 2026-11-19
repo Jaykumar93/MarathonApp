@@ -202,7 +202,7 @@ function createStyles(colors: Colors) {
     fieldText: { flex: 1, fontFamily: fonts.bodyMedium, ...text("emphasis"), color: colors.textPrimary },
     overlay: { flex: 1, justifyContent: "center", paddingHorizontal: 18 },
     backdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.55)" },
-    sheet: { backgroundColor: colors.sheetBg, borderRadius: radius.xl, padding: 16, borderWidth: 1, borderColor: colors.cardLine, gap: 6 },
+    sheet: { width: "100%", maxWidth: 420, alignSelf: "center", backgroundColor: colors.sheetBg, borderRadius: radius.xl, padding: 16, borderWidth: 1, borderColor: colors.cardLine, gap: 6 },
     monthRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
     monthTitle: { fontFamily: fonts.dataBold, ...text("title"), color: colors.textPrimary },
     nav: { width: 40, height: 40, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
