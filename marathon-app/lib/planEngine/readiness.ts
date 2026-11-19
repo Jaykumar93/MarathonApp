@@ -217,6 +217,7 @@ export function estimateReadiness(input: ReadinessInput, weeksAvailable?: number
     reachablePeakKm,
     weeksNeeded: needed,
     weeksAvailable: available,
+    weeksUntilRace: available,
     verdict: ratio >= 1 ? "comfortable" : ratio >= READINESS_TIGHT_RATIO ? "tight" : "under_prepared",
     tier: fitness.tier,
     basedOnAnswersOnly: fitness.basedOnAnswersOnly,

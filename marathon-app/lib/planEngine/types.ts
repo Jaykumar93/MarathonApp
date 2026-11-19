@@ -72,8 +72,9 @@ export interface HistoricalContext {
  * lead-in for the days before it (the original behaviour). Set it to start sooner:
  *  - today: the first session is today
  *  - tomorrow: the first session is tomorrow
- *  - first_run: the first day the plan actually schedules a run (any earlier days
- *    this week are skipped, not filled with rest days)
+ *  - first_run: the first day the plan schedules a normal run, meaning not the long
+ *    run and not a rest day, so a plan never opens with a long run (any earlier days
+ *    this week, including an earlier long run, are skipped)
  * Weeks still run Monday to Sunday, so a mid-week start gives a shorter first week.
  */
 export type StartOn = "today" | "tomorrow" | "first_run";
@@ -211,6 +212,8 @@ export interface GeneratedPlan {
   paceFeasibilityWarning?: PaceFeasibilityWarning;
   /** The numbers behind the plan's length and peak - see readiness.ts. */
   readiness: Readiness;
+  /** True when race day is more than MAX_PLAN_WEEKS away, so the plan starts later (at startDate) instead of now. */
+  deferredStart: boolean;
 }
 
 export type GenerateResult =
@@ -233,7 +236,10 @@ export interface Readiness {
   reachablePeakKm: number;
   /** Weeks this runner needs for this distance, from their current base. */
   weeksNeeded: number;
+  /** Weeks the plan covers: all the weeks to race day, up to MAX_PLAN_WEEKS. */
   weeksAvailable: number;
+  /** Weeks from the start to race day. Larger than weeksAvailable when the plan starts later (see MAX_PLAN_WEEKS). */
+  weeksUntilRace: number;
   verdict: ReadinessVerdict;
   tier: FitnessTier;
   /** True when no logged data was used: the result rests on the runner's own answers or defaults. */
@@ -257,8 +263,19 @@ export const PLAN_LENGTH_ANCHORS: { km: number; defaultWeeks: number; minWeeks: 
   { km: 5, defaultWeeks: 8, minWeeks: 5 },
   { km: 10, defaultWeeks: 10, minWeeks: 6 },
   { km: HALF_MARATHON_KM, defaultWeeks: 12, minWeeks: 8 },
-  { km: MARATHON_KM, defaultWeeks: 18, minWeeks: 12 },
+  // Runna's published convention (support pages, 2026): a standard marathon plan is 16 weeks and
+  // is recommended as the minimum, with a 12-week "fast-track" for experienced runners. Here the
+  // 16 is the floor for everyone, and the 12 is what a strong recent record can shrink it to
+  // (16 x STRONG_EVIDENCE_MIN_WEEKS_FACTOR). The shorter distances are unchanged and unsourced.
+  { km: MARATHON_KM, defaultWeeks: 16, minWeeks: 16 },
 ];
+
+/**
+ * The longest plan we build, in weeks (Runna caps its plans at 26 weeks as well). A race further
+ * away than this gets a plan for its LAST 26 weeks, so the plan starts later: nobody is asked to
+ * follow 40 or 50 weeks of structured training, and the date it starts is shown to the runner.
+ */
+export const MAX_PLAN_WEEKS = 26;
 
 /**
  * The absolute floor below which a plan cannot be generated for ANY

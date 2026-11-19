@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { fonts, radius, text } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { BlockProfile } from "./BlockProfile";
+import { shortDate } from "../lib/dateFormat";
 
 const PHASES = ["Base", "Build", "Peak", "Taper"];
 
@@ -13,6 +14,8 @@ interface PlanTerrainCardProps {
   totalWeeks: number;
   /** Name of the phase the current week is in ("base" | "build" | "peak" | "taper"). */
   phaseName?: string;
+  /** Set while the plan has not started: the card then says when it starts instead of "Week 1". */
+  startsOn?: string;
 }
 
 /**
@@ -20,7 +23,7 @@ interface PlanTerrainCardProps {
  * its four phases underneath, and "Week 11 of 24 · Build". Same card on Home (Block
  * progress) and Plan, as in the design.
  */
-export function PlanTerrainCard({ weeklyVolumesKm, actualWeeklyVolumesKm, currentWeek, totalWeeks, phaseName }: PlanTerrainCardProps) {
+export function PlanTerrainCard({ weeklyVolumesKm, actualWeeklyVolumesKm, currentWeek, totalWeeks, phaseName, startsOn }: PlanTerrainCardProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const phase = phaseName ? phaseName.charAt(0).toUpperCase() + phaseName.slice(1) : null;
@@ -35,8 +38,7 @@ export function PlanTerrainCard({ weeklyVolumesKm, actualWeeklyVolumesKm, curren
         ))}
       </View>
       <Text style={styles.week}>
-        Week {currentWeek} of {totalWeeks}
-        {phase ? ` · ${phase}` : ""}
+        {startsOn ? `Starts ${shortDate(startsOn)} · ${totalWeeks} weeks` : `Week ${currentWeek} of ${totalWeeks}${phase ? ` · ${phase}` : ""}`}
       </Text>
     </View>
   );

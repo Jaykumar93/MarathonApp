@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import type { Readiness } from "../lib/planEngine";
+import { MAX_PLAN_WEEKS, type Readiness } from "../lib/planEngine";
 import { formatDistance } from "../lib/units";
 import { fonts, radius, text } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
@@ -10,8 +10,16 @@ interface ReadinessSummaryProps {
   /** Race distance in km, for the sentence ("a 21.1 km race"). */
   raceDistanceKm: number;
   unit: "km" | "mi";
-  /** Called when the runner taps "Use my number" after the logged runs were used instead of their answer. */
-  onUseEnteredNumber?: () => void;
+  /** The Monday the plan starts, when race day is further away than the longest plan we build. */
+  deferredStartDate?: string;
+}
+
+/** "Mon 12 Apr". */
+function shortDate(iso: string): string {
+  const d = new Date(iso + "T00:00:00Z");
+  const weekday = d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
+  const month = d.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
+  return `${weekday} ${d.getUTCDate()} ${month}`;
 }
 
 function distanceName(km: number): string {
@@ -29,7 +37,7 @@ function distanceName(km: number): string {
  * the wording says "based on what you told us" when no logged runs were used,
  * so an estimate never reads as a measurement.
  */
-export function ReadinessSummary({ readiness, raceDistanceKm, unit, onUseEnteredNumber }: ReadinessSummaryProps) {
+export function ReadinessSummary({ readiness, raceDistanceKm, unit, deferredStartDate }: ReadinessSummaryProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -42,7 +50,8 @@ export function ReadinessSummary({ readiness, raceDistanceKm, unit, onUseEntered
         ? { label: "TIGHT", color: colors.warningText }
         : { label: "SHORT ON TIME", color: colors.warningText };
 
-  const headline = `For your current running (about ${base} a week), ${distanceName(raceDistanceKm)} needs about ${readiness.weeksNeeded} weeks. You have ${readiness.weeksAvailable}.`;
+  const weeksYouHave = deferredStartDate ? readiness.weeksUntilRace : readiness.weeksAvailable;
+  const headline = `For your current running (about ${base} a week), ${distanceName(raceDistanceKm)} needs about ${readiness.weeksNeeded} weeks. You have ${weeksYouHave}.`;
 
   return (
     <View style={styles.card} accessibilityLiveRegion="polite">
@@ -55,23 +64,20 @@ export function ReadinessSummary({ readiness, raceDistanceKm, unit, onUseEntered
           A later date, or a shorter distance, gives a fuller build-up.
         </Text>
       )}
+      {deferredStartDate && (
+        <Text style={styles.body}>
+          The longest plan we build is {MAX_PLAN_WEEKS} weeks, so yours starts on {shortDate(deferredStartDate)}. Until then, keep up your current easy running.
+        </Text>
+      )}
+      {readiness.weeksNeeded > MAX_PLAN_WEEKS && (
+        <Text style={styles.body}>
+          From where you are now, this distance needs more than {MAX_PLAN_WEEKS} weeks of build-up. A shorter distance, or some easy running first, would suit you better.
+        </Text>
+      )}
       {readiness.returningRunner && (
         <Text style={styles.body}>You're rebuilding after time off, so the early weeks climb back a little faster, up to the level you handled before.</Text>
       )}
       <Text style={styles.basis}>{basis}.</Text>
-      {readiness.usedLoggedInsteadOfEntered && (
-        <View>
-          <Text style={styles.body}>
-            We used {formatDistance(readiness.usedLoggedInsteadOfEntered.loggedKm, unit)} a week from your logged runs; you said{" "}
-            {formatDistance(readiness.usedLoggedInsteadOfEntered.enteredKm, unit)}.
-          </Text>
-          {onUseEnteredNumber && (
-            <Text style={styles.link} onPress={onUseEnteredNumber} accessibilityRole="button">
-              Use my number instead
-            </Text>
-          )}
-        </View>
-      )}
     </View>
   );
 }
@@ -83,6 +89,5 @@ function createStyles(colors: Colors) {
     headline: { fontFamily: fonts.bodySemiBold, ...text("body"), color: colors.textPrimary },
     body: { fontFamily: fonts.body, ...text("small"), color: colors.textDim },
     basis: { fontFamily: fonts.bodyMedium, ...text("caption"), color: colors.textFaint },
-    link: { fontFamily: fonts.bodySemiBold, ...text("small"), color: colors.accentText, paddingVertical: 6 },
   });
 }

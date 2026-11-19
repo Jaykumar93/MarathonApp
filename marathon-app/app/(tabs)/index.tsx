@@ -31,6 +31,8 @@ import { WeekStrip } from "../../components/PlanCalendarScroller";
 import { SessionCard } from "../../components/SessionCard";
 import { PlanTerrainCard } from "../../components/PlanTerrainCard";
 import { AdjustPlanBanner } from "../../components/AdjustPlanBanner";
+import { PlanStartsNotice } from "../../components/PlanStartsNotice";
+import { shortDate } from "../../lib/dateFormat";
 import { ActivityThumbnail } from "../../components/ActivityThumbnail";
 import { NotificationBell } from "../../components/NotificationBell";
 import { HealthSyncButton } from "../../components/HealthSyncButton";
@@ -150,6 +152,10 @@ export default function Home() {
   const monthSeconds = monthActivities.reduce((sum, a) => sum + a.duration_seconds, 0);
   const avgPace = monthKm > 0 ? monthSeconds / monthKm : null;
 
+  // The date of the plan's first session, when it is still ahead (a plan for a far-off race starts later).
+  const firstSessionDate = allSessions.reduce<string | null>((min, s) => (min === null || s.session_date < min ? s.session_date : min), null);
+  const planStartsLater = firstSessionDate !== null && firstSessionDate > todayIso() ? firstSessionDate : null;
+
   const isToday = selectedDate === todayIso();
   const dayLabel = isToday ? "today" : new Date(selectedDate + "T00:00:00Z").toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
   const sel = selectedSession && selectedSession.session_type !== "rest" ? selectedSession : null;
@@ -174,6 +180,8 @@ export default function Home() {
         <Pressable style={styles.arcCard} onPress={() => router.push(`/race-day?goalId=${goal.id}`)} accessibilityRole="button" accessibilityLabel="Open Race Day Details">
           <CountdownArc daysRemaining={daysRemaining} progress={planProgress} />
         </Pressable>
+
+        {planStartsLater && <PlanStartsNotice startDate={planStartsLater} raceDate={goal.goal_date} />}
 
         <SectionLabel>THIS WEEK</SectionLabel>
         <View style={styles.strip}>
@@ -206,6 +214,9 @@ export default function Home() {
             trailing={sel.status === "completed" ? "check" : "chevron"}
             onPress={() => router.push(`/planned-session?id=${sel.id}`)}
           />
+        ) : planStartsLater && selectedDate < planStartsLater ? (
+          // Before the plan starts a day is not a "rest day"; say what is coming instead of "Nothing planned".
+          <SessionCard type="rest" label={`Before your plan · ${dayLabel}`} main={`Your plan starts ${shortDate(planStartsLater)}.`} trailing="none" />
         ) : (
           <SessionCard type="rest" label={`Rest · ${dayLabel}`} main="Rest day. Nothing planned." trailing="none" />
         )}
@@ -217,6 +228,7 @@ export default function Home() {
           currentWeek={currentWeek}
           totalWeeks={totalWeeks}
           phaseName={phaseName}
+          startsOn={planStartsLater ?? undefined}
         />
 
         <SectionLabel>WEEKLY MILEAGE</SectionLabel>

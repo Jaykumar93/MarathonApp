@@ -19,6 +19,7 @@ import {
   DistanceCategory,
   GenerateResult,
   GoalInput,
+  MAX_PLAN_WEEKS,
   LONG_RUN_GROWTH_PER_WEEK,
   LONG_RUN_GUARD_FLOOR_KM,
   PaceZones,
@@ -117,7 +118,7 @@ function buildLeadInSessions(today: string, startDate: string, paceZones: PaceZo
 }
 
 /** The Monday on or before an ISO date. */
-function mondayOnOrBefore(isoDate: string): string {
+export function mondayOnOrBefore(isoDate: string): string {
   const dayIndex = new Date(isoDate + "T00:00:00Z").getUTCDay(); // 0 = Sunday
   return addDays(isoDate, -((dayIndex + 6) % 7));
 }
@@ -126,11 +127,27 @@ export function generatePlan(input: GoalInput): GenerateResult {
   const today = input.today ?? new Date().toISOString().slice(0, 10);
   // With a start choice the plan begins that day, and its weeks are still Monday-aligned (the
   // first one is simply shorter). Without one, it starts next Monday with a lead-in, as before.
-  const firstSessionDate = input.startOn === "tomorrow" ? addDays(today, 1) : input.startOn ? today : undefined;
-  const startDate = firstSessionDate ? mondayOnOrBefore(firstSessionDate) : resolveStartDate(today);
+  let requestedFirstSession = input.startOn === "tomorrow" ? addDays(today, 1) : input.startOn ? today : undefined;
+  // "First run" begins on the first normal run (not the long run). When that run falls in a later calendar week than
+  // today's, the plan's weeks start from THAT week, so week 1 is a real week of training and not an empty one.
+  if (input.startOn === "first_run") {
+    // A short, fixed horizon: the first normal run does not depend on the race date, and a far-off date would defer the probe.
+    const probe = generatePlan({ ...input, startOn: "today", goalDate: addDays(today, 20 * 7) });
+    const firstNormalRun = probe.ok
+      ? probe.plan.sessions.find((s) => s.sessionType !== "rest" && s.sessionType !== "long" && s.sessionType !== "race" && s.sessionDate >= today)
+      : undefined;
+    if (firstNormalRun) requestedFirstSession = firstNormalRun.sessionDate;
+  }
+  const requestedStart = requestedFirstSession ? mondayOnOrBefore(requestedFirstSession) : resolveStartDate(today);
   const category = getDistanceCategory(input.raceDistanceKm);
 
-  const availableWeeks = computeAvailableWeeks(startDate, input.goalDate);
+  // Nobody should follow a 40 or 50 week plan: past MAX_PLAN_WEEKS the plan covers the last
+  // MAX_PLAN_WEEKS weeks only, so it starts later (on a Monday, with no lead-in) and the runner is told when.
+  const weeksUntilRace = computeAvailableWeeks(requestedStart, input.goalDate);
+  const deferredStart = weeksUntilRace > MAX_PLAN_WEEKS;
+  const startDate = deferredStart ? addDays(mondayOnOrBefore(input.goalDate), -(MAX_PLAN_WEEKS - 1) * 7) : requestedStart;
+  const firstSessionDate = deferredStart ? startDate : requestedFirstSession;
+  const availableWeeks = deferredStart ? MAX_PLAN_WEEKS : weeksUntilRace;
   // How long THIS runner needs for THIS distance (readiness.ts), not a
   // distance-only number: it follows their current weekly volume and past races.
   const fitness = resolveFitness(input);
@@ -267,11 +284,16 @@ export function generatePlan(input: GoalInput): GenerateResult {
   sessions.length = 0;
   sessions.push(...trimmedSessions);
 
-  // A chosen start day: nothing is scheduled before it. For "first run" the plan also begins on its
-  // first real run rather than on a rest day.
+  // A chosen start day: nothing is scheduled before it. For "first run" the plan begins on its first
+  // normal run: not a rest day, and not the long run (a plan should not open with its longest effort).
+  // If the week has only a long run (for example one training day), that long run is used instead.
   if (firstSessionDate) {
     const fromStart = sessions.filter((s) => s.sessionDate >= firstSessionDate);
-    const firstRunIndex = input.startOn === "first_run" ? fromStart.findIndex((s) => s.sessionType !== "rest") : 0;
+    let firstRunIndex = 0;
+    if (input.startOn === "first_run") {
+      firstRunIndex = fromStart.findIndex((s) => s.sessionType !== "rest" && s.sessionType !== "long" && s.sessionType !== "race");
+      if (firstRunIndex < 0) firstRunIndex = fromStart.findIndex((s) => s.sessionType !== "rest");
+    }
     sessions.length = 0;
     sessions.push(...(firstRunIndex > 0 ? fromStart.slice(firstRunIndex) : fromStart));
   }
@@ -309,7 +331,8 @@ export function generatePlan(input: GoalInput): GenerateResult {
       paceFeasibilityWarning,
       // The numbers behind the plan's length and peak. reachablePeakKm is what
       // the generated volumes actually reach, so the two can never disagree.
-      readiness: { ...estimateReadiness(input, availableWeeks), reachablePeakKm: peakWeeklyDistanceKm },
+      readiness: { ...estimateReadiness(input, availableWeeks), reachablePeakKm: peakWeeklyDistanceKm, weeksUntilRace },
+      deferredStart,
     },
   };
 }

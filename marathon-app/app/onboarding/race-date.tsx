@@ -5,8 +5,10 @@ import { OnboardingStepLayout } from "../../components/OnboardingStepLayout";
 import { PlanFeasibilityWarnings } from "../../components/PlanFeasibilityWarnings";
 import { ReadinessSummary } from "../../components/ReadinessSummary";
 import { StartDayPicker } from "../../components/StartDayPicker";
-import { BuildingPlan } from "../../components/onboarding/BuildingPlan";
-import { DateField } from "../../components/ui/DateField";
+import { PlanLengthPicker } from "../../components/PlanLengthPicker";
+import { BUILD_STEPS, BuildingPlan } from "../../components/onboarding/BuildingPlan";
+import { CalendarField } from "../../components/ui/CalendarField";
+import { FitnessSourceChoice } from "../../components/FitnessSourceChoice";
 import { TextField } from "../../components/ui/TextField";
 import { useAuth } from "../../lib/auth/AuthContext";
 import { supabase } from "../../lib/supabase";
@@ -17,7 +19,7 @@ import { todayIso } from "../../lib/data/usePlanData";
 import { useOnboarding } from "../../lib/onboarding/OnboardingContext";
 import { summarizePlan } from "../../lib/onboarding/planSummary";
 import { geocodeCity } from "../../lib/weather/openMeteo";
-import { estimateReadiness, generatePlan, type GoalInput, type HistoricalContext, type StartOn } from "../../lib/planEngine";
+import { MAX_PLAN_WEEKS, estimateReadiness, generatePlan, hasUsableLoggedVolume, type GoalInput, type HistoricalContext, type StartOn } from "../../lib/planEngine";
 import { fonts, text } from "../../lib/theme";
 import { useTheme } from "../../lib/theme/ThemeContext";
 
@@ -43,11 +45,16 @@ export default function RaceDate() {
   const [city, setCity] = useState(answers.raceLocationName ?? "");
   const [historicalContext, setHistoricalContext] = useState<HistoricalContext | undefined>(undefined);
   const [useEnteredNumber, setUseEnteredNumber] = useState(false);
+  // Starts on the recommended plan length (see the default-length effect below), so a date is always filled in.
   // Defaults to the first day the plan schedules a run; the picker offers today and tomorrow too.
   const [startOn, setStartOn] = useState<StartOn>("first_run");
+  // The plan length the runner picked, if they picked one; a hand-entered date clears it.
+  const [planWeeks, setPlanWeeks] = useState<number | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
   // Which "Building your plan" step is in progress - advanced after each real await below.
   const [buildStage, setBuildStage] = useState(1);
+  // True once the plan is saved: the screen plays its finish (bar completes, flag pops) before moving on.
+  const [buildDone, setBuildDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,6 +68,14 @@ export default function RaceDate() {
       cancelled = true;
     };
   }, [session?.user?.id]);
+
+  // When the logged runs and the number the runner typed disagree (they typed more), they choose which to use.
+  const loggedVsEntered = useMemo(() => {
+    const entered = answers.currentWeeklyMileageKm;
+    if (!entered || !historicalContext || !hasUsableLoggedVolume({ historicalContext })) return null;
+    const logged = historicalContext.recentAvgWeeklyDistanceKm!;
+    return entered > logged ? { loggedKm: Math.round(logged * 10) / 10, enteredKm: entered } : null;
+  }, [answers.currentWeeklyMileageKm, historicalContext]);
 
   const dateIsValid = isValidDate(goalDate);
   const isPastDate = dateIsValid && goalDate < todayIso();
@@ -125,6 +140,14 @@ export default function RaceDate() {
     }).weeksNeeded;
   }, [answers, historicalContext, useEnteredNumber]);
 
+  // Nothing is typed or hunted for: with no date yet, the recommended length is picked, which fills the date.
+  useEffect(() => {
+    if (!goalDate && weeksNeededWithoutDate !== null && answers.longRunDay) {
+      setPlanWeeks(Math.min(Math.max(weeksNeededWithoutDate, 5), MAX_PLAN_WEEKS));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [goalDate, weeksNeededWithoutDate, answers.longRunDay]);
+
   // Weeks the plan really has: from the chosen start (its Monday), not always from next Monday.
   const availableWeeks =
     dateIsValid && !isPastDate && preview && preview.ok ? preview.plan.readiness.weeksAvailable : null;
@@ -182,6 +205,10 @@ export default function RaceDate() {
       // (it's an optional flow now, not a mandatory gate) - navigate away
       // explicitly on successful completion instead of relying on the
       // router to notice and redirect.
+      // Let the runner see the finish (every step ticked, the terrain full, the flag planted) before the next screen.
+      setBuildStage(BUILD_STEPS.length);
+      setBuildDone(true);
+      await new Promise((resolve) => setTimeout(resolve, 1900));
       router.replace("/onboarding/plan-ready");
     } catch (e) {
       // Postgrest errors are plain objects, not Error instances - same class
@@ -205,7 +232,7 @@ export default function RaceDate() {
     }
   }
 
-  if (submitting && buildStage >= 1) return <BuildingPlan stage={buildStage} />;
+  if (submitting && buildStage >= 1) return <BuildingPlan stage={buildStage} done={buildDone} />;
 
   return (
     <OnboardingStepLayout
@@ -217,8 +244,29 @@ export default function RaceDate() {
       nextLoading={submitting}
       nextDisabled={submitting || !preview || !preview.ok}
     >
-      <DateField label="Race date" value={goalDate} onChange={setGoalDate} />
       {pickerInput && <StartDayPicker input={pickerInput} value={startOn} onChange={setStartOn} />}
+      {weeksNeededWithoutDate !== null && pickerInput && (
+        <PlanLengthPicker
+          weeksNeeded={weeksNeededWithoutDate}
+          startOn={startOn}
+          input={pickerInput}
+          value={planWeeks}
+          onChange={(weeks, date) => {
+            setPlanWeeks(weeks);
+            setGoalDate(date);
+          }}
+        />
+      )}
+      <CalendarField
+        label="Race date (or pick your own on the calendar)"
+        value={goalDate}
+        minDate={todayIso()}
+        rangeStart={todayIso()}
+        onChange={(d) => {
+          setGoalDate(d);
+          setPlanWeeks(undefined);
+        }}
+      />
       {isPastDate && (
         <Text style={{ fontFamily: fonts.body, ...text("small"), color: colors.dangerText }}>Race date must be in the future - pick a date after today.</Text>
       )}
@@ -227,12 +275,21 @@ export default function RaceDate() {
           From your current running, this distance needs about {weeksNeededWithoutDate} weeks. Pick a date at least that far away for a full build-up.
         </Text>
       )}
+      {loggedVsEntered && (
+        <FitnessSourceChoice
+          loggedKm={loggedVsEntered.loggedKm}
+          enteredKm={loggedVsEntered.enteredKm}
+          unit={unit}
+          value={useEnteredNumber ? "entered" : "logged"}
+          onChange={(v) => setUseEnteredNumber(v === "entered")}
+        />
+      )}
       {preview && preview.ok && goalInput && (
         <ReadinessSummary
           readiness={{ ...preview.plan.readiness, weeksAvailable: availableWeeks ?? preview.plan.readiness.weeksAvailable }}
           raceDistanceKm={goalInput.raceDistanceKm}
           unit={unit}
-          onUseEnteredNumber={preview.plan.readiness.usedLoggedInsteadOfEntered ? () => setUseEnteredNumber(true) : undefined}
+          deferredStartDate={preview.plan.deferredStart ? preview.plan.startDate : undefined}
         />
       )}
       {preview && <PlanFeasibilityWarnings preview={preview} hideSchedule />}

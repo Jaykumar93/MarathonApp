@@ -13,7 +13,7 @@ import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { ChipSelect } from "../components/ui/ChipSelect";
 import { TextField } from "../components/ui/TextField";
 import { DurationField } from "../components/ui/DurationField";
-import { DateField } from "../components/ui/DateField";
+import { CalendarField } from "../components/ui/CalendarField";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PhotoPicker } from "../components/ui/PhotoPicker";
 import { todayIso } from "../lib/data/usePlanData";
@@ -125,7 +125,7 @@ export default function LogActivity() {
 
       <View style={[styles.fieldGap, styles.pair]}>
         <View style={{ flex: 1 }}>
-          <DateField label="Date" value={date} onChange={setDate} yearsBack={2} yearsAhead={0} defaultOffsetDays={0} />
+          <CalendarField label="Date" value={date} onChange={setDate} maxDate={todayIso()} minDate={new Date(Date.now() - 730 * 86400000).toISOString().slice(0, 10)} defaultOffsetDays={0} />
         </View>
         <View style={{ flex: 1 }}>
           <TextField label="Distance (km)" value={distanceKm} onChangeText={setDistanceKm} keyboardType="decimal-pad" placeholder="e.g. 8.5" />

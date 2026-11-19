@@ -24,6 +24,7 @@ import { TabHeader } from "../../components/ui/TabHeader";
 import { SectionLabel } from "../../components/ui/SectionLabel";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { PlanTerrainCard } from "../../components/PlanTerrainCard";
+import { shortDate } from "../../lib/dateFormat";
 import { PlanCalendarScroller } from "../../components/PlanCalendarScroller";
 import { DayDetailPanel } from "../../components/DayDetailPanel";
 import { SessionListRow } from "../../components/SessionListRow";
@@ -119,10 +120,16 @@ export default function Plan() {
   const actualWeeklyVolumesKm = getActualWeeklyVolumesKm(planActivities, plan.start_date, totalWeeks);
   const selectedSession = allSessions.find((s) => s.session_date === selectedDate) ?? null;
 
-  const [weekStart, weekEnd] = getWeekDateRange(plan.start_date, currentWeek);
-  const weekSessions = sessions.filter((s) => s.session_date >= weekStart && s.session_date <= weekEnd && s.session_type !== "rest").sort((a, b) => (a.session_date < b.session_date ? -1 : 1));
-
   const today = todayIso();
+  // The date of the plan's first session. While it is still ahead the plan has not started: the first week is
+  // shown instead of an empty "this week", and the cards say when it starts.
+  const firstSessionDate = allSessions.reduce<string | null>((min, s) => (min === null || s.session_date < min ? s.session_date : min), null);
+  const planStartsLater = firstSessionDate !== null && firstSessionDate > today ? firstSessionDate : null;
+
+  const [weekStart, weekEnd] = planStartsLater
+    ? [planStartsLater, new Date(new Date(planStartsLater + "T00:00:00Z").getTime() + 6 * 86400000).toISOString().slice(0, 10)]
+    : getWeekDateRange(plan.start_date, currentWeek);
+  const weekSessions = sessions.filter((s) => s.session_date >= weekStart && s.session_date <= weekEnd && s.session_type !== "rest").sort((a, b) => (a.session_date < b.session_date ? -1 : 1));
 
   async function handleMove(sessionRow: PlanSessionRow) {
     setSessionActionError(null);
@@ -187,24 +194,27 @@ export default function Plan() {
 
         {adjustmentProposal && <AdjustPlanBanner proposal={adjustmentProposal} onAccept={handleAcceptAdjustment} onDecline={handleDeclineAdjustment} />}
 
+
         <PlanTerrainCard
           weeklyVolumesKm={weeklyVolumesKm}
           actualWeeklyVolumesKm={actualWeeklyVolumesKm}
           currentWeek={currentWeek}
           totalWeeks={totalWeeks}
           phaseName={phaseName}
+          startsOn={planStartsLater ?? undefined}
         />
 
         <SectionLabel>CALENDAR</SectionLabel>
         <PlanCalendarScroller days={allDays} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
         <View style={styles.dayDetail} {...dayDetailSwipeHandlers}>
           <View style={noSelectStyle}>
-            <DayDetailPanel date={selectedDate} session={selectedSession} activities={selectedDayActivities} onMoveToTomorrow={handleMove} />
+            <DayDetailPanel date={selectedDate} session={selectedSession} activities={selectedDayActivities} onMoveToTomorrow={handleMove} planStartsOn={planStartsLater ?? undefined} />
           </View>
         </View>
 
-        <SectionLabel>THIS WEEK'S SESSIONS</SectionLabel>
+        <SectionLabel>{planStartsLater ? `FIRST WEEK · FROM ${shortDate(planStartsLater).toUpperCase()}` : "THIS WEEK'S SESSIONS"}</SectionLabel>
         {sessionActionError && <Text style={styles.errorText}>{sessionActionError}</Text>}
+        {weekSessions.length === 0 && <Text style={styles.body}>No runs planned this week.</Text>}
         {weekSessions.map((s) => (
           <SessionListRow key={s.id} session={s} isToday={s.session_date === today} onMoveToTomorrow={handleMove} onMarkDoneAnyway={handleMarkDone} />
         ))}

@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Animated, Pressable, View, type ColorValue, type GestureResponderEvent, type StyleProp, type ViewStyle } from "react-native";
 import { fonts, text, palette } from "../../lib/theme";
 import { useTheme } from "../../lib/theme/ThemeContext";
+import { useReducedMotion } from "../../lib/useReducedMotion";
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -51,17 +52,23 @@ function AnimatedTabButton({ children, style, onPressIn, onPressOut, ...rest }: 
 // switching tabs feels alive. Transform and opacity only (native driver).
 function TabIcon({ name, color, focused }: { name: IoniconName; color: ColorValue; focused: boolean }) {
   const progress = useRef(new Animated.Value(focused ? 1 : 0)).current;
+  const reduceMotion = useReducedMotion();
   useEffect(() => {
+    // With "reduce motion" on, the active tab just takes its look (pill and colour) with no pop, lift or spring.
+    if (reduceMotion) {
+      progress.setValue(focused ? 1 : 0);
+      return;
+    }
     Animated.spring(progress, { toValue: focused ? 1 : 0, useNativeDriver: true, speed: 16, bounciness: 12 }).start();
-  }, [focused, progress]);
+  }, [focused, progress, reduceMotion]);
   const pillScale = progress.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] });
   const pillOpacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0, 0.16] });
-  const iconScale = progress.interpolate({ inputRange: [0, 1], outputRange: [1, 1.14] });
-  const iconLift = progress.interpolate({ inputRange: [0, 1], outputRange: [0, -1] });
+  const iconScale = progress.interpolate({ inputRange: [0, 1], outputRange: reduceMotion ? [1, 1] : [1, 1.14] });
+  const iconLift = progress.interpolate({ inputRange: [0, 1], outputRange: reduceMotion ? [0, 0] : [0, -1] });
   return (
-    <View style={{ width: 48, height: 28, alignItems: "center", justifyContent: "center" }}>
+    <View style={{ width: 48, height: 24, alignItems: "center", justifyContent: "center" }}>
       <Animated.View
-        style={{ position: "absolute", width: 48, height: 28, borderRadius: 14, backgroundColor: color, opacity: pillOpacity, transform: [{ scale: pillScale }] }}
+        style={{ position: "absolute", width: 48, height: 24, borderRadius: 12, backgroundColor: color, opacity: pillOpacity, transform: [{ scale: pillScale }] }}
       />
       <Animated.View style={{ transform: [{ translateY: iconLift }, { scale: iconScale }] }}>
         <Ionicons name={name} size={22} color={color} />
@@ -90,7 +97,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.accentText,
         tabBarInactiveTintColor: colors.textDim,
         tabBarButton: (props) => <AnimatedTabButton {...props} />,
-        tabBarStyle: { height: 54 + tabBarBottom, paddingTop: 8, paddingBottom: tabBarBottom, backgroundColor: colors.tabBarBg, borderTopColor: colors.cardLine },
+        tabBarStyle: { height: 60 + tabBarBottom, paddingTop: 6, paddingBottom: tabBarBottom, backgroundColor: colors.tabBarBg, borderTopColor: colors.cardLine },
         tabBarLabelStyle: { fontFamily: fonts.bodyMedium, ...text("micro"), marginTop: 2 },
         // The five labels share a fixed-width bar; letting them follow a large system font
         // pushed them into each other, so they hold their size (icons and names stay legible).
@@ -107,7 +114,7 @@ export default function TabsLayout() {
           // Always dark, like the screen itself.
           tabBarActiveTintColor: palette.accentGlow,
           tabBarInactiveTintColor: "#B3B6C4",
-          tabBarStyle: { height: 54 + tabBarBottom, paddingTop: 8, paddingBottom: tabBarBottom, backgroundColor: "#0F1220", borderTopColor: "rgba(255,255,255,0.09)" },
+          tabBarStyle: { height: 60 + tabBarBottom, paddingTop: 6, paddingBottom: tabBarBottom, backgroundColor: "#0F1220", borderTopColor: "rgba(255,255,255,0.09)" },
         }}
       />
       <Tabs.Screen name="activity" options={{ title: "Activity", tabBarIcon: icon("bar-chart-outline") }} />

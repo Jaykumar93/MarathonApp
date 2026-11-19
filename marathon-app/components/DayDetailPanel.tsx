@@ -14,6 +14,7 @@ import { todayIso } from "../lib/data/usePlanData";
 import { formatDistance, formatPace } from "../lib/units";
 import { SESSION_TYPE_COLOR, SESSION_TYPE_LABEL, formatIntervalStructureSummary } from "../lib/sessionTypes";
 import { ActivityThumbnail } from "./ActivityThumbnail";
+import { shortDate } from "../lib/dateFormat";
 import { sessionTypeTextColor } from "./SessionCard";
 
 function formatDateHeading(iso: string): string {
@@ -45,6 +46,8 @@ interface DayDetailPanelProps {
   activities: ActivityRow[];
   /** When given, a "Move day" chip appears on a pending session. */
   onMoveToTomorrow?: (session: PlanSessionRow) => void;
+  /** The date the plan's first session falls on, while that is still ahead. Days before it say so instead of "No session planned". */
+  planStartsOn?: string;
 }
 
 /** One logged run: a flat, tappable row (thumbnail, title, mono stats) - tap through to the full Run Summary. */
@@ -77,7 +80,7 @@ function LoggedActivityRow({ activity, unit, first }: { activity: ActivityRow; u
  * and Move day. Tapping the card opens the full planned-session screen (where Start run lives).
  * Runs already logged on the day follow underneath.
  */
-export function DayDetailPanel({ date, session, activities, onMoveToTomorrow }: DayDetailPanelProps) {
+export function DayDetailPanel({ date, session, activities, onMoveToTomorrow, planStartsOn }: DayDetailPanelProps) {
   const router = useRouter();
   const { profile } = useAuth();
   const { colors } = useTheme();
@@ -146,7 +149,13 @@ export function DayDetailPanel({ date, session, activities, onMoveToTomorrow }: 
       ) : (
         <View style={[styles.card, { borderLeftColor: colors.cardLine }]}>
           <Text style={styles.heading}>{heading}</Text>
-          <Text style={styles.sub}>{session ? "Rest day. Nothing planned." : "No session planned this day."}</Text>
+          <Text style={styles.sub}>
+            {!session && planStartsOn && date < planStartsOn
+              ? `Your plan starts ${shortDate(planStartsOn)}. Keep up your easy running until then.`
+              : session
+                ? "Rest day. Nothing planned."
+                : "No session planned this day."}
+          </Text>
         </View>
       )}
 

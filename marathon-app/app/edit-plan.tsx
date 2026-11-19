@@ -7,6 +7,8 @@ import { todayIso, useActivePlanData } from "../lib/data/usePlanData";
 import { updateGoal, updateRaceLocation, type CreateGoalInput } from "../lib/data/goals";
 import { supersedePlan, createPlanWithSessions } from "../lib/data/plans";
 import {
+  hasUsableLoggedVolume,
+  estimateReadiness,
   generatePlan,
   type DayOfWeek,
   type ExperienceLevel,
@@ -32,12 +34,14 @@ import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { ChipSelect } from "../components/ui/ChipSelect";
 import { TextField } from "../components/ui/TextField";
-import { DateField } from "../components/ui/DateField";
+import { CalendarField } from "../components/ui/CalendarField";
+import { FitnessSourceChoice } from "../components/FitnessSourceChoice";
 import { DurationField } from "../components/ui/DurationField";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { PlanFeasibilityWarnings } from "../components/PlanFeasibilityWarnings";
 import { ReadinessSummary } from "../components/ReadinessSummary";
 import { StartDayPicker } from "../components/StartDayPicker";
+import { PlanLengthPicker } from "../components/PlanLengthPicker";
 import { ScreenHeader, SCREEN_TOP_GAP, SCREEN_BOTTOM_GAP } from "../components/ui/ScreenHeader";
 import { SectionLabel } from "../components/ui/SectionLabel";
 
@@ -108,6 +112,8 @@ export default function EditPlan() {
   const [useEnteredNumber, setUseEnteredNumber] = useState(false);
   // Regenerating a plan can start today, tomorrow or on the first run day (defaults to the first run day).
   const [startOn, setStartOn] = useState<StartOn>("first_run");
+  // The plan length the runner picked, if they picked one; a hand-entered date clears it.
+  const [planWeeks, setPlanWeeks] = useState<number | undefined>(undefined);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -245,6 +251,30 @@ export default function EditPlan() {
     trainingDaysPerWeek,
     longRunDay,
   ]);
+
+  // When the logged runs and the number typed disagree (typed is higher), the runner chooses which to use.
+  const loggedVsEntered = useMemo(() => {
+    const entered = weeklyMileage ? parseFloat(weeklyMileage) : undefined;
+    if (!entered || !historicalContext || !hasUsableLoggedVolume({ historicalContext })) return null;
+    const logged = historicalContext.recentAvgWeeklyDistanceKm!;
+    return entered > logged ? { loggedKm: Math.round(logged * 10) / 10, enteredKm: entered } : null;
+  }, [weeklyMileage, historicalContext]);
+
+  // Weeks this runner needs for this distance, from the same readiness rules the plan uses.
+  const weeksNeededForPicker = useMemo(() => {
+    if (!raceDistanceKm) return null;
+    return estimateReadiness({
+      raceDistanceKm,
+      experienceLevel,
+      currentWeeklyMileageKm: weeklyMileage ? parseFloat(weeklyMileage) : undefined,
+      longestRecentRunKm: longestRunBucket ? longestRunKmForBucket(longestRunBucket) : undefined,
+      timeOff,
+      calibrationRaceTimeSeconds: parseHms(calibrationTime),
+      calibrationRaceDistanceKm: calibrationDistanceKm,
+      calibrationRaceWhen: calibrationWhen,
+      historicalContext: useEnteredNumber ? undefined : historicalContext,
+    }).weeksNeeded;
+  }, [raceDistanceKm, experienceLevel, weeklyMileage, longestRunBucket, timeOff, calibrationTime, calibrationDistanceKm, calibrationWhen, historicalContext, useEnteredNumber]);
 
   const pickerInput = useMemo(
     () =>
@@ -441,21 +471,55 @@ export default function EditPlan() {
       <SectionLabel>RACE DATE</SectionLabel>
       <Card style={styles.flat}>
         <Text style={styles.fieldLabel}>Last, because how many weeks you need depends on everything above.</Text>
-        <DateField label="Race date" value={goalDate} onChange={setGoalDate} />
-        {isPastDate && <Text style={styles.errorText}>Race date must be in the future - pick a date after today.</Text>}
         {pickerInput && (
           <View style={styles.fieldGap}>
             <StartDayPicker input={pickerInput} value={startOn} onChange={setStartOn} />
           </View>
         )}
+        {weeksNeededForPicker !== null && pickerInput && (
+          <View style={styles.fieldGap}>
+            <PlanLengthPicker
+              weeksNeeded={weeksNeededForPicker}
+              startOn={startOn}
+              input={pickerInput}
+              value={planWeeks}
+              onChange={(weeks, date) => {
+                setPlanWeeks(weeks);
+                setGoalDate(date);
+              }}
+            />
+          </View>
+        )}
+        <View style={styles.fieldGap}>
+          <CalendarField
+            label="Race date (or pick your own on the calendar)"
+            value={goalDate}
+            minDate={todayIso()}
+            rangeStart={todayIso()}
+            onChange={(d) => {
+              setGoalDate(d);
+              setPlanWeeks(undefined);
+            }}
+          />
+        </View>
+        {isPastDate && <Text style={styles.errorText}>Race date must be in the future - pick a date after today.</Text>}
       </Card>
 
+      {loggedVsEntered && (
+        <FitnessSourceChoice
+          loggedKm={loggedVsEntered.loggedKm}
+          enteredKm={loggedVsEntered.enteredKm}
+          unit={unit}
+          value={useEnteredNumber ? "entered" : "logged"}
+          onChange={(v) => setUseEnteredNumber(v === "entered")}
+        />
+      )}
       {preview?.ok && goalInput && (
         <ReadinessSummary
           readiness={preview.plan.readiness}
           raceDistanceKm={goalInput.raceDistanceKm}
           unit={unit}
-          onUseEnteredNumber={preview.plan.readiness.usedLoggedInsteadOfEntered ? () => setUseEnteredNumber(true) : undefined}
+          deferredStartDate={preview.plan.deferredStart ? preview.plan.startDate : undefined}
         />
       )}
       {preview && <PlanFeasibilityWarnings preview={preview} hideSchedule />}

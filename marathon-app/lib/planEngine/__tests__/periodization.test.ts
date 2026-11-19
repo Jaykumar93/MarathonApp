@@ -39,8 +39,8 @@ describe("getDefaultWeeks / getMinWeeks - interpolation across arbitrary distanc
   it("matches known anchor points", () => {
     expect(getDefaultWeeks(5)).toBe(8);
     expect(getMinWeeks(5)).toBe(5);
-    expect(getDefaultWeeks(MARATHON_KM)).toBe(18);
-    expect(getMinWeeks(MARATHON_KM)).toBe(12);
+    expect(getDefaultWeeks(MARATHON_KM)).toBe(16);
+    expect(getMinWeeks(MARATHON_KM)).toBe(16);
   });
 
   it("interpolates a custom distance between anchors (e.g. 15k between 10k and half)", () => {

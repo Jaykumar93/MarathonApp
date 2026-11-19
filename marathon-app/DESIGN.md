@@ -241,6 +241,8 @@ Four radii: 8 (tags), 12 (controls, inputs), 16 (cards), 22 (sheet tops), plus a
 - **Do** keep Active Run and Track dark, with their colours from `darkSurface`.
 - **Do** state missed or slow sessions neutrally.
 - **Do** put numbers in Martian Mono.
+- **Do** skip movement (pops, springs, slides) when the system's reduce-motion setting is on (`useReducedMotion`); a brief press scale may stay.
+- **Do** make every state say what is true: before a plan starts, a day is "Before your plan", not "Rest day".
 
 ### Don't:
 - **Don't** nest a bordered box inside a bordered card.

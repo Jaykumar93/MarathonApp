@@ -1,14 +1,18 @@
-import React, { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Redirect } from "expo-router";
 import { Pika } from "../components/mascot/Pika";
 import { PIKA_EXPRESSIONS } from "../components/mascot/pikaFace";
 import { BrandLockup, Wordmark } from "../components/ui/Wordmark";
 import { BrandMark } from "../components/ui/BrandMark";
-import { DateField } from "../components/ui/DateField";
+import { CalendarField } from "../components/ui/CalendarField";
+import { FitnessSourceChoice, type FitnessSource } from "../components/FitnessSourceChoice";
 import { DurationField } from "../components/ui/DurationField";
 import { StartDayPicker } from "../components/StartDayPicker";
+import { PlanLengthPicker } from "../components/PlanLengthPicker";
+import { BUILD_STEPS, BuildingPlan } from "../components/onboarding/BuildingPlan";
 import type { StartOn } from "../lib/planEngine";
+import { todayIso } from "../lib/data/usePlanData";
 import { fonts, palette, radius, text } from "../lib/theme";
 import { useTheme } from "../lib/theme/ThemeContext";
 
@@ -36,9 +40,25 @@ export default function DevGallery() {
   const [raceDate, setRaceDate] = useState("");
   const [goalTime, setGoalTime] = useState("");
   const [startOn, setStartOn] = useState<StartOn>("first_run");
+  const [planWeeks, setPlanWeeks] = useState<number | undefined>(undefined);
+  const [source, setSource] = useState<FitnessSource>("logged");
+  // Plays the "Building your plan" screen on a timer so its bar and finish can be watched.
+  const [buildDemo, setBuildDemo] = useState<{ stage: number; done: boolean } | null>(null);
+  const [demoRun, setDemoRun] = useState(0);
+  useEffect(() => {
+    if (!demoRun) return;
+    setBuildDemo({ stage: 1, done: false });
+    const timers = [
+      setTimeout(() => setBuildDemo({ stage: 2, done: false }), 2500),
+      setTimeout(() => setBuildDemo({ stage: 3, done: false }), 5000),
+      setTimeout(() => setBuildDemo({ stage: BUILD_STEPS.length, done: true }), 7500),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [demoRun]);
   if (!__DEV__) return <Redirect href="/" />;
 
   return (
+    <>
     <ScrollView style={{ backgroundColor: colors.screenBg }} contentContainerStyle={styles.content}>
       <Text style={[styles.h, { color: colors.textPrimary }]}>Brand gallery ({mode})</Text>
 
@@ -94,9 +114,18 @@ export default function DevGallery() {
         ))}
       </View>
 
+      <Text style={[styles.label, { color: colors.textDim }]}>BUILDING PLAN SCREEN</Text>
+      <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.cardLine }]}>
+        <Pressable onPress={() => setDemoRun((n) => n + 1)} accessibilityRole="button">
+          <Text style={{ color: colors.accentText, fontFamily: fonts.bodySemiBold, ...text("emphasis") }}>Play the build animation</Text>
+        </Pressable>
+      </View>
+
       <Text style={[styles.label, { color: colors.textDim }]}>PICKERS</Text>
       <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.cardLine, gap: 14 }]}>
-        <DateField label="Race date" value={raceDate} onChange={setRaceDate} />
+        <PlanLengthPicker weeksNeeded={14} startOn={startOn} input={{ raceDistanceKm: 21.0975, trainingDaysPerWeek: 4, longRunDay: "sat", experienceLevel: "intermediate" }} value={planWeeks} onChange={(w, d) => { setPlanWeeks(w); setRaceDate(d); }} />
+        <CalendarField label="Race date (or pick your own on the calendar)" value={raceDate} minDate={todayIso()} rangeStart={todayIso()} onChange={(d) => { setRaceDate(d); setPlanWeeks(undefined); }} />
+        <FitnessSourceChoice loggedKm={18} enteredKm={30} unit="km" value={source} onChange={setSource} />
         <DurationField label="Goal finish time (optional)" value={goalTime} onChange={setGoalTime} optional maxHours={40} />
         <StartDayPicker input={{ raceDistanceKm: 21.0975, trainingDaysPerWeek: 4, longRunDay: "sat", experienceLevel: "intermediate" }} value={startOn} onChange={setStartOn} />
         <Text style={{ color: colors.textDim, fontFamily: fonts.mono, ...text("caption") }}>
@@ -112,6 +141,15 @@ export default function DevGallery() {
         <Text style={{ color: colors.textDim, fontFamily: fonts.monoMedium, ...text("micro"), letterSpacing: 1 }}>DISTANCE  PACE  TIME</Text>
       </View>
     </ScrollView>
+    {buildDemo && (
+      <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.screenBg }}>
+        <BuildingPlan stage={buildDemo.stage} done={buildDemo.done} />
+        <Pressable onPress={() => setBuildDemo(null)} style={{ position: "absolute", top: 12, right: 16, padding: 8 }} accessibilityRole="button">
+          <Text style={{ color: colors.accentText, fontFamily: fonts.bodySemiBold, ...text("emphasis") }}>Close</Text>
+        </Pressable>
+      </View>
+    )}
+    </>
   );
 }
 

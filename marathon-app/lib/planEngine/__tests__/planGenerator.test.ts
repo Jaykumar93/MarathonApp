@@ -172,11 +172,11 @@ describe("generatePlan - fake onboarding input scenarios", () => {
     if (result.ok) return;
     expect(result.reason).toBe("insufficient_time");
     // Weeks needed now follow the runner (here a default beginner), so it is at
-    // least the old distance-only minimum of 12 - see readiness.test.ts.
-    expect(result.minWeeksRequired).toBeGreaterThanOrEqual(12);
+    // least the distance minimum of 16 - see readiness.test.ts.
+    expect(result.minWeeksRequired).toBeGreaterThanOrEqual(16);
   });
 
-  it("5b. marathon with ~8 weeks (below the 12-week recommendation, above the 5-week structural floor) still builds, flagged", () => {
+  it("5b. marathon with ~8 weeks (below the 16-week recommendation, above the 5-week structural floor) still builds, flagged", () => {
     const today = "2026-01-05";
     const goalDate = addDaysIso(today, 8 * 7);
     const expectedAvailableWeeks = computeAvailableWeeks(resolveStartDate(today), goalDate);
@@ -192,7 +192,7 @@ describe("generatePlan - fake onboarding input scenarios", () => {
     assertPlanInvariants(result, input);
     if (!result.ok) return;
     expect(result.plan.scheduleFeasibilityWarning).toEqual({
-      minWeeksRecommended: 12,
+      minWeeksRecommended: 16,
       availableWeeks: expectedAvailableWeeks,
     });
   });

@@ -14,7 +14,7 @@ import { useTheme, type Colors } from "../../lib/theme/ThemeContext";
 import { Card } from "../../components/ui/Card";
 import { Dropdown } from "../../components/ui/Dropdown";
 import { Badge } from "../../components/ui/Badge";
-import { DateField } from "../../components/ui/DateField";
+import { CalendarField } from "../../components/ui/CalendarField";
 import { TextField } from "../../components/ui/TextField";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { LogFab } from "../../components/ui/LogFab";
@@ -286,8 +286,8 @@ export default function Activity() {
 
                 {dateRange === "custom" && (
                   <View style={styles.customRangeStack}>
-                    <DateField label="From" value={customFrom} onChange={setCustomFrom} yearsBack={5} yearsAhead={0} defaultOffsetDays={-7} />
-                    <DateField label="To" value={customTo} onChange={setCustomTo} yearsBack={5} yearsAhead={0} defaultOffsetDays={0} />
+                    <CalendarField label="From" value={customFrom} onChange={setCustomFrom} maxDate={new Date().toISOString().slice(0, 10)} defaultOffsetDays={-7} />
+                    <CalendarField label="To" value={customTo} onChange={setCustomTo} maxDate={new Date().toISOString().slice(0, 10)} defaultOffsetDays={0} />
                   </View>
                 )}
 
