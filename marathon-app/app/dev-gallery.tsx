@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { RunDaysPicker, runDaysSummary } from "../components/ui/RunDaysPicker";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Redirect } from "expo-router";
 import { Pika } from "../components/mascot/Pika";
@@ -40,6 +41,8 @@ export default function DevGallery() {
   const [raceDate, setRaceDate] = useState("");
   const [goalTime, setGoalTime] = useState("");
   const [startOn, setStartOn] = useState<StartOn>("first_run");
+  const [gRunDays, setGRunDays] = useState<import("../lib/planEngine").DayOfWeek[]>(["tue", "thu", "sat"]);
+  const [gLong, setGLong] = useState<import("../lib/planEngine").DayOfWeek | undefined>("sat");
   const [planWeeks, setPlanWeeks] = useState<number | undefined>(undefined);
   const [source, setSource] = useState<FitnessSource>("logged");
   // Plays the "Building your plan" screen on a timer so its bar and finish can be watched.
@@ -137,11 +140,13 @@ export default function DevGallery() {
 
       <Text style={[styles.label, { color: colors.textDim }]}>PICKERS</Text>
       <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.cardLine, gap: 14 }]}>
-        <PlanLengthPicker weeksNeeded={14} startOn={startOn} input={{ raceDistanceKm: 21.0975, trainingDaysPerWeek: 4, longRunDay: "sat", experienceLevel: "intermediate" }} value={planWeeks} onChange={(w, d) => { setPlanWeeks(w); setRaceDate(d); }} />
+        <RunDaysPicker runDays={gRunDays} longRunDay={gLong} onChange={(d, l) => { setGRunDays(d); setGLong(l); }} />
+        <Text style={{ color: colors.textDim }}>{runDaysSummary(gRunDays, gLong)}</Text>
+        <PlanLengthPicker weeksNeeded={14} startOn={startOn} input={{ raceDistanceKm: 21.0975, trainingDaysPerWeek: 4, longRunDay: "sat", runDays: ["tue", "thu", "sat", "sun"], experienceLevel: "intermediate" }} value={planWeeks} onChange={(w, d) => { setPlanWeeks(w); setRaceDate(d); }} />
         <CalendarField label="Race date (or pick your own on the calendar)" value={raceDate} minDate={todayIso()} rangeStart={todayIso()} onChange={(d) => { setRaceDate(d); setPlanWeeks(undefined); }} />
         <FitnessSourceChoice loggedKm={18} enteredKm={30} unit="km" value={source} onChange={setSource} />
         <DurationField label="Goal finish time (optional)" value={goalTime} onChange={setGoalTime} optional maxHours={40} />
-        <StartDayPicker input={{ raceDistanceKm: 21.0975, trainingDaysPerWeek: 4, longRunDay: "sat", experienceLevel: "intermediate" }} value={startOn} onChange={setStartOn} />
+        <StartDayPicker input={{ raceDistanceKm: 21.0975, trainingDaysPerWeek: 4, longRunDay: "sat", runDays: ["tue", "thu", "sat", "sun"], experienceLevel: "intermediate" }} value={startOn} onChange={setStartOn} />
         <Text style={{ color: colors.textDim, fontFamily: fonts.mono, ...text("caption") }}>
           date {raceDate || "-"} | time {goalTime || "-"} | start {startOn}
         </Text>

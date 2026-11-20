@@ -97,6 +97,12 @@ export interface GoalInput {
   timeOff?: TimeOff;
   trainingDaysPerWeek: number;
   longRunDay: DayOfWeek;
+  /**
+   * The exact weekdays the runner will run on, one of which is longRunDay. When set, sessions are
+   * placed only on these days and their number replaces trainingDaysPerWeek. When absent the
+   * engine chooses evenly spread days itself (the original behaviour).
+   */
+  runDays?: DayOfWeek[];
   historicalContext?: HistoricalContext;
   /** When the plan begins - see StartOn. Not stored on the goal: it only matters when a plan is generated. */
   startOn?: StartOn;

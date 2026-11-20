@@ -89,6 +89,17 @@ Not changed, on purpose: press scale stays under reduce motion (brief feedback, 
 
 Checked in the signed-in app at 320 px, 390 px and 768 px. At 768 the phone layout stretched edge to edge (tiny countdown arc, over-wide cards), so a `ResponsiveFrame` keeps the app a centred column of at most 560 px from 700 px up (calendar sheet capped at 420 px). At 320 px a long label wrapped with a stray word and now shrinks to one line. The logo mark has a heavier small-size version (under 30 px) and the lockup is optically aligned and its gap scales with size. Big headings get small negative tracking from `text()`. The brand (profile line, Pika, Bricolage Grotesque, Figtree, Martian Mono) is unchanged. The dev gallery shows the mark at real sizes. Rules recorded in `DESIGN.md` (Responsive behaviour, Logo, Optical Tracking Rule).
 
+## 3i. Choose your run days, then your long-run day (added 2026-11-20, at the user's request)
+
+The runner used to give a count ("4 days") and a long-run weekday, and the engine chose the other days. Now they tap the exact weekdays they will run, then choose which of those is the long run.
+
+- **Engine**: `GoalInput.runDays` (optional). When set, the number of days replaces `trainingDaysPerWeek`, sessions fall only on those days, the long run is on `longRunDay`, hard sessions (tempo, interval) go on the chosen days farthest from the long run and from each other, and easy runs fill the rest with the one nearest the long run first (a recovery run after it). `normalizeRunDays` cleans the list and always includes the long-run day. An ultra's back-to-back long run is skipped when the next day is not a chosen day. Without `runDays` the old placement is unchanged (tested).
+- **Storage**: new nullable column `goals.run_days text[]` (migration `20261120100000_goal_run_days.sql`, **not applied yet**; run `supabase db push`). Until it is applied, `lib/data/goals.ts` saves the goal without it, like the earlier fitness columns, and the plan falls back to the day count.
+- **Old goals**: `run_days` is null, so Edit plan shows the days the engine would have picked (`defaultRunDays`).
+- **UI**: `RunDaysPicker` (round day toggles, then a row of only the chosen days for the long run; removing the long-run day moves it to Sunday, Saturday or the last chosen day) on onboarding step 4 and in Edit plan. The start-day and plan-length pickers take `runDays` into account.
+- **Tests**: `lib/planEngine/__tests__/runDays.test.ts` (13 cases). Whole suite 375 tests, `tsc` clean.
+- **Not checked visually**: the preview browser refused to open localhost this time, so the picker was not seen running (it is in the dev gallery).
+
 ## 4. Deviations from the design
 
 - **Health data stays at step 5**, not step 2. Choosing a source in onboarding only records a preference (nothing is imported there), so it cannot pre-fill anything. Pre-filling uses runs already logged. This is the smaller alternative named in D5.

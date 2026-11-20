@@ -23,6 +23,8 @@ export interface GoalRow {
   time_off?: TimeOff | null;
   training_days_per_week: number;
   long_run_day: DayOfWeek;
+  /** The weekdays the runner chose (migration 20261120100000). Null/absent for goals made from a count alone. */
+  run_days?: DayOfWeek[] | null;
   race_lat: number | null;
   race_lon: number | null;
   race_location_name: string | null;
@@ -44,6 +46,7 @@ export interface CreateGoalInput {
   timeOff?: TimeOff;
   trainingDaysPerWeek: number;
   longRunDay: DayOfWeek;
+  runDays?: DayOfWeek[];
   raceLat?: number;
   raceLon?: number;
   raceLocationName?: string;
@@ -63,14 +66,15 @@ function goalInputToRow(input: CreateGoalInput) {
     time_off: input.timeOff ?? null,
     training_days_per_week: input.trainingDaysPerWeek,
     long_run_day: input.longRunDay,
+    run_days: input.runDays && input.runDays.length > 0 ? input.runDays : null,
     race_lat: input.raceLat ?? null,
     race_lon: input.raceLon ?? null,
     race_location_name: input.raceLocationName ?? null,
   };
 }
 
-/** The three columns added by 20261119100000_goal_fitness_answers.sql. */
-const NEW_FITNESS_COLUMNS = ["calibration_race_when", "longest_recent_run_km", "time_off"] as const;
+/** Columns added by 20261119100000_goal_fitness_answers.sql and 20261120100000_goal_run_days.sql. */
+const NEW_FITNESS_COLUMNS = ["calibration_race_when", "longest_recent_run_km", "time_off", "run_days"] as const;
 
 function withoutNewFitnessColumns<T extends Record<string, unknown>>(row: T): Omit<T, (typeof NEW_FITNESS_COLUMNS)[number]> {
   const copy: Record<string, unknown> = { ...row };

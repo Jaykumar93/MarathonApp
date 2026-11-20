@@ -12,6 +12,7 @@ import { getPrepRecovery } from "./prepRecoveryTemplates";
 import {
   applyBackToBackIfApplicable,
   getSessionTypesForWeek,
+  normalizeRunDays,
   placeSessionsOnDays,
 } from "./sessionDistribution";
 import {
@@ -169,6 +170,9 @@ export function generatePlan(input: GoalInput): GenerateResult {
   const { volumesByWeek, peakWeeklyDistanceKm } = computeWeeklyVolumes(startingVolumeKm, phases, rampOptionsFor(input, fitness));
   const { zones: paceZones, source: paceSource, feasibilityWarning: paceFeasibilityWarning } = resolvePaceZones(input);
   const introWeeks = introPeriodWeeks(input);
+  // The runner's own days, when given: sessions only fall on these, and their number is the days per week.
+  const runDays = input.runDays && input.runDays.length > 0 ? normalizeRunDays(input.runDays, input.longRunDay) : undefined;
+  const trainingDays = runDays ? runDays.length : input.trainingDaysPerWeek;
 
   // Bridges the gap between today and the plan's official Monday start (if
   // any) with a light warmup day rather than leaving it with no plan
@@ -182,14 +186,15 @@ export function generatePlan(input: GoalInput): GenerateResult {
     const weeklyVolumeKm = volumesByWeek[week - 1];
     const introGated = week <= introWeeks;
 
-    const types = getSessionTypesForWeek(input.trainingDaysPerWeek, phase, category, introGated);
-    let placedDays = placeSessionsOnDays(types, input.longRunDay);
+    const types = getSessionTypesForWeek(trainingDays, phase, category, introGated);
+    let placedDays = placeSessionsOnDays(types, input.longRunDay, runDays);
     placedDays = applyBackToBackIfApplicable(
       placedDays,
       input.longRunDay,
       category,
       phase,
-      input.trainingDaysPerWeek
+      trainingDays,
+      runDays
     );
 
     const dayMetrics = new Map<string, DayMetric>();

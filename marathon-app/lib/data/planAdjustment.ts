@@ -76,6 +76,7 @@ export async function applyMissedRunAdjustment(userId: string, goal: GoalRow, pl
     calibrationRaceWhen: goal.calibration_race_when ?? undefined,
     trainingDaysPerWeek: goal.training_days_per_week,
     longRunDay: goal.long_run_day,
+    runDays: goal.run_days && goal.run_days.length > 0 ? goal.run_days : undefined,
     historicalContext:
       actualWeeklyAvgKm > 0
         ? {

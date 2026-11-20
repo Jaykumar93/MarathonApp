@@ -9,6 +9,7 @@ import { supersedePlan, createPlanWithSessions } from "../lib/data/plans";
 import {
   hasUsableLoggedVolume,
   estimateReadiness,
+  defaultRunDays,
   generatePlan,
   type DayOfWeek,
   type ExperienceLevel,
@@ -33,6 +34,7 @@ import { fonts, palette, spacing, type, text, inputText } from "../lib/theme";
 import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import { Card } from "../components/ui/Card";
 import { ChipSelect } from "../components/ui/ChipSelect";
+import { RunDaysPicker, runDaysSummary } from "../components/ui/RunDaysPicker";
 import { TextField } from "../components/ui/TextField";
 import { CalendarField } from "../components/ui/CalendarField";
 import { FitnessSourceChoice } from "../components/FitnessSourceChoice";
@@ -70,17 +72,6 @@ const EXPERIENCE_OPTIONS = [
   { value: "advanced" as const, label: "Advanced" },
 ];
 
-const DAYS_OPTIONS = [1, 2, 3, 4, 5, 6, 7].map((n) => ({ value: n, label: String(n) }));
-const DAY_OF_WEEK_OPTIONS: { value: DayOfWeek; label: string }[] = [
-  { value: "mon", label: "Mon" },
-  { value: "tue", label: "Tue" },
-  { value: "wed", label: "Wed" },
-  { value: "thu", label: "Thu" },
-  { value: "fri", label: "Fri" },
-  { value: "sat", label: "Sat" },
-  { value: "sun", label: "Sun" },
-];
-
 export default function EditPlan() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -100,8 +91,10 @@ export default function EditPlan() {
   const [calibrationTime, setCalibrationTime] = useState("");
   const [calibrationDistanceKm, setCalibrationDistanceKm] = useState<number | undefined>();
   const [customCalibrationDistance, setCustomCalibrationDistance] = useState("");
-  const [trainingDaysPerWeek, setTrainingDaysPerWeek] = useState<number | undefined>();
+  const [runDays, setRunDays] = useState<DayOfWeek[]>([]);
   const [longRunDay, setLongRunDay] = useState<DayOfWeek | undefined>();
+  // The number of days you run is the number of days you picked.
+  const trainingDaysPerWeek = runDays.length || undefined;
   const [raceLocationCity, setRaceLocationCity] = useState("");
   // Answers about the runner's running (Task 10): they decide how many weeks the distance needs,
   // so the race date sits after them at the bottom of the form.
@@ -135,7 +128,8 @@ export default function EditPlan() {
     setTargetTime(goal.target_time_seconds ? formatHms(goal.target_time_seconds) : "");
     setCalibrationTime(goal.calibration_race_time_seconds ? formatHms(goal.calibration_race_time_seconds) : "");
     setCalibrationDistanceKm(goal.calibration_race_distance_km ?? undefined);
-    setTrainingDaysPerWeek(goal.training_days_per_week);
+    // Goals made before run days existed keep their count: show the days the plan engine spread them over.
+    setRunDays(goal.run_days && goal.run_days.length > 0 ? goal.run_days : defaultRunDays(goal.training_days_per_week, goal.long_run_day));
     setLongRunDay(goal.long_run_day);
     setRaceLocationCity(goal.race_location_name ?? "");
     setLongestRunBucket(longestRunBucketForKm(goal.longest_recent_run_km));
@@ -229,6 +223,7 @@ export default function EditPlan() {
       timeOff,
       trainingDaysPerWeek,
       longRunDay,
+      runDays,
       historicalContext: useEnteredNumber ? undefined : historicalContext,
       startOn,
     };
@@ -250,6 +245,7 @@ export default function EditPlan() {
     startOn,
     trainingDaysPerWeek,
     longRunDay,
+    runDays,
   ]);
 
   // When the logged runs and the number typed disagree (typed is higher), the runner chooses which to use.
@@ -287,10 +283,11 @@ export default function EditPlan() {
             calibrationRaceDistanceKm: calibrationDistanceKm,
             trainingDaysPerWeek,
             longRunDay,
+            runDays,
             historicalContext: useEnteredNumber ? undefined : historicalContext,
           }
         : null,
-    [raceDistanceKm, experienceLevel, weeklyMileage, calibrationTime, calibrationDistanceKm, trainingDaysPerWeek, longRunDay, historicalContext, useEnteredNumber]
+    [raceDistanceKm, experienceLevel, weeklyMileage, calibrationTime, calibrationDistanceKm, trainingDaysPerWeek, longRunDay, runDays, historicalContext, useEnteredNumber]
   );
 
   // Computed here (not just at save time) so the warnings shown before
@@ -460,12 +457,15 @@ export default function EditPlan() {
 
       <SectionLabel>SCHEDULE</SectionLabel>
       <Card style={styles.flat}>
-        <Text style={styles.fieldLabel}>Days per week</Text>
-        <ChipSelect options={DAYS_OPTIONS} value={trainingDaysPerWeek} onChange={setTrainingDaysPerWeek} />
-        <View style={styles.fieldGap}>
-          <Text style={styles.fieldLabel}>Long run day</Text>
-          <ChipSelect options={DAY_OF_WEEK_OPTIONS} value={longRunDay} onChange={setLongRunDay} />
-        </View>
+        <RunDaysPicker
+          runDays={runDays}
+          longRunDay={longRunDay}
+          onChange={(days, long) => {
+            setRunDays(days);
+            setLongRunDay(long);
+          }}
+        />
+        {runDaysSummary(runDays, longRunDay) && <Text style={[styles.fieldLabel, styles.fieldGap]}>{runDaysSummary(runDays, longRunDay)}</Text>}
       </Card>
 
       <SectionLabel>RACE DATE</SectionLabel>

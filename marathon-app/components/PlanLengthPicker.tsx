@@ -47,7 +47,7 @@ export function PlanLengthPicker({ weeksNeeded, startOn, input, value, onChange 
   const firstRunDate = useMemo(
     () => startOptions(input, today).firstRunDate,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [today, input.raceDistanceKm, input.trainingDaysPerWeek, input.longRunDay, input.experienceLevel, input.historicalContext, input.currentWeeklyMileageKm, input.calibrationRaceTimeSeconds]
+    [today, input.raceDistanceKm, input.trainingDaysPerWeek, input.longRunDay, input.runDays, input.experienceLevel, input.historicalContext, input.currentWeeklyMileageKm, input.calibrationRaceTimeSeconds]
   );
   const dateFor = (weeks: number) => raceDateForWeeks(weeks, today, startOn, longRunDay, firstRunDate);
 

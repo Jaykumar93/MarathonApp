@@ -95,6 +95,7 @@ export default function RaceDate() {
       timeOff: answers.timeOff,
       trainingDaysPerWeek: answers.trainingDaysPerWeek,
       longRunDay: answers.longRunDay,
+      runDays: answers.runDays,
       // Logged runs outrank the runner's answers, unless they tapped "Use my number".
       historicalContext: useEnteredNumber ? undefined : historicalContext,
       startOn,
@@ -113,6 +114,7 @@ export default function RaceDate() {
             calibrationRaceDistanceKm: answers.calibrationRaceDistanceKm,
             trainingDaysPerWeek: answers.trainingDaysPerWeek,
             longRunDay: answers.longRunDay,
+            runDays: answers.runDays,
             historicalContext: useEnteredNumber ? undefined : historicalContext,
           }
         : null,

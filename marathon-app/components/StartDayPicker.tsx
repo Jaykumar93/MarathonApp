@@ -37,7 +37,7 @@ export function StartDayPicker({ input, value, onChange }: StartDayPickerProps) 
   const { options, firstRunDate } = useMemo(
     () => startOptions(input, today),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [today, input.raceDistanceKm, input.trainingDaysPerWeek, input.longRunDay, input.experienceLevel, input.historicalContext, input.currentWeeklyMileageKm, input.calibrationRaceTimeSeconds]
+    [today, input.raceDistanceKm, input.trainingDaysPerWeek, input.longRunDay, input.runDays, input.experienceLevel, input.historicalContext, input.currentWeeklyMileageKm, input.calibrationRaceTimeSeconds]
   );
 
   // "First run" can coincide with today or tomorrow; the chip then shows as that day.

@@ -18,6 +18,8 @@ export interface OnboardingAnswers {
   timeOff?: TimeOff;
   trainingDaysPerWeek?: number;
   longRunDay?: DayOfWeek;
+  /** The weekdays the runner chose to run on, including longRunDay. */
+  runDays?: DayOfWeek[];
   raceLat?: number;
   raceLon?: number;
   raceLocationName?: string;
