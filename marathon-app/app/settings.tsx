@@ -422,7 +422,7 @@ export default function Settings() {
       <Card>
         <View style={styles.row}>
           <Text style={styles.label}>Cursus version</Text>
-          <Text style={styles.value}>{Constants.expoConfig?.version ?? "1.0.0"}</Text>
+          <Text style={styles.value}>{Constants.expoConfig?.version ?? "1.1.0"}</Text>
         </View>
         <View style={styles.divider} />
         <Pressable accessibilityRole="button" style={styles.row} onPress={() => router.push("/privacy-policy")}>

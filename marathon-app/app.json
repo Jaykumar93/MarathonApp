@@ -3,7 +3,7 @@
     "name": "Cursus",
     "slug": "marathonapp",
     "scheme": ["cursus", "stryde"],
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.jaykumar093.stryde",
-      "versionCode": 4,
+      "versionCode": 5,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#0F1220",
