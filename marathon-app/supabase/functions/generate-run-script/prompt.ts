@@ -1,4 +1,5 @@
 interface IntervalStructure {
+  kind?: "tempo";
   warmupMeters: number;
   reps: number;
   repDistanceMeters: number;
@@ -41,6 +42,12 @@ function formatPace(secondsPerKm: number | null, unit: "km" | "mi"): string {
  */
 function describeSegments(structure: IntervalStructure, unit: "km" | "mi"): string {
   const lines = [`1. warmup - ${formatMeters(structure.warmupMeters, unit)} easy jog`];
+  if (structure.kind === "tempo") {
+    // One steady block (a "rep" segment, repNumber 1), no recovery, then cooldown.
+    lines.push(`2. rep 1 of 1 - one steady tempo block of ${formatMeters(structure.repDistanceMeters, unit)} at ${formatPace(structure.repPaceSecondsPerKm, unit)}`);
+    lines.push(`3. cooldown - ${formatMeters(structure.cooldownMeters, unit)} easy jog`);
+    return lines.join("\n");
+  }
   for (let rep = 1; rep <= structure.reps; rep++) {
     lines.push(
       `${lines.length + 1}. rep ${rep} of ${structure.reps} - ${formatMeters(structure.repDistanceMeters, unit)} at ${formatPace(structure.repPaceSecondsPerKm, unit)}`

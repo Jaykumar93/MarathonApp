@@ -93,6 +93,25 @@ export function buildFallbackVoiceScript(session: PlanSessionRow, unit: "km" | "
   }
 
   const structure = session.interval_structure;
+  if (structure && structure.kind === "tempo") {
+    const block = formatMeters(structure.repDistanceMeters);
+    const pace = formatPace(structure.repPaceSecondsPerKm, unit);
+    return {
+      breakdown: [
+        `Warmup: ${formatMeters(structure.warmupMeters)} easy jog.`,
+        `Tempo: ${block} at ${pace}. Comfortably hard, steady and controlled the whole way.`,
+        `Cooldown: ${formatMeters(structure.cooldownMeters)} easy jog to bring things back down.`,
+      ].join("\n"),
+      countdownHeadsUp: `Tempo run today - ${block} at tempo pace. Starting in 30 seconds.`,
+      countdownGo: "Let's get moving.",
+      segments: [
+        { kind: "warmup", transitionLine: `Easy warmup jog, ${formatMeters(structure.warmupMeters)} - loosen up and get ready.` },
+        { kind: "rep", repNumber: 1, transitionLine: `Warmup's done. Tempo block: ${block} at ${pace}. Settle in and hold it steady.`, focusCue: "Comfortably hard - controlled breathing." },
+        { kind: "cooldown", transitionLine: `Tempo's done - nice work. ${formatMeters(structure.cooldownMeters)} easy jog to finish.` },
+      ],
+      motivationalLines: HARD_MOTIVATION,
+    };
+  }
   if (structure) {
     const segments: RunVoiceSegment[] = [
       { kind: "warmup", transitionLine: `Easy warmup jog, ${formatMeters(structure.warmupMeters)} - loosen up and get ready.` },

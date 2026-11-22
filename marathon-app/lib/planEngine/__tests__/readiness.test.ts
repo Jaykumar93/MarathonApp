@@ -96,7 +96,7 @@ describe("readiness - weeks needed follow the runner, not just the distance", ()
     if (!result.ok) return;
     const week1 = result.plan.sessions.filter((s) => s.weekNumber === 1);
     const week1Km = week1.reduce((sum, s) => sum + (s.plannedDistanceMeters ?? 0), 0) / 1000;
-    expect(week1Km).toBeLessThanOrEqual(8 + 0.5); // starts from today's volume, not the old one
+    expect(week1Km).toBeLessThanOrEqual(8 * 1.3); // starts near today volume (session minimums shrink to fit it; long and easy runs are whole kilometres), not the old one
   });
 
   it("the race date does not change how many weeks are needed - only the verdict", () => {

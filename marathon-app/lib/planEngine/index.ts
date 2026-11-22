@@ -10,6 +10,8 @@ export {
 export { riegelPredict, resolvePaceZones } from "./paceCalculator";
 export { startOptions, raceDateForWeeks, type StartOption } from "./startOptions";
 export { defaultRunDays, normalizeRunDays } from "./sessionDistribution";
+export { checkPlan, type PlanIssue } from "./planChecker";
+export { buildWorkout, workoutTotals, minSessionMeters, MIN_SESSION_MINUTES, type BuildableType, type WorkoutRequest } from "./workouts";
 export { estimateReadiness, resolveFitness, weeksNeeded, rampOptionsFor, type ReadinessInput, type ResolvedFitness } from "./readiness";
 export {
   computePhases,

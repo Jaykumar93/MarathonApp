@@ -84,7 +84,7 @@ export function normalizeRunDays(runDays: DayOfWeek[], longRunDay: DayOfWeek): D
  */
 export function defaultRunDays(trainingDaysPerWeek: number, longRunDay: DayOfWeek): DayOfWeek[] {
   const types = getSessionTypesForWeek(trainingDaysPerWeek, "build", "marathon", false);
-  return placeSessionsOnDays(types, longRunDay)
+  return spreadPlacement(types, longRunDay)
     .filter((d) => d.type !== "rest")
     .map((d) => d.day);
 }
@@ -144,6 +144,16 @@ function placeOnChosenDays(types: SessionType[], longRunDay: DayOfWeek, runDays:
  */
 export function placeSessionsOnDays(types: SessionType[], longRunDay: DayOfWeek, runDays?: DayOfWeek[]): PlacedDay[] {
   if (runDays && runDays.length > 0) return placeOnChosenDays(types, longRunDay, runDays);
+  // The engine's own spread decides WHICH days are run; what is run on each is then placed by the same
+  // rules as chosen days (hard sessions away from the long run and from each other).
+  const days = spreadPlacement(types, longRunDay)
+    .filter((d) => d.type !== "rest")
+    .map((d) => d.day);
+  return placeOnChosenDays(types, longRunDay, days);
+}
+
+/** The original even spread: which weekdays a week of this many sessions runs on, starting the day after the long run. */
+function spreadPlacement(types: SessionType[], longRunDay: DayOfWeek): PlacedDay[] {
   const longRunIndex = DAY_ORDER.indexOf(longRunDay);
   const others = types.filter((t) => t !== "long");
   const n = types.length;

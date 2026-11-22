@@ -100,6 +100,47 @@ The runner used to give a count ("4 days") and a long-run weekday, and the engin
 - **Tests**: `lib/planEngine/__tests__/runDays.test.ts` (13 cases). Whole suite 375 tests, `tsc` clean.
 - **Not checked visually**: the preview browser refused to open localhost this time, so the picker was not seen running (it is in the dev gallery).
 
+## 3j. Structured workouts: real sessions, not distances (added 2026-11-23, at the user's request)
+
+**The problem.** A runner's first session was a 2.3 km tempo with no warm-up, no cool-down and no sections, and runs were oddly small for a low-volume runner. Compared with a coached plan (Runna's sample plans, which sit in `docs/others/`) it had no named workouts, no variety, and no minimum size for a session. A second reference (a general running-plan guide) agreed on the shape: short easy run 20 to 35 min, long run 40 to 75 min, one quality session a week, a lighter week every fourth.
+
+**What changed (engine, `lib/planEngine/`).**
+- `workouts.ts` is a workout library. Every session is a named, ordered list of sections (`Workout`, `WorkoutSegment`: kind, label, distance, pace), and the session's distance and duration are the sum of its sections, warm-up and cool-down included.
+  - Tempo: Steady Tempo, Tempo Repeats, Over & Unders, Progressive Run, Steady into Tempo.
+  - Intervals: Repeats, Rolling, Pyramid, Descending, 400s into 200s, beginner Fartlek (1 min steady / 1 min easy).
+  - Long runs: Easy, Progressive, and Goal-Pace Blocks (half and marathon only, build and peak phases, never a beginner).
+  - Easy runs: plain, or with strides in the build and peak phases.
+  - The engine rotates through each level's list in a fixed order, steps rep lengths up through the plan, caps reps by level, and gives a lighter week the simplest versions.
+- **Minimum session sizes, in minutes, by level** (taper 75%): easy 20/25/30, long 35/45/60, quality 32/38/45. They shrink to as low as 60% when the runner's base cannot carry them, so a plan never starts far above what they run now. A plan's starting volume is at least a week of those smallest sessions.
+- **Long run** grows with the week's volume from its minimum to a peak for the race distance (anchors 5 km: 8, 10 km: 12, half: 19, marathon: 32 km; beginners 85% below the marathon; scaled by how much of the target weekly peak the plan reaches), never more than 15% above the last full-size long run, shorter in a lighter week and the taper.
+- **Quality sessions** take 30% of the week (22% each when two share it), grow at most 25% from the last one, never exceed 60/75/90 min by level, and in the taper never grow.
+- **Safe start.** A beginner's or returning runner's first three quality sessions are gentle: the hard part is at most 12 minutes (fartlek or a steady block). Anyone's very first quality session is a touch lighter.
+- **Race week.** No long run and nothing hard beyond one short sharpener (4 x 400 m at race pace) early in the week when at least 3 days remain; shakeout runs otherwise. These sessions are stored as easy (shakeout) or interval (sharpener), not as the long or hard session they replaced.
+- **Hard-session spacing** now also applies to the engine's own days (it used to put a tempo and an interval on back-to-back days for 5 or more days a week): the days run are still chosen the same way, but what is run on each follows the chosen-days rules.
+- `planChecker.ts` is a deterministic checker for a generated plan (small sessions, section totals, warm-up and cool-down, hard sessions back to back or before the long run, race week, week-to-week jumps, a beginner's first quality session). It never changes a plan; a test runs it over 72 profiles (distance, level, days, length). Plan numbers still come from rules, not AI.
+
+- **A week adds up to its volume.** The long run's share of the week now depends on the number of run days (1 day 100%, 2: 60%, 3: 44%, 4: 37%, 5: 32%, 6: 29%, 7: 27%; it was a fixed 30%, which left a three-day week about 40% short: a runner at 20 km a week got 12 km). It is capped at the longest run the race distance asks for. A runner at 20 km a week now gets about 19 km in week 1 with 3, 4 or 5 run days (tested).
+- **Whole kilometres.** Easy and long runs (and race-week shakeouts) are rounded to whole kilometres, as in the Runna samples (4 km easy, 12 km long); never under 2 km, and a long run never exceeds the recent-run safety limit. Quality sessions keep the exact total of their sections (Runna's are 5.2, 7.3, 9.4 km too).
+
+**Storage.** New nullable `plan_sessions.workout` (jsonb), migration `20261121100000_plan_session_workout.sql`, **not applied yet** (run `supabase db push`). Until then `lib/data/plans.ts` saves sessions without it. Plain repeats and a steady tempo still also write `interval_structure` (exactly the same run), so live guidance, voice cues and the coach keep working for them; the other shapes show their full breakdown but run as a normal run with a target pace. Generalising live guidance to every shape is a follow-up. Older plans keep their old display.
+
+**Screens.** The session screen shows the workout's name, a bar of its sections and every section's distance and pace; the Plan list and Day panel show the name under the session.
+
+**During and after a run.** Reaching the planned distance is announced once (a voice cue and a banner with a Finish button); the run is never stopped for the runner. The finished-run screen shows "+X km over plan" when the run was more than 2% over.
+
+**Completion rules (`lib/planCompletion.ts`).** A run within 90% of the planned distance counts (it was exactly the planned distance before). A run tracked as a free run, or imported, that falls on a day with a pending planned run now offers "Count this as your planned run?" on its summary screen (same type preferred). Linking marks the session done if the distance meets the rule.
+
+**Moving sessions (`lib/planSwap.ts`).** The session screen can swap a run with another day of the same week (not past days, finished sessions or race day), warning when the swap puts a hard session next to the long run or another hard session.
+
+**Tests.** `workouts.test.ts`, `planQuality.test.ts` (the checker over 72 profiles), `sampleEnvelope.test.ts` (a beginner 10K and marathon land in the range of the published sample plans), `lib/__tests__/planCompletion.test.ts` (completion, matching, swapping), plus updated existing tests. Whole suite: 32 suites, 406 tests, `tsc` clean.
+
+**Open.**
+- Every number above is provisional: the minimum minutes, peak long runs by distance, shares and caps are shaped by the published samples and guides, not validated against primary sources.
+- A beginner who reports a very low weekly base and many days gets small sessions (the minimums shrink to fit); fewer days would suit them better.
+- Live-run guidance for Pyramid, Descending, Progressive, Over & Unders and the other new shapes.
+- The match offer appears on the run summary only (not as a notification on import); the swap is within the week only.
+- Not seen running in the app: the browser could not open the local preview.
+
 ## 4. Deviations from the design
 
 - **Health data stays at step 5**, not step 2. Choosing a source in onboarding only records a preference (nothing is imported there), so it cannot pre-fill anything. Pre-filling uses runs already logged. This is the smaller alternative named in D5.

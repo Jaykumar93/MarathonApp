@@ -7,7 +7,7 @@ import { useTheme, type Colors } from "../lib/theme/ThemeContext";
 import type { PlanSessionRow } from "../lib/data/plans";
 import { useAuth } from "../lib/auth/AuthContext";
 import { formatDistance, formatPace } from "../lib/units";
-import { SESSION_TYPE_LABEL, formatIntervalStructureSummary } from "../lib/sessionTypes";
+import { SESSION_TYPE_LABEL, sessionSubtitle } from "../lib/sessionTypes";
 import { todayIso } from "../lib/data/usePlanData";
 import { SessionCard } from "./SessionCard";
 
@@ -53,7 +53,7 @@ export function SessionListRow({ session, isToday, onMoveToTomorrow, onMarkDoneA
       type={session.session_type}
       label={caption}
       main={main}
-      sub={session.interval_structure ? formatIntervalStructureSummary(session.interval_structure, unit) : undefined}
+      sub={sessionSubtitle(session, unit) ?? undefined}
       muted={isMissed && !isDone}
       trailing={isDone ? "check" : isMissed || session.session_type === "rest" ? "none" : "chevron"}
       onPress={session.session_type !== "rest" && !isMissed ? () => router.push(`/planned-session?id=${session.id}`) : undefined}

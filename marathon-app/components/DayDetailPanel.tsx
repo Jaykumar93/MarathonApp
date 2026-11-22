@@ -12,7 +12,7 @@ import type { ActivityRow } from "../lib/data/activities";
 import { useAuth } from "../lib/auth/AuthContext";
 import { todayIso } from "../lib/data/usePlanData";
 import { formatDistance, formatPace } from "../lib/units";
-import { SESSION_TYPE_COLOR, SESSION_TYPE_LABEL, formatIntervalStructureSummary } from "../lib/sessionTypes";
+import { SESSION_TYPE_COLOR, SESSION_TYPE_LABEL, sessionSubtitle } from "../lib/sessionTypes";
 import { ActivityThumbnail } from "./ActivityThumbnail";
 import { shortDate } from "../lib/dateFormat";
 import { sessionTypeTextColor } from "./SessionCard";
@@ -117,7 +117,7 @@ export function DayDetailPanel({ date, session, activities, onMoveToTomorrow, pl
             {session.planned_distance_meters ? formatDistance(session.planned_distance_meters / 1000, unit) : session.planned_duration_seconds ? formatDuration(session.planned_duration_seconds) : "-"}
             {session.planned_pace_seconds_per_km ? ` at ${formatPace(session.planned_pace_seconds_per_km, unit)}` : ""}
           </Text>
-          {session.interval_structure ? <Text style={styles.sub}>{formatIntervalStructureSummary(session.interval_structure, unit)}</Text> : null}
+          {sessionSubtitle(session, unit) ? <Text style={styles.sub}>{sessionSubtitle(session, unit)}</Text> : null}
           <Text style={styles.sub}>{prep?.prep ?? TYPE_BLURB[type] ?? ""}</Text>
           </Pressable>
           <View style={styles.chips}>

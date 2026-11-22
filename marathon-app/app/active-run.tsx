@@ -301,6 +301,9 @@ function ActiveRunScreen() {
     const distanceKm = rt.finalStats.distanceMeters / 1000;
     const pace = distanceKm > 0 ? rt.finalStats.durationSeconds / distanceKm : null;
     const distNum = unit === "mi" ? distanceKm * 0.621371 : distanceKm;
+    // Past the planned distance by more than rounding noise: say how far (the session still counts as done).
+    const finishedPlanned = rt.plannedSession?.planned_distance_meters ?? 0;
+    const overPlanMeters = finishedPlanned > 0 && rt.finalStats.distanceMeters > finishedPlanned * 1.02 ? rt.finalStats.distanceMeters - finishedPlanned : 0;
     return (
       <View style={styles.finishedScreen}>
         <BackButton onPress={goBack} top={backTop} plain />
@@ -329,6 +332,10 @@ function ActiveRunScreen() {
               <Text style={styles.finishedStatValue}>{formatPace(pace, unit).replace(/\/(km|mi)$/, "") || "--"}</Text>
             </View>
           </View>
+
+          {overPlanMeters > 0 && (
+            <Text style={styles.overPlan}>+{formatDistance(overPlanMeters / 1000, unit)} over plan</Text>
+          )}
 
           {!confirmingDiscard ? (
             <>
@@ -402,6 +409,7 @@ function ActiveRunScreen() {
   const averagePace = computeAveragePaceSecondsPerKm(distanceMeters, rt.elapsedSeconds);
   const targetPaceSecondsPerKm = rt.plannedSession?.planned_pace_seconds_per_km ?? null;
   const paceDeltaSecondsPerKm = currentPace != null && targetPaceSecondsPerKm ? currentPace - targetPaceSecondsPerKm : null;
+  const plannedMeters = rt.plannedSession?.planned_distance_meters ?? 0;
   const currentLeg = rt.plannedSession?.interval_structure
     ? getCurrentLeg(rt.plannedSession.interval_structure, distanceMeters)
     : null;
@@ -422,6 +430,17 @@ function ActiveRunScreen() {
 
       <BackButton onPress={goBack} top={backTop} />
       <MuteButton muted={rt.coachMuted} onPress={rt.toggleCoachMute} top={backTop} />
+
+      {plannedMeters > 0 && distanceMeters >= plannedMeters && (
+        <View style={[styles.reachedBanner, { top: backTop + 56 }]} accessibilityLiveRegion="polite">
+          <Text style={styles.reachedText}>
+            Planned {formatDistance((plannedMeters / 1000) * 1, unit)} done. Keep going or finish?
+          </Text>
+          <Pressable onPress={rt.stop} accessibilityRole="button" accessibilityLabel="Finish the run" style={styles.reachedButton} hitSlop={8}>
+            <Text style={styles.reachedButtonText}>Finish</Text>
+          </Pressable>
+        </View>
+      )}
 
       <ActiveRunSheet
         phase={rt.phase as "running" | "paused"}
@@ -445,6 +464,25 @@ function ActiveRunScreen() {
 
 const styles = StyleSheet.create({
   mapScreen: { flex: 1, backgroundColor: palette.ink },
+  reachedBanner: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 10,
+    paddingLeft: 16,
+    paddingRight: 10,
+    borderRadius: radius.lg,
+    backgroundColor: palette.ink,
+    borderWidth: 1,
+    borderColor: darkSurface.line,
+  },
+  reachedText: { flex: 1, fontFamily: fonts.body, ...text("body"), color: darkSurface.text },
+  reachedButton: { minHeight: 44, minWidth: 72, paddingHorizontal: 16, borderRadius: radius.md, alignItems: "center", justifyContent: "center", backgroundColor: palette.accent },
+  reachedButtonText: { fontFamily: fonts.monoSemiBold, ...text("body"), color: palette.onAccent },
+  overPlan: { fontFamily: fonts.monoSemiBold, ...text("body"), color: palette.accentGlow, textAlign: "center" },
   center: {
     flex: 1,
     backgroundColor: palette.ink,

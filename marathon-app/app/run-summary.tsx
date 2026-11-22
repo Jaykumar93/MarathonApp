@@ -8,7 +8,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Circle, Polyline } from "react-native-svg";
 import { useAuth } from "../lib/auth/AuthContext";
-import { deleteActivity, getActivityById, getAllActivities, updateActivity, type ActivityRow, type UpdateActivityInput } from "../lib/data/activities";
+import { deleteActivity, findSessionMatch, getActivityById, getAllActivities, linkActivityToSession, updateActivity, type ActivityRow, type UpdateActivityInput } from "../lib/data/activities";
 import { getShoes, type ShoeRow } from "../lib/data/shoes";
 import { getPlanSessionById, type PlanSessionRow } from "../lib/data/plans";
 import { formatDistance, formatPace } from "../lib/units";
@@ -68,6 +68,9 @@ export default function RunSummary() {
   const [activity, setActivity] = useState<ActivityRow | null>(null);
   const [planSession, setPlanSession] = useState<PlanSessionRow | null>(null);
   const [loading, setLoading] = useState(true);
+  // A planned session this run probably was (it was tracked as a free run or imported): offered once, the runner decides.
+  const [matchOffer, setMatchOffer] = useState<PlanSessionRow | null>(null);
+  const [matchNote, setMatchNote] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -89,6 +92,41 @@ export default function RunSummary() {
       setLoading(false);
     });
   }, [id]);
+
+  useEffect(() => {
+    if (!activity || activity.plan_session_id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        if (await AsyncStorage.getItem(`cursus:matchDismissed:${activity.id}`)) return;
+        const match = await findSessionMatch(activity);
+        if (!cancelled) setMatchOffer(match);
+      } catch {
+        // offering a match is a nicety - never block the summary on it
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activity?.id, activity?.plan_session_id]);
+
+  async function acceptMatch() {
+    if (!activity || !matchOffer) return;
+    try {
+      const { completed } = await linkActivityToSession(activity, matchOffer);
+      setPlanSession(matchOffer);
+      setActivity({ ...activity, plan_id: matchOffer.plan_id, plan_session_id: matchOffer.id });
+      setMatchNote(completed ? "Counted. That planned run is marked done." : "Linked to the planned run. It was a bit short, so it stays open.");
+      setMatchOffer(null);
+    } catch (e) {
+      setMatchNote(e instanceof Error ? e.message : "Could not link this run.");
+    }
+  }
+
+  async function declineMatch() {
+    if (activity) AsyncStorage.setItem(`cursus:matchDismissed:${activity.id}`, "1").catch(() => {});
+    setMatchOffer(null);
+  }
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -374,6 +412,25 @@ export default function RunSummary() {
             <Text style={styles.askCoachText}>Ask the coach about this run</Text>
           </Pressable>
         )}
+
+        {matchOffer && (
+          <Card>
+            <Text style={styles.cardTitle}>Count this as your planned run?</Text>
+            <Text style={styles.detailLine}>
+              {SESSION_TYPE_LABEL[matchOffer.session_type] ?? matchOffer.session_type}
+              {matchOffer.planned_distance_meters ? ` planned for ${formatDistance(matchOffer.planned_distance_meters / 1000, unit)}` : ""} on this day. You ran {formatDistance(distanceKm, unit)}.
+            </Text>
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
+              <View style={{ flex: 1 }}>
+                <PrimaryButton label="Count it" onPress={acceptMatch} />
+              </View>
+              <Pressable onPress={declineMatch} accessibilityRole="button" accessibilityLabel="Do not count this run as the planned one" style={{ minHeight: 48, paddingHorizontal: 16, justifyContent: "center" }}>
+                <Text style={styles.detailLine}>Not this one</Text>
+              </Pressable>
+            </View>
+          </Card>
+        )}
+        {matchNote && <Text style={styles.detailLine}>{matchNote}</Text>}
 
         {planSession && planSession.session_type !== "rest" && (
           <Card>

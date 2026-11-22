@@ -1,5 +1,5 @@
 import { supabase } from "../supabase";
-import type { GeneratedPlan, IntervalStructure } from "../planEngine/types";
+import type { GeneratedPlan, IntervalStructure, Workout } from "../planEngine/types";
 
 export interface PlanRow {
   id: string;
@@ -27,11 +27,19 @@ export interface PlanSessionRow {
   prep_recovery: unknown;
   /** Only ever set on session_type "interval" - see planEngine/types.ts. */
   interval_structure: IntervalStructure | null;
+  /** The session as named sections (migration 20261121100000). Null for sessions made before it, or while it is not applied. */
+  workout?: Workout | null;
   status: "pending" | "completed" | "missed" | "moved" | "cancelled";
   original_session_date: string | null;
   /** Cached AI-generated (or deterministic-fallback) voice script - untyped here to avoid a circular import; see lib/runTracking/voiceScript.ts's RunVoiceScript + isValidScript for the real shape/validation. */
   voice_script: unknown;
   back_to_back_group: string | null;
+}
+
+function isMissingWorkoutColumnError(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  if (error.code === "PGRST204" || error.code === "42703") return true;
+  return (error.message ?? "").includes("workout");
 }
 
 /**
@@ -71,10 +79,15 @@ export async function createPlanWithSessions(
     planned_pace_seconds_per_km: s.plannedPaceSecondsPerKm,
     prep_recovery: s.prepRecovery,
     interval_structure: s.intervalStructure ?? null,
+    workout: s.workout ?? null,
     back_to_back_group: s.backToBackGroup ?? null,
   }));
 
-  const { error: sessionsError } = await supabase.from("plan_sessions").insert(sessionRows);
+  let { error: sessionsError } = await supabase.from("plan_sessions").insert(sessionRows);
+  // Until migration 20261121100000 is applied the workout column does not exist: save without it so plans still build.
+  if (isMissingWorkoutColumnError(sessionsError)) {
+    ({ error: sessionsError } = await supabase.from("plan_sessions").insert(sessionRows.map(({ workout: _workout, ...rest }) => rest)));
+  }
   if (sessionsError) throw sessionsError;
 
   return planRow as PlanRow;
@@ -281,7 +294,12 @@ export async function recordAdjustmentDeclined(planId: string): Promise<void> {
 export async function moveSessionToTomorrow(session: PlanSessionRow): Promise<void> {
   const next = new Date(session.session_date + "T00:00:00Z");
   next.setUTCDate(next.getUTCDate() + 1);
-  const nextDate = next.toISOString().slice(0, 10);
+  await moveSessionToDate(session, next.toISOString().slice(0, 10));
+}
+
+/** Moves a session to any date in its plan, swapping with whatever is scheduled there (see moveSessionToTomorrow). */
+export async function moveSessionToDate(session: PlanSessionRow, nextDate: string): Promise<void> {
+  const next = new Date(nextDate + "T00:00:00Z");
 
   const { data: conflicting, error: fetchError } = await supabase
     .from("plan_sessions")

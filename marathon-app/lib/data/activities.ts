@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
-import { getPlanSessionById, markSessionDone, markSessionPending } from "./plans";
+import { getPlanSessionById, markSessionDone, markSessionPending, type PlanSessionRow } from "./plans";
+import { bestSessionMatch, meetsPlannedDistance } from "../planCompletion";
 
 export interface ActivityRow {
   id: string;
@@ -125,8 +126,7 @@ export async function createActivity(userId: string, input: CreateActivityInput)
 
   if (input.planSessionId) {
     const plannedSession = await getPlanSessionById(input.planSessionId);
-    const requiredMeters = plannedSession?.planned_distance_meters ?? 0;
-    if (input.distanceMeters >= requiredMeters) {
+    if (meetsPlannedDistance(input.distanceMeters, plannedSession?.planned_distance_meters)) {
       await markSessionDone(input.planSessionId);
     }
   }
@@ -169,9 +169,8 @@ export async function updateActivity(activityId: string, input: UpdateActivityIn
 
   if (input.distanceMeters !== undefined && activity.plan_session_id) {
     const session = await getPlanSessionById(activity.plan_session_id);
-    const requiredMeters = session?.planned_distance_meters ?? 0;
 
-    if (activity.distance_meters >= requiredMeters) {
+    if (meetsPlannedDistance(activity.distance_meters, session?.planned_distance_meters)) {
       await markSessionDone(activity.plan_session_id);
     } else if (session?.status === "completed") {
       const { data: remaining, error: remainingError } = await supabase
@@ -181,12 +180,45 @@ export async function updateActivity(activityId: string, input: UpdateActivityIn
         .eq("is_deleted", false);
       if (remainingError) throw remainingError;
 
-      const stillFulfilled = (remaining ?? []).some((a) => (a as { distance_meters: number }).distance_meters >= requiredMeters);
+      const stillFulfilled = (remaining ?? []).some((a) => meetsPlannedDistance((a as { distance_meters: number }).distance_meters, session?.planned_distance_meters));
       if (!stillFulfilled) await markSessionPending(activity.plan_session_id);
     }
   }
 
   return activity;
+}
+
+/**
+ * The planned session an unlinked run most likely was (same day, still pending, same type preferred),
+ * from the runner's current plan only - or null. Used to offer "Count this as your planned run?" for a
+ * run tracked as a free run or imported from a health app.
+ */
+export async function findSessionMatch(activity: ActivityRow): Promise<PlanSessionRow | null> {
+  if (activity.plan_session_id) return null;
+  const { data, error } = await supabase
+    .from("plan_sessions")
+    .select("*, plans!inner(is_deleted)")
+    .eq("user_id", activity.user_id)
+    .eq("status", "pending")
+    .eq("plans.is_deleted", false);
+  if (error) throw error;
+  const sessions = ((data ?? []) as (PlanSessionRow & { plans?: unknown })[]).map(({ plans: _plans, ...row }) => row as PlanSessionRow);
+  return bestSessionMatch(activity, sessions);
+}
+
+/**
+ * Links a run to a planned session after the fact (the runner confirmed it). The session is marked
+ * done when the run covers enough of it (see meetsPlannedDistance); otherwise it stays linked but pending.
+ */
+export async function linkActivityToSession(activity: ActivityRow, session: PlanSessionRow): Promise<{ completed: boolean }> {
+  const { error } = await supabase
+    .from("activities")
+    .update({ plan_id: session.plan_id, plan_session_id: session.id })
+    .eq("id", activity.id);
+  if (error) throw error;
+  const completed = meetsPlannedDistance(activity.distance_meters, session.planned_distance_meters);
+  if (completed) await markSessionDone(session.id);
+  return { completed };
 }
 
 export async function getActivityById(id: string): Promise<ActivityRow | null> {
@@ -242,8 +274,7 @@ export async function deleteActivity(activityId: string): Promise<void> {
     .eq("is_deleted", false);
   if (remainingError) throw remainingError;
 
-  const requiredMeters = session.planned_distance_meters ?? 0;
-  const stillFulfilled = (remaining ?? []).some((a) => (a as { distance_meters: number }).distance_meters >= requiredMeters);
+  const stillFulfilled = (remaining ?? []).some((a) => meetsPlannedDistance((a as { distance_meters: number }).distance_meters, session.planned_distance_meters));
   if (!stillFulfilled) {
     await markSessionPending(planSessionId);
   }

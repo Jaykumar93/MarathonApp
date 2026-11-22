@@ -17,6 +17,7 @@ const LEG_KIND_LABEL: Record<RunLeg["kind"], string> = {
 };
 
 function legKindLabel(leg: RunLeg): string {
+  if (leg.tempo && leg.kind === "rep") return "TEMPO";
   if (leg.kind === "rep" || leg.kind === "recovery") {
     return `${LEG_KIND_LABEL[leg.kind]} · REP ${leg.repNumber} OF ${leg.totalReps}`;
   }
@@ -26,7 +27,7 @@ function legKindLabel(leg: RunLeg): string {
 function legMessage(leg: RunLeg, unit: "km" | "mi"): string {
   switch (leg.kind) {
     case "warmup":
-      return `${formatMeters(leg.metersRemainingInLeg)} easy, then reps begin`;
+      return `${formatMeters(leg.metersRemainingInLeg)} easy, then ${leg.tempo ? "your tempo block begins" : "reps begin"}`;
     case "rep":
       return `${formatMeters(leg.metersRemainingInLeg).replace(/(\d)(m|km)$/, "$1 $2")} to go at ${paceOnly(leg.paceSecondsPerKm, unit)}`;
     case "recovery":

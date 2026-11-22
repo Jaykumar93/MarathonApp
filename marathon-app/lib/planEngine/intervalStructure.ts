@@ -72,6 +72,36 @@ export function buildIntervalStructure(
   };
 }
 
+// A tempo block is sized from the week's volume but never shorter than 8 minutes (a real
+// threshold stimulus) or longer than 40 (beyond that it is a race effort). Warm-up and cool-down
+// are added around it, so a tempo day is always more than just the block. In a small week they
+// shrink (down to half, 6 and 5 minutes) so the tempo day does not outweigh the week it sits in.
+const TEMPO_MIN_BLOCK_SECONDS = 8 * 60;
+const TEMPO_FULL_WEEK_KM = 25;
+const TEMPO_MAX_BLOCK_SECONDS = 40 * 60;
+const TEMPO_WARMUP_SECONDS = 12 * 60;
+const TEMPO_COOLDOWN_SECONDS = 10 * 60;
+
+/**
+ * Builds a tempo run: easy warm-up, one steady block at tempo pace, easy cool-down. The block's
+ * distance is the day's share of weekly volume (clamped to 10-40 minutes at tempo pace), rounded to 100 m.
+ */
+export function buildTempoStructure(blockTargetKm: number, paceZones: PaceZones, weeklyVolumeKm = TEMPO_FULL_WEEK_KM): IntervalStructure {
+  const scale = Math.min(1, Math.max(0.5, weeklyVolumeKm / TEMPO_FULL_WEEK_KM));
+  const blockSeconds = Math.min(TEMPO_MAX_BLOCK_SECONDS, Math.max(TEMPO_MIN_BLOCK_SECONDS, blockTargetKm * paceZones.tempo));
+  const round100 = (m: number) => Math.round(m / 100) * 100;
+  return {
+    kind: "tempo",
+    warmupMeters: round100(((TEMPO_WARMUP_SECONDS * scale) / paceZones.easy) * 1000),
+    reps: 1,
+    repDistanceMeters: round100((blockSeconds / paceZones.tempo) * 1000),
+    repPaceSecondsPerKm: paceZones.tempo,
+    recoveryDistanceMeters: 0,
+    recoveryPaceSecondsPerKm: paceZones.easy,
+    cooldownMeters: round100(((TEMPO_COOLDOWN_SECONDS * scale) / paceZones.easy) * 1000),
+  };
+}
+
 /** The structure's real total - source of truth for the session's stored plannedDistanceMeters/plannedDurationSeconds once a structure exists. */
 export function intervalStructureTotals(structure: IntervalStructure): { distanceMeters: number; durationSeconds: number } {
   const hardMeters = structure.reps * structure.repDistanceMeters;

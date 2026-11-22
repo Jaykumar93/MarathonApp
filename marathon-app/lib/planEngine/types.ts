@@ -139,8 +139,14 @@ export interface PrepRecovery {
  * plannedDistanceMeters/plannedDurationSeconds on the session are derived
  * FROM this structure once it's built (warmup + reps*(rep+recovery) +
  * cooldown), not the other way around - see buildIntervalStructure.
+ *
+ * A tempo run uses the same shape with kind "tempo": warmup, ONE block at
+ * tempo pace (reps 1, repDistanceMeters = the block), no recovery (0 m), cooldown.
+ * Reusing the shape means the progress bar, leg tracking and voice cues work for it unchanged.
  */
 export interface IntervalStructure {
+  /** "tempo" for a tempo run's warmup + steady block + cooldown. Absent means a normal interval workout. */
+  kind?: "tempo";
   warmupMeters: number;
   reps: number;
   repDistanceMeters: number;
@@ -148,6 +154,31 @@ export interface IntervalStructure {
   recoveryDistanceMeters: number;
   recoveryPaceSecondsPerKm: number;
   cooldownMeters: number;
+}
+
+/** What a stretch of a workout is for - drives its colour and its coaching copy. */
+export type SegmentKind = "warmup" | "easy" | "steady" | "tempo" | "interval" | "recovery" | "strides" | "goal" | "cooldown";
+
+/** One stretch of a workout: a distance at a pace, in the order it is run. */
+export interface WorkoutSegment {
+  kind: SegmentKind;
+  /** Short name shown to the runner, for example "Warm up", "Rep 3" or "Float". */
+  label: string;
+  distanceMeters: number;
+  paceSecondsPerKm: number;
+}
+
+/**
+ * A planned session as an ordered list of sections, each with its own distance and pace, so a
+ * tempo, a pyramid or a progressive long run can all be shown and followed. The session's own
+ * distance and duration are the sum of its segments (see workoutTotals), warm-up and cool-down included.
+ */
+export interface Workout {
+  /** Which kind of workout this is, for example "steady_tempo" or "pyramid". */
+  family: string;
+  /** What the runner sees, for example "Steady Tempo 3km" or "Rolling 500s". */
+  name: string;
+  segments: WorkoutSegment[];
 }
 
 export interface PlanSessionDraft {
@@ -164,8 +195,10 @@ export interface PlanSessionDraft {
   plannedDurationSeconds: number | null;
   plannedPaceSecondsPerKm: number | null;
   prepRecovery: PrepRecovery | null;
-  /** Only ever set on sessionType "interval" - see IntervalStructure. */
+  /** Set on "interval" and "tempo" sessions - see IntervalStructure. */
   intervalStructure?: IntervalStructure | null;
+  /** The session as named sections (see Workout). Set on every non-rest session of plans built after workouts existed. */
+  workout?: Workout | null;
   /**
    * Groups a back-to-back long-run pair (ultra-specific - e.g. a 25-mile
    * Saturday run and a 20-mile Sunday run sharing the same group id).

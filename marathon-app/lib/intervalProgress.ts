@@ -12,6 +12,8 @@ export interface RunLeg {
   legDistanceMeters: number;
   metersIntoLeg: number;
   metersRemainingInLeg: number;
+  /** True for a tempo run (one steady block), so screens say "tempo" rather than "rep 1 of 1". */
+  tempo?: boolean;
 }
 
 /**
@@ -27,6 +29,11 @@ export interface RunLeg {
  * exactly the planned distance lands exactly on "complete" here too.
  */
 export function getCurrentLeg(structure: IntervalStructure, distanceCoveredMeters: number): RunLeg {
+  const leg = legAt(structure, distanceCoveredMeters);
+  return structure.kind === "tempo" ? { ...leg, tempo: true } : leg;
+}
+
+function legAt(structure: IntervalStructure, distanceCoveredMeters: number): RunLeg {
   let remaining = Math.max(0, distanceCoveredMeters);
 
   if (remaining < structure.warmupMeters) {

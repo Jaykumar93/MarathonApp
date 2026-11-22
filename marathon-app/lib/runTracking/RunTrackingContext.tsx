@@ -273,6 +273,8 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
   const motivationFiredForLegRef = useRef(false);
   const nextMotivationFractionRef = useRef(MOTIVATION_FRACTION_STEP);
   const motivationLineIndexRef = useRef(0);
+  // The planned distance is announced once per run, the first time it is reached.
+  const plannedReachedRef = useRef(false);
   // Set once per run (in startRun) after actually asking for background
   // permission - checked by startLocationDelivery so pause/resume don't
   // each have to re-request it.
@@ -474,6 +476,16 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
         if (crossedMotivationFraction(coveredFraction, nextMotivationFractionRef.current)) {
           speakCoach(nextMotivationLine());
           nextMotivationFractionRef.current += MOTIVATION_FRACTION_STEP;
+        }
+      }
+
+      // The planned distance is reached: say so once. The run is never stopped for the runner - they decide.
+      const plannedMeters = plannedSession?.planned_distance_meters;
+      if (plannedMeters && distanceMeters >= plannedMeters && !plannedReachedRef.current) {
+        plannedReachedRef.current = true;
+        if (voiceEnabled) {
+          const shown = ((plannedMeters / 1000) * (unit === "mi" ? 0.621371 : 1)).toFixed(1);
+          speakCoach(`That's your planned ${shown} ${unit === "mi" ? "miles" : "kilometres"}. Great work. Keep going if you feel good, or finish here.`);
         }
       }
     },
@@ -733,6 +745,7 @@ export function RunTrackingProvider({ children }: { children: React.ReactNode })
     motivationFiredForLegRef.current = false;
     nextMotivationFractionRef.current = MOTIVATION_FRACTION_STEP;
     motivationLineIndexRef.current = 0;
+    plannedReachedRef.current = false;
   }, []);
 
   const save = useCallback(
